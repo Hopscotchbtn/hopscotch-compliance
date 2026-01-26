@@ -11,6 +11,8 @@ import { Alert, PromptBox } from '../../components/ui/Alert'
 import { Accordion, AccordionGroup } from '../../components/ui/Accordion'
 import { StepProgress } from '../../components/ui/StepProgress'
 import { AIAnalysisPanel, EmailDraftModal } from '../../components/ui/AIAnalysis'
+import { COONotificationCard, OfstedDraftCard, RIDDORDraftCard } from '../../components/ui/NotificationDrafts'
+import { FileUpload } from '../../components/ui/FileUpload'
 import { incidentTypes, generateReference } from '../../data/incident/incidentTypes'
 import { injuryTypes, injuryCauses, bodyAreas, severityLevels, childAges, genderOptions } from '../../data/incident/injuryData'
 import { incidentLocations } from '../../data/incident/locations'
@@ -20,7 +22,7 @@ import { nurseries } from '../../data/nurseries'
 import { rooms } from '../../data/rooms'
 import { storage } from '../../lib/storage'
 import { saveIncident } from '../../lib/incidentDb'
-import { analyzeIncident, generateArmadilloEmail } from '../../lib/aiAnalysis'
+import { analyzeIncident, generateArmadilloEmail, analyzeWitnessStatement } from '../../lib/aiAnalysis'
 
 const TOTAL_STEPS = 7
 
@@ -39,6 +41,9 @@ export function IncidentForm() {
   const [aiError, setAiError] = useState(false)
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [emailData, setEmailData] = useState(null)
+
+  // Witness statement analysis state
+  const [witnessAnalyzing, setWitnessAnalyzing] = useState(false)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -76,11 +81,23 @@ export function IncidentForm() {
     parentsNotifiedBy: '',
     parentsNotifiedTime: '',
     parentResponse: '',
-    // Witnesses
+    // Witnesses & Evidence
     hasWitnesses: '',
     witnesses: [],
     witnessStatementsTaken: '',
+    witnessStatements: [], // Uploaded witness statement files with analysis
     photosTaken: '',
+    incidentPhotos: [], // Photos of scene, injury, body map
+    cctvChecked: '',
+    cctvAvailable: '',
+    cctvNotes: '',
+    // Supervision (child incidents)
+    supervisorName: '',
+    staffPresent: '',
+    ratiosCompliant: '',
+    ratiosNotes: '',
+    // Supporting documents
+    supportingDocuments: [], // Medical reports, risk assessments, etc.
     // Investigation
     investigationFindings: '',
     rootCauseAnalysis: {},
@@ -104,7 +121,7 @@ export function IncidentForm() {
   const stepNames = [
     'Basic Details',
     'What Happened',
-    'Witnesses',
+    'Evidence',
     'Immediate Response',
     'Investigation',
     'Actions',
@@ -136,6 +153,34 @@ export function IncidentForm() {
     const email = generateArmadilloEmail(formData, typeId, aiAnalysis)
     setEmailData(email)
     setShowEmailModal(true)
+  }
+
+  const handleWitnessFilesChange = (files) => {
+    updateField('witnessStatements', files)
+  }
+
+  const handleIncidentPhotosChange = (files) => {
+    updateField('incidentPhotos', files)
+  }
+
+  const handleSupportingDocsChange = (files) => {
+    updateField('supportingDocuments', files)
+  }
+
+  const handleAnalyzeWitnessStatement = async (file) => {
+    setWitnessAnalyzing(true)
+    try {
+      const analysis = await analyzeWitnessStatement(file, formData.description)
+      // Update the file with its analysis
+      const updatedStatements = formData.witnessStatements.map(f =>
+        f.id === file.id ? { ...f, analysis } : f
+      )
+      updateField('witnessStatements', updatedStatements)
+    } catch (err) {
+      console.error('Failed to analyze witness statement:', err)
+    } finally {
+      setWitnessAnalyzing(false)
+    }
   }
 
   const isChildIncident = incidentType?.personType === 'child' || typeId === 'allergyBreach'
@@ -410,51 +455,199 @@ export function IncidentForm() {
           </Card>
         )}
 
-        {/* Step 3: Witnesses (moved earlier) */}
+        {/* Step 3: Evidence & Documentation */}
         {step === 3 && (
-          <Card className="space-y-4">
-            <h2 className="font-semibold text-hop-forest text-lg">Witnesses</h2>
+          <div className="space-y-4">
+            {/* Supervision Context - Child incidents only */}
+            {isChildIncident && (
+              <Card className="space-y-4">
+                <h2 className="font-semibold text-hop-forest text-lg">Supervision Context</h2>
 
-            <PromptBox title="Think about the context..." color="freshair">
-              <ul className="list-disc list-inside space-y-1">
-                {contextPrompts.thinking.map((prompt, i) => (
-                  <li key={i}>{prompt}</li>
-                ))}
-              </ul>
-              <p className="mt-2 italic text-xs">
-                You don't need to record all this here - it's to help you reflect before the investigation.
-              </p>
-            </PromptBox>
+                <Input
+                  label="Who was supervising at the time?"
+                  value={formData.supervisorName}
+                  onChange={(v) => updateField('supervisorName', v)}
+                  placeholder="Name of staff member directly supervising"
+                />
 
-            <RadioGroup
-              label="Were there witnesses to this incident?"
-              options={[{ id: 'yes', label: 'Yes' }, { id: 'no', label: 'No' }]}
-              value={formData.hasWitnesses}
-              onChange={(v) => updateField('hasWitnesses', v)}
-            />
+                <Input
+                  label="Other staff present in the area"
+                  value={formData.staffPresent}
+                  onChange={(v) => updateField('staffPresent', v)}
+                  placeholder="Names of other staff who were nearby"
+                />
 
-            {formData.hasWitnesses === 'yes' && (
-              <>
                 <RadioGroup
-                  label="Have witness statements been collected?"
+                  label="Were adult:child ratios compliant at the time?"
                   options={[
                     { id: 'yes', label: 'Yes' },
                     { id: 'no', label: 'No' },
-                    { id: 'in-progress', label: 'In progress' },
+                    { id: 'unknown', label: 'To be confirmed' },
                   ]}
-                  value={formData.witnessStatementsTaken}
-                  onChange={(v) => updateField('witnessStatementsTaken', v)}
+                  value={formData.ratiosCompliant}
+                  onChange={(v) => updateField('ratiosCompliant', v)}
                 />
-              </>
+
+                {formData.ratiosCompliant === 'no' && (
+                  <Textarea
+                    label="Explain the ratio situation"
+                    value={formData.ratiosNotes}
+                    onChange={(v) => updateField('ratiosNotes', v)}
+                    placeholder="What were the actual ratios? Why were they non-compliant?"
+                    rows={2}
+                  />
+                )}
+              </Card>
             )}
 
-            <RadioGroup
-              label="Have photos been taken?"
-              options={[{ id: 'yes', label: 'Yes' }, { id: 'no', label: 'No' }]}
-              value={formData.photosTaken}
-              onChange={(v) => updateField('photosTaken', v)}
-            />
-          </Card>
+            {/* Photos & Visual Evidence */}
+            <Card className="space-y-4">
+              <h2 className="font-semibold text-hop-forest text-lg">Photos & Visual Evidence</h2>
+
+              <RadioGroup
+                label="Have photos been taken?"
+                options={[
+                  { id: 'yes', label: 'Yes' },
+                  { id: 'no', label: 'No' },
+                  { id: 'not-yet', label: 'Not yet - will take now' },
+                ]}
+                value={formData.photosTaken}
+                onChange={(v) => updateField('photosTaken', v)}
+              />
+
+              {formData.photosTaken === 'no' && (
+                <PromptBox title="Consider taking photos" color="sunshine">
+                  <p>Photos help document the scene and any injuries. Consider photographing:</p>
+                  <ul className="list-disc list-inside mt-1 text-sm">
+                    <li>The location where the incident occurred</li>
+                    <li>Any equipment or hazards involved</li>
+                    {isAccidentType && <li>The injury (with parent consent for children)</li>}
+                    {isAccidentType && <li>A body map showing injury location</li>}
+                  </ul>
+                </PromptBox>
+              )}
+
+              {(formData.photosTaken === 'yes' || formData.photosTaken === 'not-yet') && (
+                <FileUpload
+                  label="Upload photos"
+                  hint="Upload photos of the scene, injury, body map, or any relevant equipment. These become part of the incident record."
+                  files={formData.incidentPhotos}
+                  onFilesChange={handleIncidentPhotosChange}
+                  maxFiles={10}
+                />
+              )}
+            </Card>
+
+            {/* CCTV */}
+            <Card className="space-y-4">
+              <h2 className="font-semibold text-hop-forest text-lg">CCTV</h2>
+
+              <RadioGroup
+                label="Has CCTV been checked?"
+                options={[
+                  { id: 'yes', label: 'Yes' },
+                  { id: 'no', label: 'No' },
+                  { id: 'not-available', label: 'No CCTV in this area' },
+                ]}
+                value={formData.cctvChecked}
+                onChange={(v) => updateField('cctvChecked', v)}
+              />
+
+              {formData.cctvChecked === 'no' && (
+                <PromptBox title="Check CCTV promptly" color="marmalade">
+                  <p>CCTV footage is often overwritten within days. Check and preserve any relevant footage as soon as possible.</p>
+                </PromptBox>
+              )}
+
+              {formData.cctvChecked === 'yes' && (
+                <>
+                  <RadioGroup
+                    label="Does CCTV footage show the incident?"
+                    options={[
+                      { id: 'yes', label: 'Yes - footage available' },
+                      { id: 'partial', label: 'Partial - some angles only' },
+                      { id: 'no', label: 'No - not captured' },
+                    ]}
+                    value={formData.cctvAvailable}
+                    onChange={(v) => updateField('cctvAvailable', v)}
+                  />
+
+                  {(formData.cctvAvailable === 'yes' || formData.cctvAvailable === 'partial') && (
+                    <Textarea
+                      label="CCTV notes"
+                      value={formData.cctvNotes}
+                      onChange={(v) => updateField('cctvNotes', v)}
+                      placeholder="Where is the footage saved? What does it show? Any discrepancies with witness accounts?"
+                      rows={2}
+                    />
+                  )}
+                </>
+              )}
+            </Card>
+
+            {/* Witnesses */}
+            <Card className="space-y-4">
+              <h2 className="font-semibold text-hop-forest text-lg">Witness Statements</h2>
+
+              <RadioGroup
+                label="Were there witnesses to this incident?"
+                options={[{ id: 'yes', label: 'Yes' }, { id: 'no', label: 'No' }]}
+                value={formData.hasWitnesses}
+                onChange={(v) => updateField('hasWitnesses', v)}
+              />
+
+              {formData.hasWitnesses === 'yes' && (
+                <>
+                  <RadioGroup
+                    label="Have witness statements been collected?"
+                    options={[
+                      { id: 'yes', label: 'Yes' },
+                      { id: 'no', label: 'No' },
+                      { id: 'in-progress', label: 'In progress' },
+                    ]}
+                    value={formData.witnessStatementsTaken}
+                    onChange={(v) => updateField('witnessStatementsTaken', v)}
+                  />
+
+                  {formData.witnessStatementsTaken === 'no' && (
+                    <PromptBox title="Collect statements soon" color="sunshine">
+                      <p>Witness statements are most accurate when collected promptly. Try to gather written statements from witnesses within 24 hours while memories are fresh.</p>
+                      <p className="mt-2 text-sm">You can continue with this report now and upload statements later.</p>
+                    </PromptBox>
+                  )}
+
+                  {(formData.witnessStatementsTaken === 'yes' || formData.witnessStatementsTaken === 'in-progress') && (
+                    <FileUpload
+                      label="Upload witness statements"
+                      hint="Upload photos of handwritten statements, scanned documents, or typed statements. AI will analyse each statement to extract key facts."
+                      files={formData.witnessStatements}
+                      onFilesChange={handleWitnessFilesChange}
+                      onAnalyze={handleAnalyzeWitnessStatement}
+                      analyzing={witnessAnalyzing}
+                      maxFiles={10}
+                    />
+                  )}
+                </>
+              )}
+            </Card>
+
+            {/* Supporting Documents */}
+            <Card className="space-y-4">
+              <h2 className="font-semibold text-hop-forest text-lg">Other Documents</h2>
+
+              <p className="text-sm text-gray-600">
+                Upload any other relevant documents such as risk assessments, medical reports, or existing policies.
+              </p>
+
+              <FileUpload
+                label="Supporting documents (optional)"
+                hint="Medical reports, hospital discharge notes, relevant risk assessments, policy documents, etc."
+                files={formData.supportingDocuments}
+                onFilesChange={handleSupportingDocsChange}
+                maxFiles={10}
+              />
+            </Card>
+          </div>
         )}
 
         {/* Step 4: Immediate Response */}
@@ -504,6 +697,13 @@ export function IncidentForm() {
                   value={formData.hospitalAttendance}
                   onChange={(v) => updateField('hospitalAttendance', v)}
                 />
+
+                {formData.hospitalAttendance === 'yes' && isAccidentType && formData.severity !== 'serious' && formData.severity !== 'critical' && (
+                  <PromptBox title="Review severity" color="marmalade">
+                    <p>Hospital attendance often indicates a more serious injury. You may want to go back to Step 2 and update the severity level.</p>
+                    <p className="mt-1 text-sm">Current severity: <strong>{formData.severity || 'Not set'}</strong></p>
+                  </PromptBox>
+                )}
               </>
             )}
 
@@ -549,6 +749,50 @@ export function IncidentForm() {
         {step === 5 && (
           <Card className="space-y-4">
             <h2 className="font-semibold text-hop-forest text-lg">Investigation</h2>
+
+            {/* Evidence checklist */}
+            <div className="bg-hop-freshair/20 rounded-lg p-4 border border-hop-freshair">
+              <h3 className="font-medium text-hop-forest mb-2">Before investigating, confirm you have:</h3>
+              <ul className="space-y-1 text-sm">
+                <li className="flex items-center gap-2">
+                  {formData.incidentPhotos?.length > 0 || formData.photosTaken === 'no' ? (
+                    <span className="text-hop-apple">✓</span>
+                  ) : (
+                    <span className="text-hop-marmalade">○</span>
+                  )}
+                  <span>Photos of scene/injury</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  {formData.cctvChecked === 'yes' || formData.cctvChecked === 'not-available' ? (
+                    <span className="text-hop-apple">✓</span>
+                  ) : (
+                    <span className="text-hop-marmalade">○</span>
+                  )}
+                  <span>CCTV checked</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  {formData.hasWitnesses === 'no' || formData.witnessStatementsTaken === 'yes' ? (
+                    <span className="text-hop-apple">✓</span>
+                  ) : (
+                    <span className="text-hop-marmalade">○</span>
+                  )}
+                  <span>Witness statements collected</span>
+                </li>
+                {isChildIncident && (
+                  <li className="flex items-center gap-2">
+                    {formData.supervisorName ? (
+                      <span className="text-hop-apple">✓</span>
+                    ) : (
+                      <span className="text-hop-marmalade">○</span>
+                    )}
+                    <span>Supervision details recorded</span>
+                  </li>
+                )}
+              </ul>
+              <p className="text-xs text-gray-500 mt-2 italic">
+                You can proceed with incomplete evidence, but the investigation will be stronger with all documentation.
+              </p>
+            </div>
 
             <PromptBox color="pebble">
               <p>This section helps you think through what happened and why. Take your time. The goal is understanding, not blame.</p>
@@ -688,6 +932,27 @@ export function IncidentForm() {
                     onChange={(v) => updateField('riddorReportable', v)}
                   />
                 </Card>
+
+                {/* Notification Draft Cards */}
+                <COONotificationCard
+                  incidentData={formData}
+                  incidentType={typeId}
+                  analysis={aiAnalysis}
+                />
+
+                <OfstedDraftCard
+                  incidentData={formData}
+                  incidentType={typeId}
+                  analysis={aiAnalysis}
+                  visible={formData.ofstedNotifiable === 'yes'}
+                />
+
+                <RIDDORDraftCard
+                  incidentData={formData}
+                  incidentType={typeId}
+                  analysis={aiAnalysis}
+                  visible={formData.riddorReportable === 'yes'}
+                />
 
                 {/* Armadillo email option */}
                 <Card>

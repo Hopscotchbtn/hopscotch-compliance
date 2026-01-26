@@ -19,6 +19,27 @@ export async function analyzeIncident(incidentData, incidentType) {
   }
 }
 
+export async function analyzeWitnessStatement(file, incidentDescription) {
+  try {
+    const response = await fetch('/api/analyze-witness-statement', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ file, incidentDescription }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to analyze witness statement')
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error('Witness statement analysis error:', error)
+    throw error
+  }
+}
+
 export function generateArmadilloEmail(incidentData, incidentType, analysis) {
   const incidentTypeNames = {
     childAccident: 'Child Accident/Injury',
