@@ -63,7 +63,6 @@ export function KitchenSection() {
   const [temperatures, setTemperatures] = useState({})
   const [deliveryData, setDeliveryData] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
 
   // Redirect if missing data
   useEffect(() => {
@@ -72,68 +71,56 @@ export function KitchenSection() {
     }
   }, [config, nursery, navigate])
 
-  const items = config?.items || []
-  const units = kitchenSafety.defaultUnits
-
-  // Safety check: if index goes out of bounds, advance to next phase
-  useEffect(() => {
-    if (phase === 'checks' && currentIndex >= items.length && items.length > 0) {
-      if (config?.includeTemps) {
-        setPhase('temps')
-      } else if (config?.includeWeeklyProbe) {
-        setPhase('weekly')
-      } else if (config?.includeMonthlyCalibration) {
-        setPhase('monthly')
-      } else {
-        setPhase('summary')
-      }
-    }
-    setIsProcessing(false)
-  }, [currentIndex, items.length, phase, config])
-
   if (!config || !nursery) {
     return null
   }
 
+  const items = config.items || []
+  const units = kitchenSafety.defaultUnits
   const currentItem = items[currentIndex]
 
-  // Handle swipe actions with guard against double-processing
+  // Move to next phase after checks
+  const goToNextPhase = () => {
+    if (config.includeTemps) {
+      setPhase('temps')
+    } else if (config.includeWeeklyProbe) {
+      setPhase('weekly')
+    } else if (config.includeMonthlyCalibration) {
+      setPhase('monthly')
+    } else {
+      setPhase('summary')
+    }
+  }
+
+  // Handle swipe actions - use response check to prevent double-processing
   const handlePass = () => {
-    if (isProcessing || !currentItem) return
-    setIsProcessing(true)
+    if (!currentItem || responses[currentItem.id]) return
     setResponses(prev => ({ ...prev, [currentItem.id]: 'pass' }))
-    advanceToNext()
+    if (currentIndex >= items.length - 1) {
+      goToNextPhase()
+    } else {
+      setCurrentIndex(currentIndex + 1)
+    }
   }
 
   const handleFail = (note) => {
-    if (isProcessing || !currentItem) return
-    setIsProcessing(true)
+    if (!currentItem || responses[currentItem.id]) return
     setResponses(prev => ({ ...prev, [currentItem.id]: 'fail' }))
     if (note) setNotes(prev => ({ ...prev, [currentItem.id]: note }))
-    advanceToNext()
+    if (currentIndex >= items.length - 1) {
+      goToNextPhase()
+    } else {
+      setCurrentIndex(currentIndex + 1)
+    }
   }
 
   const handleNA = () => {
-    if (isProcessing || !currentItem) return
-    setIsProcessing(true)
+    if (!currentItem || responses[currentItem.id]) return
     setResponses(prev => ({ ...prev, [currentItem.id]: 'na' }))
-    advanceToNext()
-  }
-
-  const advanceToNext = () => {
-    if (currentIndex < items.length - 1) {
-      setCurrentIndex(prev => Math.min(prev + 1, items.length - 1))
+    if (currentIndex >= items.length - 1) {
+      goToNextPhase()
     } else {
-      // Move to next phase
-      if (config.includeTemps) {
-        setPhase('temps')
-      } else if (config.includeWeeklyProbe) {
-        setPhase('weekly')
-      } else if (config.includeMonthlyCalibration) {
-        setPhase('monthly')
-      } else {
-        setPhase('summary')
-      }
+      setCurrentIndex(currentIndex + 1)
     }
   }
 
@@ -650,22 +637,25 @@ export function KitchenSection() {
   }
 
   // Render swipe card flow for checks
-  // Guard against rendering with invalid index
-  if (!currentItem && items.length > 0) {
-    return (
-      <div className="min-h-screen bg-hop-pebble flex items-center justify-center">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-hop-pebble flex flex-col">
       <Header
         title={config.title}
-        subtitle={`${Math.min(currentIndex + 1, items.length)} of ${items.length}`}
+        subtitle={`${currentIndex + 1} of ${items.length}`}
         showBack
-        onBack={currentIndex > 0 ? () => { setIsProcessing(false); setCurrentIndex(prev => prev - 1) } : undefined}
+        onBack={currentIndex > 0 ? () => {
+          const prevIndex = currentIndex - 1
+          // Clear response so user can re-answer
+          const prevItem = items[prevIndex]
+          if (prevItem) {
+            setResponses(prev => {
+              const next = { ...prev }
+              delete next[prevItem.id]
+              return next
+            })
+          }
+          setCurrentIndex(prevIndex)
+        } : undefined}
       />
 
       <div className="flex-1 flex items-center justify-center">
