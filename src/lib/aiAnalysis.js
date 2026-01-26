@@ -40,6 +40,28 @@ export async function analyzeWitnessStatement(file, incidentDescription) {
   }
 }
 
+export async function reviewEvidence(description, witnessStatements, photos, documents) {
+  try {
+    const response = await fetch('/api/review-evidence', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ description, witnessStatements, photos, documents }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to review evidence')
+    }
+
+    const data = await response.json()
+    return data.suggestions || []
+  } catch (error) {
+    console.error('Evidence review error:', error)
+    throw error
+  }
+}
+
 export function generateArmadilloEmail(incidentData, incidentType, analysis) {
   const incidentTypeNames = {
     childAccident: 'Child Accident/Injury',

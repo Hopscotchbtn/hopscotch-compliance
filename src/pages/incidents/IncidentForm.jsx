@@ -13,6 +13,7 @@ import { StepProgress } from '../../components/ui/StepProgress'
 import { AIAnalysisPanel, EmailDraftModal } from '../../components/ui/AIAnalysis'
 import { COONotificationCard, OfstedDraftCard, RIDDORDraftCard } from '../../components/ui/NotificationDrafts'
 import { FileUpload } from '../../components/ui/FileUpload'
+import { EvidenceReviewPanel } from '../../components/ui/EvidenceReviewPanel'
 import { incidentTypes, generateReference } from '../../data/incident/incidentTypes'
 import { injuryTypes, injuryCauses, bodyAreas, severityLevels, childAges, genderOptions } from '../../data/incident/injuryData'
 import { incidentLocations } from '../../data/incident/locations'
@@ -22,7 +23,7 @@ import { nurseries } from '../../data/nurseries'
 import { rooms } from '../../data/rooms'
 import { storage } from '../../lib/storage'
 import { saveIncident } from '../../lib/incidentDb'
-import { analyzeIncident, generateArmadilloEmail, analyzeWitnessStatement } from '../../lib/aiAnalysis'
+import { analyzeIncident, generateArmadilloEmail, analyzeWitnessStatement, reviewEvidence } from '../../lib/aiAnalysis'
 
 const TOTAL_STEPS = 7
 
@@ -44,6 +45,13 @@ export function IncidentForm() {
 
   // Witness statement analysis state
   const [witnessAnalyzing, setWitnessAnalyzing] = useState(false)
+
+  // Evidence review state (middle ground AI review)
+  const [showEvidenceReview, setShowEvidenceReview] = useState(false)
+  const [evidenceReviewSuggestions, setEvidenceReviewSuggestions] = useState([])
+  const [evidenceReviewLoading, setEvidenceReviewLoading] = useState(false)
+  const [evidenceReviewError, setEvidenceReviewError] = useState(false)
+  const [acceptedReviewNotes, setAcceptedReviewNotes] = useState([])
 
   // Form state
   const [formData, setFormData] = useState({
@@ -183,6 +191,69 @@ export function IncidentForm() {
     }
   }
 
+  // Run evidence review when leaving Step 3
+  const runEvidenceReview = async () => {
+    // Only run if there's evidence to review
+    const hasEvidence = formData.witnessStatements.length > 0 ||
+                        formData.incidentPhotos.length > 0 ||
+                        formData.supportingDocuments.length > 0
+
+    if (!hasEvidence) {
+      // No evidence to review, proceed directly
+      setStep(4)
+      window.scrollTo(0, 0)
+      return
+    }
+
+    setShowEvidenceReview(true)
+    setEvidenceReviewLoading(true)
+    setEvidenceReviewError(false)
+
+    try {
+      const suggestions = await reviewEvidence(
+        formData.description,
+        formData.witnessStatements,
+        formData.incidentPhotos,
+        formData.supportingDocuments
+      )
+      setEvidenceReviewSuggestions(suggestions)
+    } catch (err) {
+      console.error('Evidence review failed:', err)
+      setEvidenceReviewError(true)
+    } finally {
+      setEvidenceReviewLoading(false)
+    }
+  }
+
+  const handleEvidenceReviewAccept = (suggestion) => {
+    setAcceptedReviewNotes(prev => [...prev, suggestion])
+  }
+
+  const handleEvidenceReviewDismiss = (id) => {
+    // Just tracking dismissals if needed later
+  }
+
+  const handleEvidenceReviewSkip = () => {
+    setShowEvidenceReview(false)
+    setStep(4)
+    window.scrollTo(0, 0)
+  }
+
+  const handleEvidenceReviewContinue = () => {
+    // Add accepted notes to investigation findings
+    if (acceptedReviewNotes.length > 0) {
+      const notesText = acceptedReviewNotes
+        .map(n => `- ${n.message} (${n.source})`)
+        .join('\n')
+      const currentFindings = formData.investigationFindings || ''
+      const separator = currentFindings ? '\n\nAI Review Notes:\n' : 'AI Review Notes:\n'
+      updateField('investigationFindings', currentFindings + separator + notesText)
+    }
+    setShowEvidenceReview(false)
+    setStep(4)
+    window.scrollTo(0, 0)
+  }
+
   const isChildIncident = incidentType?.personType === 'child' || typeId === 'allergyBreach'
   const isAccidentType = typeId === 'childAccident' || typeId === 'staffAccident'
   const isAllergyBreach = typeId === 'allergyBreach'
@@ -211,6 +282,11 @@ export function IncidentForm() {
 
   const handleNext = () => {
     if (step < TOTAL_STEPS) {
+      // Trigger evidence review when leaving Step 3
+      if (step === 3) {
+        runEvidenceReview()
+        return
+      }
       setStep(step + 1)
       window.scrollTo(0, 0)
     }
@@ -1007,6 +1083,21 @@ export function IncidentForm() {
           <EmailDraftModal
             emailData={emailData}
             onClose={() => setShowEmailModal(false)}
+          />
+        )}
+
+        {/* Evidence Review Modal */}
+        {showEvidenceReview && (
+          <EvidenceReviewPanel
+            suggestions={evidenceReviewSuggestions}
+            loading={evidenceReviewLoading}
+            error={evidenceReviewError}
+            onAccept={handleEvidenceReviewAccept}
+            onDismiss={handleEvidenceReviewDismiss}
+            onSkip={handleEvidenceReviewSkip}
+            onRetry={runEvidenceReview}
+            onContinue={handleEvidenceReviewContinue}
+            acceptedNotes={acceptedReviewNotes}
           />
         )}
 
