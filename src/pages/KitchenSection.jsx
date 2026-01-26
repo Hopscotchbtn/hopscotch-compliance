@@ -63,6 +63,7 @@ export function KitchenSection() {
   const [temperatures, setTemperatures] = useState({})
   const [deliveryData, setDeliveryData] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // Redirect if missing data
   useEffect(() => {
@@ -71,34 +72,57 @@ export function KitchenSection() {
     }
   }, [config, nursery, navigate])
 
+  const items = config?.items || []
+  const units = kitchenSafety.defaultUnits
+
+  // Safety check: if index goes out of bounds, advance to next phase
+  useEffect(() => {
+    if (phase === 'checks' && currentIndex >= items.length && items.length > 0) {
+      if (config?.includeTemps) {
+        setPhase('temps')
+      } else if (config?.includeWeeklyProbe) {
+        setPhase('weekly')
+      } else if (config?.includeMonthlyCalibration) {
+        setPhase('monthly')
+      } else {
+        setPhase('summary')
+      }
+    }
+    setIsProcessing(false)
+  }, [currentIndex, items.length, phase, config])
+
   if (!config || !nursery) {
     return null
   }
 
-  const items = config.items || []
-  const units = kitchenSafety.defaultUnits
   const currentItem = items[currentIndex]
 
-  // Handle swipe actions
+  // Handle swipe actions with guard against double-processing
   const handlePass = () => {
+    if (isProcessing || !currentItem) return
+    setIsProcessing(true)
     setResponses(prev => ({ ...prev, [currentItem.id]: 'pass' }))
     advanceToNext()
   }
 
   const handleFail = (note) => {
+    if (isProcessing || !currentItem) return
+    setIsProcessing(true)
     setResponses(prev => ({ ...prev, [currentItem.id]: 'fail' }))
     if (note) setNotes(prev => ({ ...prev, [currentItem.id]: note }))
     advanceToNext()
   }
 
   const handleNA = () => {
+    if (isProcessing || !currentItem) return
+    setIsProcessing(true)
     setResponses(prev => ({ ...prev, [currentItem.id]: 'na' }))
     advanceToNext()
   }
 
   const advanceToNext = () => {
     if (currentIndex < items.length - 1) {
-      setCurrentIndex(prev => prev + 1)
+      setCurrentIndex(prev => Math.min(prev + 1, items.length - 1))
     } else {
       // Move to next phase
       if (config.includeTemps) {
@@ -626,13 +650,22 @@ export function KitchenSection() {
   }
 
   // Render swipe card flow for checks
+  // Guard against rendering with invalid index
+  if (!currentItem && items.length > 0) {
+    return (
+      <div className="min-h-screen bg-hop-pebble flex items-center justify-center">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-hop-pebble flex flex-col">
       <Header
         title={config.title}
-        subtitle={`${currentIndex + 1} of ${items.length}`}
+        subtitle={`${Math.min(currentIndex + 1, items.length)} of ${items.length}`}
         showBack
-        onBack={currentIndex > 0 ? () => setCurrentIndex(prev => prev - 1) : undefined}
+        onBack={currentIndex > 0 ? () => { setIsProcessing(false); setCurrentIndex(prev => prev - 1) } : undefined}
       />
 
       <div className="flex-1 flex items-center justify-center">
