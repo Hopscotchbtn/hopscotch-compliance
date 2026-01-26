@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Card } from '../components/ui/Card'
 import { Select } from '../components/ui/Select'
@@ -7,23 +7,13 @@ import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { checkTypes } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
-import { rooms } from '../data/rooms'
 import { storage } from '../lib/storage'
 import { getTodayChecksByType } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
 
-// Rooms that apply to opening checks (exclude Kitchen, Main Building for room checks)
-const OPENING_CHECK_ROOMS = [
-  'Baby Room',
-  'Toddler Room',
-  'Pre-School Room',
-  'Garden/Outdoor Area',
-]
-
 export function RoomProgress() {
+  const { checkTypeId } = useParams()
   const navigate = useNavigate()
-  // Hardcoded for room opening checks
-  const checkTypeId = 'roomOpening'
   const checkType = checkTypes[checkTypeId]
 
   const [nursery, setNursery] = useState(() => storage.getLastNursery())
@@ -33,11 +23,32 @@ export function RoomProgress() {
   const [loading, setLoading] = useState(false)
   const [showSetup, setShowSetup] = useState(!storage.getLastNursery() || !storage.getUserName())
 
+  // Redirect if invalid check type
   useEffect(() => {
-    if (nursery) {
+    if (!checkType) {
+      navigate('/')
+    }
+  }, [checkType, navigate])
+
+  // For autoRoom checks (like Garden), skip straight to swipe cards after setup
+  useEffect(() => {
+    if (checkType?.autoRoom && !showSetup && nursery && name) {
+      navigate(`/check/${checkTypeId}/room/${encodeURIComponent(checkType.autoRoom)}`, {
+        state: {
+          nursery,
+          room: checkType.autoRoom,
+          completedBy: name.trim(),
+          checkType: checkTypeId,
+        },
+      })
+    }
+  }, [checkType, showSetup, nursery, name, checkTypeId, navigate])
+
+  useEffect(() => {
+    if (nursery && checkType && !checkType.autoRoom) {
       loadTodayProgress()
     }
-  }, [nursery, checkTypeId])
+  }, [nursery, checkTypeId, checkType])
 
   const loadTodayProgress = async () => {
     setLoading(true)
@@ -62,6 +73,11 @@ export function RoomProgress() {
     }
   }
 
+  // Return null while redirecting
+  if (!checkType) {
+    return null
+  }
+
   const handleSetupComplete = () => {
     if (!nursery || !name.trim()) return
     storage.setLastNursery(nursery)
@@ -80,8 +96,10 @@ export function RoomProgress() {
     })
   }
 
-  const completedCount = OPENING_CHECK_ROOMS.filter(room => completedRooms[room]).length
-  const totalCount = OPENING_CHECK_ROOMS.length
+  // Get rooms for this check type
+  const checkRooms = checkType.rooms || []
+  const completedCount = checkRooms.filter(room => completedRooms[room]).length
+  const totalCount = checkRooms.length
   const allComplete = completedCount === totalCount
 
   // Setup screen
@@ -134,6 +152,18 @@ export function RoomProgress() {
     )
   }
 
+  // For autoRoom checks, show loading while redirecting
+  if (checkType.autoRoom) {
+    return (
+      <div className="min-h-screen bg-hop-pebble flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-hop-forest border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-gray-500">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-hop-pebble">
       <Header
@@ -148,7 +178,7 @@ export function RoomProgress() {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-600">Progress</span>
             <span className="text-sm font-medium text-hop-forest">
-              {completedCount} of {totalCount} rooms
+              {completedCount} of {totalCount} room{totalCount !== 1 ? 's' : ''}
             </span>
           </div>
           <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -170,7 +200,7 @@ export function RoomProgress() {
               </div>
               <div>
                 <p className="font-medium text-hop-forest">All rooms checked!</p>
-                <p className="text-sm text-gray-600">Opening checks complete for today</p>
+                <p className="text-sm text-gray-600">{checkType.shortName} complete for today</p>
               </div>
             </div>
           </Card>
@@ -178,7 +208,7 @@ export function RoomProgress() {
 
         {/* Room list */}
         <div className="space-y-3">
-          {OPENING_CHECK_ROOMS.map((room) => {
+          {checkRooms.map((room) => {
             const isComplete = completedRooms[room]
             const hasIssues = roomIssues[room]?.length > 0
 
@@ -221,7 +251,7 @@ export function RoomProgress() {
 
                 {/* Room info */}
                 <div className="flex-1">
-                  <p className={`font-medium ${isComplete ? 'text-hop-forest' : 'text-hop-forest'}`}>
+                  <p className="font-medium text-hop-forest">
                     {room}
                   </p>
                   {isComplete && (

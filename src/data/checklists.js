@@ -1,3 +1,10 @@
+// Rooms that each check type applies to
+export const CHECK_ROOMS = {
+  roomOpening: ['Baby Room', 'Toddler Room', 'Pre-School Room', 'Garden/Outdoor Area'],
+  roomSafety: ['Baby Room', 'Toddler Room', 'Pre-School Room'],
+  gardenOutdoor: ['Garden/Outdoor Area'], // autoRoom - no picker needed
+}
+
 export const checkTypes = {
   roomOpening: {
     id: 'roomOpening',
@@ -5,6 +12,7 @@ export const checkTypes = {
     shortName: 'Room Opening',
     description: 'Complete this check before the nursery opens and children arrive.',
     color: 'hop-freshair',
+    rooms: CHECK_ROOMS.roomOpening,
     standardItems: [
       { id: 1, text: 'Room set up as per planning, risk assessments checked as required' },
       { id: 2, text: 'Play equipment checked for damage, wear, corrosion, loose fixings, sharp corners, protruding nails/screws' },
@@ -28,6 +36,7 @@ export const checkTypes = {
     shortName: 'Room Safety',
     description: 'These checks should be carried out before opening. Report any defects immediately to the duty manager.',
     color: 'hop-sunshine',
+    rooms: CHECK_ROOMS.roomSafety,
     standardItems: [
       { id: 1, text: 'Electrical equipment in good condition, wires out of reach or made safe' },
       { id: 2, text: 'Play equipment in good condition, no sharp edges or damage' },
@@ -45,6 +54,7 @@ export const checkTypes = {
     shortName: 'Garden/Outdoor',
     description: 'Complete before nursery opens. Monitor throughout the day and report any defects immediately. Inform all staff of any hazards.',
     color: 'hop-apple',
+    rooms: CHECK_ROOMS.gardenOutdoor,
     standardItems: [
       { id: 1, text: 'Gates locked and lock mechanisms working' },
       { id: 2, text: 'Play equipment in good working order, no damage or loose fittings' },
@@ -76,3 +86,77 @@ export const getChecklistItems = (checkTypeId) => {
 }
 
 export const isMonday = () => new Date().getDay() === 1
+export const isFirstOfMonth = () => new Date().getDate() === 1
+
+// Kitchen Food Safety configuration
+export const kitchenSafety = {
+  id: 'kitchenSafety',
+  name: 'Kitchen Food Safety',
+  shortName: 'Kitchen Safety',
+  description: 'Daily food safety diary for kitchen compliance.',
+  color: 'hop-marmalade',
+
+  // Opening checks - done first thing in morning
+  openingChecks: [
+    { id: 'o1', text: 'Hot water in place' },
+    { id: 'o2', text: 'Handwash facilities in place' },
+    { id: 'o3', text: 'Clean cloths in place' },
+    { id: 'o4', text: 'Sanitiser in place' },
+    { id: 'o5', text: 'No food left out' },
+    { id: 'o6', text: 'All foods in date' },
+    { id: 'o7', text: 'Equipment OK' },
+    { id: 'o8', text: 'Probe thermometer available & working' },
+    { id: 'o9', text: 'Staff fit, well, in uniform' },
+  ],
+
+  // Closing checks - done at end of day
+  closingChecks: [
+    { id: 'c1', text: 'Rubbish out' },
+    { id: 'c2', text: 'Cloths & aprons cleaned / removed' },
+    { id: 'c3', text: 'No food left out' },
+    { id: 'c4', text: 'All foods checked & date labelled' },
+    { id: 'c5', text: 'Foods covered' },
+    { id: 'c6', text: 'Utensils washed-up' },
+    { id: 'c7', text: 'Daily cleaning tasks done' },
+    { id: 'c8', text: 'Diary completed' },
+  ],
+
+  // Packed lunch visual checks
+  packedLunchChecks: [
+    { id: 'pl1', text: 'Child\'s name shown on boxes' },
+    { id: 'pl2', text: 'Foods inside boxes cool (not warm)' },
+    { id: 'pl3', text: 'Food in good condition' },
+    { id: 'pl4', text: 'No nuts' },
+  ],
+
+  // Little Tums food delivery items
+  littleTumsItems: [
+    { id: 'lt1', label: 'Hot lunch item 1', type: 'hot' },
+    { id: 'lt2', label: 'Hot lunch item 2', type: 'hot' },
+    { id: 'lt3', label: 'Cold lunch item 1', type: 'cold' },
+    { id: 'lt4', label: 'Cold lunch item 2', type: 'cold' },
+    { id: 'lt5', label: 'Hot tea item', type: 'hot' },
+    { id: 'lt6', label: 'Cold tea item', type: 'cold' },
+  ],
+
+  // Temperature thresholds
+  tempThresholds: {
+    fridgeMax: 5,      // Fridges must be ≤5°C
+    freezerMax: -18,   // Freezers must be ≤-18°C
+    hotFoodMin: 63,    // Hot food must be ≥63°C
+    coldFoodMax: 8,    // Cold food must be ≤8°C
+    twoHourRule: 120,  // Minutes - food must be served within 2 hours
+    boilingMin: 99,    // Probe calibration boiling water
+    boilingMax: 101,
+    icedMin: -1,       // Probe calibration iced water
+    icedMax: 1,
+  },
+
+  // Default fridge/freezer units (can be customized per nursery)
+  defaultUnits: [
+    { id: 'unit1', name: 'Fridge 1', type: 'fridge' },
+    { id: 'unit2', name: 'Fridge 2', type: 'fridge' },
+    { id: 'unit3', name: 'Freezer 1', type: 'freezer' },
+    { id: 'unit4', name: 'Freezer 2', type: 'freezer' },
+  ],
+}

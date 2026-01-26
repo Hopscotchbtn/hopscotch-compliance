@@ -9,6 +9,9 @@ import { SwipeChecklist } from './pages/SwipeChecklist'
 import { History } from './pages/History'
 import { RequestRecords } from './pages/RequestRecords'
 import { PasswordGate } from './components/PasswordGate'
+// Kitchen Food Safety pages
+import { KitchenSafety } from './pages/KitchenSafety'
+import { KitchenSection } from './pages/KitchenSection'
 // IncidentIQ pages
 import { IncidentDashboard } from './pages/incidents/IncidentDashboard'
 import { IncidentTypeSelect } from './pages/incidents/IncidentTypeSelect'
@@ -21,18 +24,17 @@ function App() {
     <PasswordGate>
       <div className="font-body">
         <Routes>
-          {/* Daily Checks - New swipe flow for opening checks */}
+          {/* Daily Checks - New swipe flow for all check types */}
           <Route path="/" element={<Home />} />
-          <Route path="/check/roomOpening" element={<RoomProgress />} />
-          <Route path="/check/roomOpening/room/:roomName" element={<SwipeChecklist />} />
-
-          {/* Daily Checks - Legacy flow for other check types */}
-          <Route path="/check/:checkTypeId" element={<CheckSetup />} />
-          <Route path="/check/:checkTypeId/checklist" element={<Checklist />} />
-          <Route path="/check/:checkTypeId/confirmation" element={<Confirmation />} />
+          <Route path="/check/:checkTypeId" element={<RoomProgress />} />
+          <Route path="/check/:checkTypeId/room/:roomName" element={<SwipeChecklist />} />
           <Route path="/summary" element={<Summary />} />
           <Route path="/history" element={<History />} />
           <Route path="/history/request" element={<RequestRecords />} />
+
+          {/* Kitchen Food Safety */}
+          <Route path="/kitchen-safety" element={<KitchenSafety />} />
+          <Route path="/kitchen-safety/:sectionId" element={<KitchenSection />} />
 
           {/* IncidentIQ */}
           <Route path="/incidents" element={<IncidentDashboard />} />

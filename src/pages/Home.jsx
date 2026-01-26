@@ -40,6 +40,12 @@ export function Home() {
               <span className="text-lg">Garden & Outdoor Check</span>
             </Button>
           </Link>
+
+          <Link to="/kitchen-safety">
+            <Button color="marmalade" size="large" fullWidth>
+              <span className="text-lg">Kitchen Food Safety</span>
+            </Button>
+          </Link>
         </div>
 
         {/* View checks links */}

@@ -7,12 +7,12 @@ import { checkTypes, getChecklistItems, isMonday } from '../data/checklists'
 import { submitCheck } from '../lib/supabase'
 
 export function SwipeChecklist() {
-  const { roomName } = useParams()
+  const { checkTypeId, roomName } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
 
-  const { nursery, room, completedBy, checkType: checkTypeId = 'roomOpening' } = location.state || {}
-  const actualRoom = roomName ? decodeURIComponent(roomName) : room
+  const { nursery, completedBy } = location.state || {}
+  const actualRoom = roomName ? decodeURIComponent(roomName) : null
   const checkType = checkTypes[checkTypeId]
 
   const [currentIndex, setCurrentIndex] = useState(0)
