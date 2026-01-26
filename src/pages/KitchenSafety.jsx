@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -20,14 +20,30 @@ const SECTIONS = [
 
 export function KitchenSafety() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   const [nursery, setNursery] = useState(() => storage.getLastNursery())
   const [name, setName] = useState(() => storage.getUserName())
-  const [showSetup, setShowSetup] = useState(!storage.getLastNursery() || !storage.getUserName())
+  // Always show setup first for Kitchen Safety to confirm nursery/name
+  const [showSetup, setShowSetup] = useState(() => {
+    // If returning from a completed section, don't show setup
+    return !location.state?.completedSection
+  })
 
   // Section completion state
   const [completedSections, setCompletedSections] = useState({})
   const [sectionData, setSectionData] = useState({})
+
+  // Handle returning from a completed section
+  useEffect(() => {
+    if (location.state?.completedSection) {
+      const { completedSection, sectionData: newData } = location.state
+      setCompletedSections(prev => ({ ...prev, [completedSection]: true }))
+      setSectionData(prev => ({ ...prev, [completedSection]: newData }))
+      // Clear the state so it doesn't re-trigger on refresh
+      window.history.replaceState({}, document.title)
+    }
+  }, [location.state])
 
   const handleSetupComplete = () => {
     if (!nursery || !name.trim()) return
