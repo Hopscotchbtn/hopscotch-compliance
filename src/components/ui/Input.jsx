@@ -1,3 +1,5 @@
+import { forwardRef } from 'react'
+
 export function Input({
   label,
   value,
@@ -50,7 +52,7 @@ export function Input({
   )
 }
 
-export function TextArea({
+export const TextArea = forwardRef(function TextArea({
   label,
   value,
   onChange,
@@ -58,7 +60,7 @@ export function TextArea({
   rows = 3,
   disabled = false,
   required = false,
-}) {
+}, ref) {
   return (
     <div className="w-full">
       {label && (
@@ -68,6 +70,7 @@ export function TextArea({
         </label>
       )}
       <textarea
+        ref={ref}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -86,4 +89,4 @@ export function TextArea({
       />
     </div>
   )
-}
+})

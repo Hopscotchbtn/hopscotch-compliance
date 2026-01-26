@@ -42,13 +42,19 @@ export function Home() {
           </Link>
         </div>
 
-        {/* View today's checks link */}
-        <div className="text-center mb-8">
+        {/* View checks links */}
+        <div className="text-center mb-8 space-y-2">
           <Link
             to="/summary"
-            className="text-hop-forest hover:text-hop-forest-dark underline underline-offset-2 transition-colors"
+            className="block text-hop-forest hover:text-hop-forest-dark underline underline-offset-2 transition-colors"
           >
             View today's checks →
+          </Link>
+          <Link
+            to="/history"
+            className="block text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors text-sm"
+          >
+            View check history (30 days)
           </Link>
         </div>
 

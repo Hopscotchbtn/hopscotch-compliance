@@ -63,3 +63,82 @@ export const getTodayChecks = async (nurseryFilter = null) => {
 
   return data || []
 }
+
+export const getTodayChecksByType = async (nursery, checkType) => {
+  if (!supabase) {
+    console.log('Offline mode: Would fetch today\'s checks by type')
+    return []
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const { data, error } = await supabase
+    .from('checks')
+    .select('*')
+    .eq('nursery', nursery)
+    .eq('check_type', checkType)
+    .gte('created_at', today.toISOString())
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching checks:', error)
+    return []
+  }
+
+  return data || []
+}
+
+export const getChecksHistory = async (nursery, days = 30) => {
+  if (!supabase) {
+    console.log('Offline mode: Would fetch checks history')
+    return []
+  }
+
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - days)
+  startDate.setHours(0, 0, 0, 0)
+
+  let query = supabase
+    .from('checks')
+    .select('*')
+    .gte('created_at', startDate.toISOString())
+    .order('created_at', { ascending: false })
+
+  if (nursery && nursery !== 'all') {
+    query = query.eq('nursery', nursery)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    console.error('Error fetching checks history:', error)
+    return []
+  }
+
+  return data || []
+}
+
+export const submitRecordRequest = async (requestData) => {
+  if (!supabase) {
+    console.log('Offline mode: Record request would be submitted:', requestData)
+    return { data: [{ id: 'offline-' + Date.now(), ...requestData }], error: null }
+  }
+
+  const { data, error } = await supabase
+    .from('record_requests')
+    .insert([{
+      nursery: requestData.nursery,
+      room: requestData.room,
+      start_date: requestData.startDate,
+      end_date: requestData.endDate,
+      reason: requestData.reason || null,
+      email: requestData.email,
+      requested_by: requestData.requestedBy,
+      status: 'pending',
+    }])
+    .select()
+
+  if (error) throw error
+  return { data, error: null }
+}
