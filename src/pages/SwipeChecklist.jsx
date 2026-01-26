@@ -23,6 +23,13 @@ export function SwipeChecklist() {
   const [error, setError] = useState(null)
   const [showSummary, setShowSummary] = useState(false)
 
+  // Redirect if missing required data
+  useEffect(() => {
+    if (!checkType || !nursery) {
+      navigate('/')
+    }
+  }, [checkType, nursery, navigate])
+
   useEffect(() => {
     if (checkType) {
       const checklistItems = getChecklistItems(checkTypeId)
@@ -30,8 +37,8 @@ export function SwipeChecklist() {
     }
   }, [checkTypeId, checkType])
 
+  // Show loading state while checking/redirecting
   if (!checkType || !nursery) {
-    navigate('/')
     return null
   }
 

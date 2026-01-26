@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Card } from '../components/ui/Card'
 import { Select } from '../components/ui/Select'
@@ -21,8 +21,9 @@ const OPENING_CHECK_ROOMS = [
 ]
 
 export function RoomProgress() {
-  const { checkTypeId } = useParams()
   const navigate = useNavigate()
+  // Hardcoded for room opening checks
+  const checkTypeId = 'roomOpening'
   const checkType = checkTypes[checkTypeId]
 
   const [nursery, setNursery] = useState(() => storage.getLastNursery())
@@ -59,11 +60,6 @@ export function RoomProgress() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (!checkType) {
-    navigate('/')
-    return null
   }
 
   const handleSetupComplete = () => {
