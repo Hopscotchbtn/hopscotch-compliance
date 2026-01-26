@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: #f2eeed;
+  color: #1f4435;
+  min-height: 100vh;
+}
+
+/* Ensure minimum tap target size */
+button, a, input, select, textarea {
+  min-height: 44px;
+}
+
+/* Custom scrollbar for checklist */
+.checklist-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.checklist-scroll::-webkit-scrollbar-track {
+  background: #f2eeed;
+}
+
+.checklist-scroll::-webkit-scrollbar-thumb {
+  background: #b1c8f6;
+  border-radius: 2px;
+}
+
+/* Animation for confirmation checkmark */
+@keyframes scale-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.5s ease-out forwards;
+}
+
+/* Smooth expand for fail notes */
+.expand-enter {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.expand-enter-active {
+  max-height: 200px;
+  opacity: 1;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+}
