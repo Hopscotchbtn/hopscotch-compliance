@@ -9,9 +9,12 @@ export function SwipeCard({
   onFail,
   onNA,
   onNoteChange,
+  onPhotoChange,
   note,
+  photo,
   color = 'hop-freshair',
 }) {
+  const fileInputRef = useRef(null)
   const [dragX, setDragX] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [showFailNote, setShowFailNote] = useState(false)
@@ -241,6 +244,45 @@ export function SwipeCard({
                 placeholder="Describe the problem and any action taken..."
                 rows={3}
               />
+
+              {/* Photo evidence */}
+              <div className="mt-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const reader = new FileReader()
+                    reader.onload = (ev) => onPhotoChange?.(ev.target.result)
+                    reader.readAsDataURL(file)
+                  }}
+                />
+                {photo ? (
+                  <div className="relative inline-block">
+                    <img src={photo} alt="Evidence" className="w-20 h-20 object-cover rounded-lg border" />
+                    <button
+                      type="button"
+                      onClick={() => { onPhotoChange?.(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                      className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg px-3 py-2 transition-colors"
+                  >
+                    📷 Add photo evidence
+                  </button>
+                )}
+              </div>
+
               <div className="flex gap-3 mt-3">
                 <button
                   onClick={() => setShowFailNote(false)}

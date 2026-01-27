@@ -9,6 +9,7 @@ import { nurseries } from '../data/nurseries'
 import { rooms } from '../data/rooms'
 import { checkTypes } from '../data/checklists'
 import { storage } from '../lib/storage'
+import { generatePdf } from '../lib/generatePdf'
 
 export function History() {
   const [checks, setChecks] = useState([])
@@ -233,6 +234,23 @@ export function History() {
                     <p className="text-gray-500">No checks recorded</p>
                   </Card>
                 ) : (
+                  <>
+                  {/* Download PDF button */}
+                  <div className="mb-3">
+                    <Button
+                      color="forest"
+                      variant="secondary"
+                      size="small"
+                      onClick={() => generatePdf(
+                        selectedDateChecks,
+                        nurseryFilter === 'all' ? 'All Nurseries' : nurseryFilter,
+                        selectedDate.toISOString().split('T')[0]
+                      )}
+                    >
+                      📄 Download PDF Report
+                    </Button>
+                  </div>
+
                   <div className="space-y-3">
                     {selectedDateChecks.map((check) => (
                       <Card key={check.id} className={check.has_issues ? 'border-l-4 border-l-hop-marmalade' : ''}>
@@ -283,6 +301,7 @@ export function History() {
                       </Card>
                     ))}
                   </div>
+                  </>
                 )}
               </div>
             )}

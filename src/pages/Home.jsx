@@ -1,12 +1,39 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { LogoWithText } from '../components/Logo'
 import { Button } from '../components/ui/Button'
 import { formatDate } from '../lib/utils'
+import { getTodayChecks } from '../lib/supabase'
 
 export function Home() {
+  const [issueCount, setIssueCount] = useState(0)
+
+  useEffect(() => {
+    getTodayChecks().then(checks => {
+      const count = checks.filter(c => c.has_issues).length
+      setIssueCount(count)
+    }).catch(() => {})
+  }, [])
+
   return (
     <div className="min-h-screen bg-hop-pebble px-4 py-8">
       <div className="max-w-md mx-auto">
+        {/* Issues banner */}
+        {issueCount > 0 && (
+          <Link to="/summary" className="block mb-6">
+            <div className="bg-hop-marmalade/15 border border-hop-marmalade rounded-xl p-4 flex items-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div className="flex-1">
+                <p className="font-medium text-hop-forest">
+                  {issueCount} check{issueCount !== 1 ? 's' : ''} with issues today
+                </p>
+                <p className="text-sm text-gray-600">Tap to view details</p>
+              </div>
+              <span className="text-gray-400">→</span>
+            </div>
+          </Link>
+        )}
+
         {/* Logo and title */}
         <div className="text-center mb-8">
           <LogoWithText size="large" />

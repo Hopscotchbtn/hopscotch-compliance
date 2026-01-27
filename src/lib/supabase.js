@@ -28,6 +28,7 @@ export const submitCheck = async (checkData) => {
       has_issues: checkData.items.some(item => item.status === 'fail'),
       overall_notes: checkData.notes || null,
       water_temperature: checkData.waterTemperature || null,
+      signature_url: checkData.signatureUrl || null,
     }])
     .select()
 
@@ -87,6 +88,81 @@ export const getTodayChecksByType = async (nursery, checkType) => {
   }
 
   return data || []
+}
+
+// Resize image to max dimension, returns base64 JPEG
+const resizeImage = (dataUrl, maxDim = 1200) => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height)
+        width = Math.round(width * ratio)
+        height = Math.round(height * ratio)
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', 0.8))
+    }
+    img.src = dataUrl
+  })
+}
+
+export const uploadCheckPhoto = async (dataUrl, checkType, itemId) => {
+  if (!supabase) {
+    console.log('Offline mode: Would upload photo')
+    return null
+  }
+
+  const resized = await resizeImage(dataUrl)
+  const base64 = resized.split(',')[1]
+  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+  const path = `${Date.now()}-${checkType}-${itemId}.jpg`
+
+  const { error } = await supabase.storage
+    .from('check-photos')
+    .upload(path, bytes, { contentType: 'image/jpeg' })
+
+  if (error) {
+    console.error('Photo upload error:', error)
+    return null
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('check-photos')
+    .getPublicUrl(path)
+
+  return urlData.publicUrl
+}
+
+export const uploadSignature = async (dataUrl) => {
+  if (!supabase) {
+    console.log('Offline mode: Would upload signature')
+    return null
+  }
+
+  const base64 = dataUrl.split(',')[1]
+  const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0))
+  const path = `${Date.now()}-signature.png`
+
+  const { error } = await supabase.storage
+    .from('check-signatures')
+    .upload(path, bytes, { contentType: 'image/png' })
+
+  if (error) {
+    console.error('Signature upload error:', error)
+    return null
+  }
+
+  const { data: urlData } = supabase.storage
+    .from('check-signatures')
+    .getPublicUrl(path)
+
+  return urlData.publicUrl
 }
 
 export const getChecksHistory = async (nursery, days = 30) => {
