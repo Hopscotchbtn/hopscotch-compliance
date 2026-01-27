@@ -615,10 +615,10 @@ export function KitchenSection() {
             </p>
 
             <Input
-              label="Manager name"
+              label="Manager initials"
               value={responses.managerName || ''}
               onChange={(val) => setResponses(prev => ({ ...prev, managerName: val }))}
-              placeholder="Enter manager name"
+              placeholder="e.g. PF"
             />
           </Card>
 

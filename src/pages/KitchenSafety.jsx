@@ -94,7 +94,7 @@ export function KitchenSafety() {
 
           <Card className="space-y-5">
             <p className="text-gray-600 text-sm">
-              Select your nursery and enter your name to begin the Kitchen Food Safety Diary.
+              Select your nursery and enter your initials to begin the Kitchen Food Safety Diary.
             </p>
 
             <Select
@@ -107,10 +107,10 @@ export function KitchenSafety() {
             />
 
             <Input
-              label="Your name"
+              label="Your initials"
               value={name}
               onChange={setName}
-              placeholder="Enter your name"
+              placeholder="e.g. PF"
               required
             />
 
@@ -254,7 +254,7 @@ export function KitchenSafety() {
             onClick={() => setShowSetup(true)}
             className="text-sm text-gray-500 hover:text-hop-forest underline underline-offset-2"
           >
-            Change nursery or name
+            Change nursery or initials
           </button>
         </div>
       </div>
