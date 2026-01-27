@@ -90,6 +90,7 @@ export const checkTypes = {
       { id: 13, text: 'Box has been resealed with new date tag if restocked' },
     ],
     weeklyItems: [],
+    autoRoom: 'First Aid',
   },
 }
 
