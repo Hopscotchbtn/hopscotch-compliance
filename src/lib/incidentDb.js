@@ -62,6 +62,53 @@ export const saveIncident = async (incidentData) => {
   return { data, error: null }
 }
 
+export const getIncidentById = async (id) => {
+  if (!supabase) return null
+
+  try {
+    const { data, error } = await supabase
+      .from('incidents')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw error
+    return data
+  } catch (err) {
+    console.error('Error fetching incident:', err)
+    return null
+  }
+}
+
+export const updateIncident = async (id, fields) => {
+  if (!supabase) {
+    console.log('Offline mode: Would update incident', id, fields)
+    return { data: { id, ...fields }, error: null }
+  }
+
+  const { data, error } = await supabase
+    .from('incidents')
+    .update(fields)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return { data, error: null }
+}
+
+export const deleteIncident = async (id) => {
+  if (!supabase) return { error: null }
+
+  const { error } = await supabase
+    .from('incidents')
+    .delete()
+    .eq('id', id)
+
+  if (error) throw error
+  return { error: null }
+}
+
 export const getIncidentStats = async () => {
   if (!supabase) {
     return { open: 0, pendingReview: 0, completedThisMonth: 0 }

@@ -15,6 +15,7 @@ import { IncidentTypeSelect } from './pages/incidents/IncidentTypeSelect'
 import { IncidentForm } from './pages/incidents/IncidentForm'
 import { IncidentConfirmation } from './pages/incidents/IncidentConfirmation'
 import { IncidentList } from './pages/incidents/IncidentList'
+import { IncidentDetail } from './pages/incidents/IncidentDetail'
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
           <Route path="/incidents/new/:typeId/details" element={<IncidentForm />} />
           <Route path="/incidents/confirmation" element={<IncidentConfirmation />} />
           <Route path="/incidents/list" element={<IncidentList />} />
+          <Route path="/incidents/:id" element={<IncidentDetail />} />
         </Routes>
       </div>
     </PasswordGate>
