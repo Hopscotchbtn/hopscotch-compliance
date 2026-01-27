@@ -287,14 +287,14 @@ export function History() {
               </div>
             )}
 
-            {/* Request older records */}
+            {/* Download records */}
             <div className="text-center pt-4 border-t border-gray-200">
               <p className="text-sm text-gray-500 mb-3">
-                Need records older than 30 days?
+                Need to export or download records?
               </p>
               <Link to="/history/request">
                 <Button color="forest" variant="secondary" size="small">
-                  Request older records
+                  📥 Download records
                 </Button>
               </Link>
             </div>

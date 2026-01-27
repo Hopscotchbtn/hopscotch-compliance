@@ -1,97 +1,124 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Card } from '../components/ui/Card'
-import { Input } from '../components/ui/Input'
-import { TextArea } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
+import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { nurseries } from '../data/nurseries'
-import { rooms } from '../data/rooms'
+import { checkTypes } from '../data/checklists'
 import { storage } from '../lib/storage'
-import { submitRecordRequest } from '../lib/supabase'
+import { supabase } from '../lib/supabase'
 
 export function RequestRecords() {
-  const navigate = useNavigate()
   const [nursery, setNursery] = useState(() => storage.getLastNursery() || '')
-  const [room, setRoom] = useState('all')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [reason, setReason] = useState('')
-  const [email, setEmail] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
   const [error, setError] = useState(null)
+  const [recordCount, setRecordCount] = useState(null)
 
-  const isValid = nursery && startDate && endDate && email
+  const isValid = nursery && startDate && endDate
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleDownload = async () => {
     if (!isValid) return
 
-    setIsSubmitting(true)
+    setIsDownloading(true)
     setError(null)
+    setRecordCount(null)
 
     try {
-      await submitRecordRequest({
-        nursery,
-        room: room === 'all' ? null : room,
-        startDate,
-        endDate,
-        reason,
-        email,
-        requestedBy: storage.getUserName() || 'Unknown',
+      if (!supabase) {
+        setError('Database not configured. Running in offline mode.')
+        setIsDownloading(false)
+        return
+      }
+
+      const start = new Date(startDate)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(endDate)
+      end.setHours(23, 59, 59, 999)
+
+      const { data, error: queryError } = await supabase
+        .from('checks')
+        .select('*')
+        .eq('nursery', nursery)
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .order('created_at', { ascending: true })
+
+      if (queryError) throw queryError
+
+      if (!data || data.length === 0) {
+        setError('No records found for the selected date range.')
+        setIsDownloading(false)
+        return
+      }
+
+      setRecordCount(data.length)
+
+      // Build CSV
+      const csvRows = [
+        ['Date', 'Time', 'Nursery', 'Room', 'Check Type', 'Completed By', 'Status', 'Issues', 'Items'].join(',')
+      ]
+
+      data.forEach(check => {
+        const date = new Date(check.created_at)
+        const dateStr = date.toLocaleDateString('en-GB')
+        const timeStr = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+        const checkName = checkTypes[check.check_type]?.shortName || check.check_type
+        const status = check.has_issues ? 'Issues Found' : 'All OK'
+
+        const failedItems = (check.items || [])
+          .filter(item => item.status === 'fail')
+          .map(item => {
+            const note = item.note ? ` (${item.note})` : ''
+            return `${item.text}${note}`
+          })
+          .join('; ')
+
+        const row = [
+          dateStr,
+          timeStr,
+          check.nursery,
+          check.room,
+          checkName,
+          check.completed_by,
+          status,
+          failedItems || 'None',
+          (check.items || []).length + ' items checked',
+        ].map(val => `"${String(val).replace(/"/g, '""')}"`)
+
+        csvRows.push(row.join(','))
       })
-      setIsSubmitted(true)
+
+      const csv = csvRows.join('\n')
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${nursery.replace(/\s+/g, '-')}_checks_${startDate}_to_${endDate}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
     } catch (err) {
-      console.error('Error submitting request:', err)
-      setError('Failed to submit request. Please try again.')
+      console.error('Error downloading records:', err)
+      setError('Failed to download records. Please try again.')
     } finally {
-      setIsSubmitting(false)
+      setIsDownloading(false)
     }
   }
 
-  if (isSubmitted) {
-    return (
-      <div className="min-h-screen bg-hop-pebble">
-        <Header title="Request Sent" showBack />
-
-        <div className="px-4 py-8 max-w-md mx-auto">
-          <Card className="text-center py-8">
-            <div className="w-16 h-16 bg-hop-apple rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="font-display text-xl text-hop-forest font-semibold mb-2">
-              Request Submitted
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Your request has been sent to the admin team. You'll receive the records at <strong>{email}</strong> within 2-3 working days.
-            </p>
-            <Button color="forest" onClick={() => navigate('/history')}>
-              Back to History
-            </Button>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-
-  // Calculate max date (30 days ago)
-  const maxDate = new Date()
-  maxDate.setDate(maxDate.getDate() - 30)
-  const maxDateStr = maxDate.toISOString().split('T')[0]
-
   return (
     <div className="min-h-screen bg-hop-pebble">
-      <Header title="Request Records" subtitle="Older than 30 days" showBack />
+      <Header title="📥 Download Records" showBack />
 
       <div className="px-4 py-6 max-w-md mx-auto">
         <Card>
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-5">
             <p className="text-gray-600 text-sm">
-              Request compliance check records older than 30 days. Records will be sent to your email within 2-3 working days.
+              Download compliance check records as a CSV file. Select a nursery and date range.
             </p>
 
             <Select
@@ -103,21 +130,12 @@ export function RequestRecords() {
               required
             />
 
-            <Select
-              label="Room (optional)"
-              value={room}
-              onChange={setRoom}
-              options={['all', ...rooms]}
-              placeholder="All rooms"
-            />
-
             <div className="grid grid-cols-2 gap-3">
               <Input
                 label="From date"
                 type="date"
                 value={startDate}
                 onChange={setStartDate}
-                max={maxDateStr}
                 required
               />
               <Input
@@ -125,27 +143,9 @@ export function RequestRecords() {
                 type="date"
                 value={endDate}
                 onChange={setEndDate}
-                max={maxDateStr}
                 required
               />
             </div>
-
-            <Input
-              label="Your email"
-              type="email"
-              value={email}
-              onChange={setEmail}
-              placeholder="email@example.com"
-              required
-            />
-
-            <TextArea
-              label="Reason for request (optional)"
-              value={reason}
-              onChange={setReason}
-              placeholder="e.g., Ofsted inspection, internal audit..."
-              rows={2}
-            />
 
             {error && (
               <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
@@ -153,16 +153,22 @@ export function RequestRecords() {
               </div>
             )}
 
+            {recordCount !== null && !error && (
+              <div className="p-3 bg-hop-apple/10 text-hop-apple rounded-lg text-sm text-center">
+                ✅ Downloaded {recordCount} record{recordCount !== 1 ? 's' : ''}
+              </div>
+            )}
+
             <Button
-              type="submit"
               color="forest"
               size="large"
               fullWidth
-              disabled={!isValid || isSubmitting}
+              disabled={!isValid || isDownloading}
+              onClick={handleDownload}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              {isDownloading ? 'Downloading...' : '📥 Download CSV'}
             </Button>
-          </form>
+          </div>
         </Card>
       </div>
     </div>

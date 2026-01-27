@@ -21,7 +21,7 @@ export function RoomProgress() {
   const [completedRooms, setCompletedRooms] = useState({})
   const [roomIssues, setRoomIssues] = useState({})
   const [loading, setLoading] = useState(false)
-  const [showSetup, setShowSetup] = useState(!storage.getLastNursery() || !storage.getUserName())
+  const [showSetup, setShowSetup] = useState(true)
 
   // Redirect if invalid check type
   useEffect(() => {

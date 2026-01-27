@@ -119,26 +119,3 @@ export const getChecksHistory = async (nursery, days = 30) => {
   return data || []
 }
 
-export const submitRecordRequest = async (requestData) => {
-  if (!supabase) {
-    console.log('Offline mode: Record request would be submitted:', requestData)
-    return { data: [{ id: 'offline-' + Date.now(), ...requestData }], error: null }
-  }
-
-  const { data, error } = await supabase
-    .from('record_requests')
-    .insert([{
-      nursery: requestData.nursery,
-      room: requestData.room,
-      start_date: requestData.startDate,
-      end_date: requestData.endDate,
-      reason: requestData.reason || null,
-      email: requestData.email,
-      requested_by: requestData.requestedBy,
-      status: 'pending',
-    }])
-    .select()
-
-  if (error) throw error
-  return { data, error: null }
-}
