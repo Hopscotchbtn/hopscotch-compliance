@@ -38,6 +38,10 @@ export function Button({
       primary: 'bg-hop-marmalade text-white hover:bg-hop-marmalade-dark active:bg-hop-marmalade-dark',
       secondary: 'bg-white text-hop-forest border-2 border-hop-marmalade hover:bg-hop-marmalade/20',
     },
+    blossom: {
+      primary: 'bg-hop-blossom text-hop-forest hover:brightness-95 active:brightness-90',
+      secondary: 'bg-white text-hop-forest border-2 border-hop-blossom hover:bg-hop-blossom/20',
+    },
   }
 
   const disabledStyles = 'opacity-50 cursor-not-allowed'

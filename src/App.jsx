@@ -1,8 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
 import { Home } from './pages/Home'
-import { CheckSetup } from './pages/CheckSetup'
-import { Checklist } from './pages/Checklist'
-import { Confirmation } from './pages/Confirmation'
 import { Summary } from './pages/Summary'
 import { RoomProgress } from './pages/RoomProgress'
 import { SwipeChecklist } from './pages/SwipeChecklist'

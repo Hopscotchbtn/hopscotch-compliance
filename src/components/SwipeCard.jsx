@@ -284,7 +284,7 @@ export function SwipeCard({
         </div>
       </div>
 
-      {/* Keyboard hints */}
+      {/* Interaction hints */}
       {!showFailNote && (
         <div className="mt-6 text-center text-sm text-gray-400">
           <span className="hidden md:inline">
@@ -292,8 +292,12 @@ export function SwipeCard({
             <kbd className="px-2 py-1 bg-gray-100 rounded text-xs ml-2">F</kbd> Fail ·
             <kbd className="px-2 py-1 bg-gray-100 rounded text-xs ml-2">N</kbd> N/A
           </span>
-          <span className="md:hidden">
-            Swipe right to pass · left to fail
+          <span className="md:hidden flex items-center justify-center gap-3">
+            <span className="text-hop-marmalade-dark">← Fail</span>
+            <span className="text-gray-300">·</span>
+            <span>Swipe or tap</span>
+            <span className="text-gray-300">·</span>
+            <span className="text-hop-apple">Pass →</span>
           </span>
         </div>
       )}

@@ -17,6 +17,7 @@ export default {
         'hop-forest-dark': '#0f261c',
         'hop-marmalade-dark': '#fa541f',
         'hop-freshair-dark': '#799bed',
+        'hop-blossom': '#f0a0b8',
       },
       fontFamily: {
         'display': ['Georgia', 'Times New Roman', 'serif'],
