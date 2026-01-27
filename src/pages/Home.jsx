@@ -25,31 +25,31 @@ export function Home() {
         <div className="space-y-4 mb-8">
           <Link to="/check/roomOpening">
             <Button color="freshair" size="large" fullWidth>
-              <span className="text-lg">Room Opening Check</span>
+              <span className="text-lg">🌅 Room Opening Check</span>
             </Button>
           </Link>
 
           <Link to="/check/roomSafety">
             <Button color="sunshine" size="large" fullWidth>
-              <span className="text-lg">Room Safety Check</span>
+              <span className="text-lg">🛡️ Room Safety Check</span>
             </Button>
           </Link>
 
           <Link to="/check/gardenOutdoor">
             <Button color="apple" size="large" fullWidth>
-              <span className="text-lg">Garden & Outdoor Check</span>
+              <span className="text-lg">🌿 Garden & Outdoor Check</span>
             </Button>
           </Link>
 
           <Link to="/kitchen-safety">
             <Button color="marmalade" size="large" fullWidth>
-              <span className="text-lg">Kitchen Food Safety</span>
+              <span className="text-lg">🍳 Kitchen Food Safety</span>
             </Button>
           </Link>
 
           <Link to="/check/firstAidBox">
             <Button color="blossom" size="large" fullWidth>
-              <span className="text-lg">First Aid Box Weekly Check</span>
+              <span className="text-lg">🩹 First Aid Box Weekly Check</span>
             </Button>
           </Link>
         </div>
@@ -60,13 +60,13 @@ export function Home() {
             to="/summary"
             className="block text-hop-forest hover:text-hop-forest-dark underline underline-offset-2 transition-colors"
           >
-            View today's checks →
+            📋 View today's checks →
           </Link>
           <Link
             to="/history"
             className="block text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors text-sm"
           >
-            View check history (30 days)
+            📅 View check history (30 days)
           </Link>
         </div>
       </div>

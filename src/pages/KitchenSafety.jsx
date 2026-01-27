@@ -64,7 +64,9 @@ export function KitchenSafety() {
   }
 
   const isSectionLocked = (sectionId) => {
-    // Sign-off is locked until other sections complete
+    if (sectionId === 'closing') {
+      return !completedSections.opening
+    }
     if (sectionId === 'signoff') {
       return !completedSections.opening || !completedSections.closing
     }

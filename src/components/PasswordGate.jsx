@@ -4,8 +4,7 @@ import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { Card } from './ui/Card'
 
-// Change this password to whatever you want
-const SITE_PASSWORD = 'hopscotch2024'
+const SITE_PASSWORD = import.meta.env.VITE_SITE_PASSWORD || 'hopscotch2024'
 
 const STORAGE_KEY = 'hopscotch_authenticated'
 
