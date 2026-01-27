@@ -68,6 +68,20 @@ export const checkTypes = {
     weeklyItems: [],
     autoRoom: 'Garden/Outdoor Area',
   },
+  firstAidBox: {
+    id: 'firstAidBox',
+    name: 'First Aid Box Weekly Check',
+    shortName: 'First Aid Box',
+    description: 'Check first aid boxes weekly. If the seal is intact, contents are all present. If the box has been used, replace missing items and reseal.',
+    color: 'hop-blossom',
+    standardItems: [
+      { id: 1, text: 'First aid box seal/tag is intact and dated' },
+      { id: 2, text: 'All required items are present and in date' },
+      { id: 3, text: 'Any used or missing items have been reordered' },
+      { id: 4, text: 'Box has been resealed with new date tag after restocking' },
+    ],
+    weeklyItems: [],
+  },
 }
 
 export const getChecklistItems = (checkTypeId) => {

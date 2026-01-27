@@ -46,6 +46,12 @@ export function Home() {
               <span className="text-lg">Kitchen Food Safety</span>
             </Button>
           </Link>
+
+          <Link to="/check/firstAidBox">
+            <Button color="blossom" size="large" fullWidth>
+              <span className="text-lg">First Aid Box Weekly Check</span>
+            </Button>
+          </Link>
         </div>
 
         {/* View checks links */}
@@ -61,15 +67,6 @@ export function Home() {
             className="block text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors text-sm"
           >
             View check history (30 days)
-          </Link>
-        </div>
-
-        {/* IncidentIQ link */}
-        <div className="border-t border-gray-200 pt-6">
-          <Link to="/incidents">
-            <Button color="marmalade" variant="secondary" fullWidth>
-              <span>IncidentIQ - Report Incident</span>
-            </Button>
           </Link>
         </div>
       </div>
