@@ -30,13 +30,13 @@ export const incidentTypes = {
 }
 
 export const nurseryCodes = {
-  'Brunswick': 'BR',
-  'Davigdor': 'DV',
   'Hove Station': 'HS',
-  'Old Shoreham Road': 'OS',
   'Peacehaven': 'PH',
-  'Poets Corner': 'PC',
-  'Wilbury': 'WB',
+  'Preston Park': 'PP',
+  'Seaford': 'SF',
+  'Seven Dials': 'SD',
+  'West Hove': 'WH',
+  'Worthing': 'WO',
 }
 
 export const generateReference = (nursery, date) => {
