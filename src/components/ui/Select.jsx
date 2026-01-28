@@ -6,6 +6,7 @@ export function Select({
   placeholder = 'Select an option',
   disabled = false,
   required = false,
+  children,
 }) {
   return (
     <div className="w-full">
@@ -17,7 +18,7 @@ export function Select({
       )}
       <select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
         disabled={disabled}
         required={required}
         className={`
@@ -36,14 +37,20 @@ export function Select({
           backgroundPosition: 'right 12px center',
         }}
       >
-        <option value="" disabled>
-          {placeholder}
-        </option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
+        {children ? (
+          children
+        ) : (
+          <>
+            <option value="" disabled>
+              {placeholder}
+            </option>
+            {options && options.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </>
+        )}
       </select>
     </div>
   )
