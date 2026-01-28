@@ -16,6 +16,11 @@ import { IncidentForm } from './pages/incidents/IncidentForm'
 import { IncidentConfirmation } from './pages/incidents/IncidentConfirmation'
 import { IncidentList } from './pages/incidents/IncidentList'
 import { IncidentDetail } from './pages/incidents/IncidentDetail'
+// Risk Assessment pages
+import { RiskAssessmentDashboard } from './pages/riskAssessment/RiskAssessmentDashboard'
+import { RiskAssessmentWizard } from './pages/riskAssessment/RiskAssessmentWizard'
+import { RiskValidationScreen } from './pages/riskAssessment/RiskValidationScreen'
+import { RiskConfirmation } from './pages/riskAssessment/RiskConfirmation'
 
 function App() {
   return (
@@ -41,6 +46,12 @@ function App() {
           <Route path="/incidents/confirmation" element={<IncidentConfirmation />} />
           <Route path="/incidents/list" element={<IncidentList />} />
           <Route path="/incidents/:id" element={<IncidentDetail />} />
+
+          {/* Risk Assessment */}
+          <Route path="/risk-assessment" element={<RiskAssessmentDashboard />} />
+          <Route path="/risk-assessment/new" element={<RiskAssessmentWizard />} />
+          <Route path="/risk-assessment/review" element={<RiskValidationScreen />} />
+          <Route path="/risk-assessment/confirmation" element={<RiskConfirmation />} />
         </Routes>
       </div>
     </PasswordGate>

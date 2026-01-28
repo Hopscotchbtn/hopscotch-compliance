@@ -96,6 +96,23 @@ export function Home() {
             📅 View check history (30 days)
           </Link>
         </div>
+
+        {/* More Tools Section */}
+        <div className="border-t border-gray-200 pt-6 mb-8">
+          <h3 className="text-center text-gray-500 text-sm font-medium mb-4">More Tools</h3>
+          <div className="space-y-3">
+            <Link to="/incidents">
+              <Button color="forest" size="large" fullWidth>
+                <span className="text-lg">🚨 IncidentIQ</span>
+              </Button>
+            </Link>
+            <Link to="/risk-assessment">
+              <Button color="forest" variant="secondary" size="large" fullWidth>
+                <span className="text-lg">📋 Risk Assessments</span>
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   )
