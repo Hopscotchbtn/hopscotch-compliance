@@ -8,8 +8,14 @@ import { Select } from '../../components/ui/Select'
 import { Textarea } from '../../components/ui/Textarea'
 import { Checkbox } from '../../components/ui/Checkbox'
 import { StepProgress } from '../../components/ui/StepProgress'
-import { assessmentTypes, peopleAtRiskOptions, policyOptions } from '../../data/riskAssessment/assessmentTypes'
-import { nurseries } from '../../data/nurseries'
+import { assessmentTypes as importedAssessmentTypes, peopleAtRiskOptions as importedPeopleAtRisk, policyOptions as importedPolicyOptions } from '../../data/riskAssessment/assessmentTypes'
+import { nurseries as importedNurseries } from '../../data/nurseries'
+
+// Defensive defaults in case imports fail
+const assessmentTypes = importedAssessmentTypes || []
+const peopleAtRiskOptions = importedPeopleAtRisk || []
+const policyOptions = importedPolicyOptions || []
+const nurseries = importedNurseries || []
 import { brainstormHazards, generateAssessmentDraft } from '../../lib/riskAssessmentAi'
 import { saveRiskAssessment, trackAssessmentEvent } from '../../lib/riskAssessmentDb'
 import { storage } from '../../lib/storage'
