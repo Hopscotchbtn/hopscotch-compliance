@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { Card } from '../../components/ui/Card'
@@ -27,6 +27,17 @@ export function RiskValidationScreen() {
   const [error, setError] = useState(null)
   const [expandedHazard, setExpandedHazard] = useState(1)
   const [editingField, setEditingField] = useState(null)
+
+  // Warn user before leaving with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [])
 
   // Redirect if no draft data
   if (!initialDraft) {
@@ -144,7 +155,7 @@ export function RiskValidationScreen() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Hazard</label>
               <Input
                 value={hazard}
-                onChange={(e) => updateDraftField(`hazard_${index}`, e.target.value)}
+                onChange={(value) => updateDraftField(`hazard_${index}`, value)}
               />
             </div>
 
@@ -179,7 +190,7 @@ export function RiskValidationScreen() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Control Measures</label>
               <Textarea
                 value={draft[`control_measures_${index}`] || ''}
-                onChange={(e) => updateDraftField(`control_measures_${index}`, e.target.value)}
+                onChange={(value) => updateDraftField(`control_measures_${index}`, value)}
                 rows={3}
               />
             </div>
@@ -189,7 +200,7 @@ export function RiskValidationScreen() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Additional Controls (optional)</label>
               <Textarea
                 value={draft[`additional_controls_${index}`] || ''}
-                onChange={(e) => updateDraftField(`additional_controls_${index}`, e.target.value)}
+                onChange={(value) => updateDraftField(`additional_controls_${index}`, value)}
                 rows={2}
                 placeholder="Any extra measures needed..."
               />
@@ -286,7 +297,7 @@ export function RiskValidationScreen() {
               {editingField === 'ssow' ? (
                 <Textarea
                   value={draft.safe_system_of_work || ''}
-                  onChange={(e) => updateDraftField('safe_system_of_work', e.target.value)}
+                  onChange={(value) => updateDraftField('safe_system_of_work', value)}
                   rows={5}
                 />
               ) : (

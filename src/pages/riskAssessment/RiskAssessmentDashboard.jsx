@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
@@ -80,30 +80,31 @@ export function RiskAssessmentDashboard() {
           <section>
             <h2 className="text-lg font-semibold text-hop-forest mb-3 flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-hop-marmalade" />
-              Continue Draft
+              Drafts in Progress
             </h2>
             <div className="space-y-2">
               {drafts.map((draft) => (
-                <Card key={draft.id} padding="small" className="cursor-pointer hover:shadow-md transition-shadow">
-                  <Link to={`/risk-assessment/edit/${draft.id}`} className="block">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-medium text-hop-forest">
-                          {draft.assessment_type}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {draft.activity_description || 'Untitled'}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          {draft.nursery} • {formatDate(draft.created_at)}
-                        </div>
+                <Card key={draft.id} padding="small">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-hop-forest">
+                        {draft.assessment_type}
                       </div>
-                      <Clock className="w-5 h-5 text-hop-marmalade flex-shrink-0" />
+                      <div className="text-sm text-gray-500">
+                        {draft.activity_description || 'Untitled'}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {draft.nursery} • {formatDate(draft.created_at)}
+                      </div>
                     </div>
-                  </Link>
+                    <Clock className="w-5 h-5 text-hop-marmalade flex-shrink-0" />
+                  </div>
                 </Card>
               ))}
             </div>
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              Draft editing coming soon
+            </p>
           </section>
         )}
 
@@ -126,27 +127,25 @@ export function RiskAssessmentDashboard() {
           ) : (
             <div className="space-y-2">
               {recentAssessments.map((assessment) => (
-                <Card key={assessment.id} padding="small" className="cursor-pointer hover:shadow-md transition-shadow">
-                  <Link to={`/risk-assessment/${assessment.id}`} className="block">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="font-medium text-hop-forest">
-                          {assessment.assessment_type}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {assessment.activity_description}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">
-                          {assessment.nursery} • {formatDate(assessment.assessment_date)}
-                        </div>
+                <Card key={assessment.id} padding="small">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-medium text-hop-forest">
+                        {assessment.assessment_type}
                       </div>
-                      {assessment.status === 'completed' ? (
-                        <CheckCircle className="w-5 h-5 text-hop-apple flex-shrink-0" />
-                      ) : (
-                        <Clock className="w-5 h-5 text-hop-marmalade flex-shrink-0" />
-                      )}
+                      <div className="text-sm text-gray-500">
+                        {assessment.activity_description}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        {assessment.nursery} • {formatDate(assessment.assessment_date)}
+                      </div>
                     </div>
-                  </Link>
+                    {assessment.status === 'completed' ? (
+                      <CheckCircle className="w-5 h-5 text-hop-apple flex-shrink-0" />
+                    ) : (
+                      <Clock className="w-5 h-5 text-hop-marmalade flex-shrink-0" />
+                    )}
+                  </div>
                 </Card>
               ))}
             </div>

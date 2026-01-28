@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { Card } from '../../components/ui/Card'
@@ -50,6 +50,21 @@ export function RiskAssessmentWizard() {
   })
 
   const [customHazardInput, setCustomHazardInput] = useState('')
+
+  // Warn user before leaving if they have unsaved work
+  useEffect(() => {
+    const hasUnsavedWork = formData.activityName || formData.selectedHazards.length > 0
+
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedWork) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [formData.activityName, formData.selectedHazards.length])
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -109,9 +124,14 @@ export function RiskAssessmentWizard() {
       return
     }
 
-    // Save assessor name for future use
-    if (currentStep === 1 && formData.assessorName) {
-      storage.setUserName(formData.assessorName)
+    // Save assessor name and nursery for future use
+    if (currentStep === 1) {
+      if (formData.assessorName) {
+        storage.setUserName(formData.assessorName)
+      }
+      if (formData.nursery) {
+        storage.setLastNursery(formData.nursery)
+      }
     }
 
     // If moving to step 3, brainstorm hazards
@@ -230,7 +250,7 @@ export function RiskAssessmentWizard() {
       <Input
         label="Activity / Resource Name *"
         value={formData.activityName}
-        onChange={(e) => updateField('activityName', e.target.value)}
+        onChange={(value) => updateField('activityName', value)}
         placeholder="e.g., Outdoor Play Equipment, Water Play Activity"
       />
 
@@ -238,13 +258,13 @@ export function RiskAssessmentWizard() {
         label="Assessment Date"
         type="date"
         value={formData.assessmentDate}
-        onChange={(e) => updateField('assessmentDate', e.target.value)}
+        onChange={(value) => updateField('assessmentDate', value)}
       />
 
       <Input
         label="Your Name (Assessor) *"
         value={formData.assessorName}
-        onChange={(e) => updateField('assessorName', e.target.value)}
+        onChange={(value) => updateField('assessorName', value)}
         placeholder="Enter your full name"
       />
 
@@ -266,7 +286,7 @@ export function RiskAssessmentWizard() {
       <Input
         label="Specific Location (optional)"
         value={formData.location}
-        onChange={(e) => updateField('location', e.target.value)}
+        onChange={(value) => updateField('location', value)}
         placeholder="e.g., Garden, Baby Room, Kitchen"
       />
     </div>
@@ -311,7 +331,7 @@ export function RiskAssessmentWizard() {
       <Textarea
         label="Activity Overview (optional)"
         value={formData.overview}
-        onChange={(e) => updateField('overview', e.target.value)}
+        onChange={(value) => updateField('overview', value)}
         placeholder="Describe the activity or context in more detail..."
         rows={4}
       />
@@ -348,7 +368,7 @@ export function RiskAssessmentWizard() {
         <div className="flex gap-2">
           <Input
             value={customHazardInput}
-            onChange={(e) => setCustomHazardInput(e.target.value)}
+            onChange={(value) => setCustomHazardInput(value)}
             placeholder="Describe a hazard..."
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomHazard())}
           />

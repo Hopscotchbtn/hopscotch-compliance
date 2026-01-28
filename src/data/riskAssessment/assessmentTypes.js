@@ -77,7 +77,8 @@ export const policyOptions = [
   { id: 'safeguarding', label: 'Safeguarding Policy' },
   { id: 'health-and-safety', label: 'Health & Safety Policy' },
   { id: 'caring-for-children', label: 'Caring for Children Policy' },
-  { id: 'employee-guide', label: 'Employee Guide' }
+  { id: 'employee-guide', label: 'Employee Guide' },
+  { id: 'fsms', label: 'FSMS - Food Safety Management System' }
 ];
 
 export const riskRatings = [
