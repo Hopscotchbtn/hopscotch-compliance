@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
@@ -127,26 +127,28 @@ export function RiskAssessmentDashboard() {
           ) : (
             <div className="space-y-2">
               {recentAssessments.map((assessment) => (
-                <Card key={assessment.id} padding="small">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-medium text-hop-forest">
-                        {assessment.assessment_type}
+                <Link key={assessment.id} to={`/risk-assessment/${assessment.id}`}>
+                  <Card padding="small" className="cursor-pointer hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium text-hop-forest">
+                          {assessment.assessment_type}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {assessment.activity_description}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {assessment.nursery} • {formatDate(assessment.assessment_date)}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {assessment.activity_description}
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {assessment.nursery} • {formatDate(assessment.assessment_date)}
-                      </div>
+                      {assessment.status === 'completed' ? (
+                        <CheckCircle className="w-5 h-5 text-hop-apple flex-shrink-0" />
+                      ) : (
+                        <Clock className="w-5 h-5 text-hop-marmalade flex-shrink-0" />
+                      )}
                     </div>
-                    {assessment.status === 'completed' ? (
-                      <CheckCircle className="w-5 h-5 text-hop-apple flex-shrink-0" />
-                    ) : (
-                      <Clock className="w-5 h-5 text-hop-marmalade flex-shrink-0" />
-                    )}
-                  </div>
-                </Card>
+                  </Card>
+                </Link>
               ))}
             </div>
           )}

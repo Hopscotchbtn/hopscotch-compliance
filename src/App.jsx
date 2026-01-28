@@ -21,6 +21,7 @@ import { RiskAssessmentDashboard } from './pages/riskAssessment/RiskAssessmentDa
 import { RiskAssessmentWizard } from './pages/riskAssessment/RiskAssessmentWizard'
 import { RiskValidationScreen } from './pages/riskAssessment/RiskValidationScreen'
 import { RiskConfirmation } from './pages/riskAssessment/RiskConfirmation'
+import { RiskAssessmentDetail } from './pages/riskAssessment/RiskAssessmentDetail'
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
           <Route path="/risk-assessment/new" element={<RiskAssessmentWizard />} />
           <Route path="/risk-assessment/review" element={<RiskValidationScreen />} />
           <Route path="/risk-assessment/confirmation" element={<RiskConfirmation />} />
+          <Route path="/risk-assessment/:id" element={<RiskAssessmentDetail />} />
         </Routes>
       </div>
     </PasswordGate>

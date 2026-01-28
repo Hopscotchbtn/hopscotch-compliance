@@ -6,22 +6,38 @@ export const saveRiskAssessment = async (assessmentData) => {
     return { data: [{ id: 'offline-' + Date.now(), ...assessmentData }], error: null }
   }
 
+  // Build hazards array with full details for re-downloading
+  const hazardsWithDetails = []
+  for (let i = 1; i <= 10; i++) {
+    const hazard = assessmentData[`hazard_${i}`]
+    if (hazard) {
+      hazardsWithDetails.push({
+        hazard: hazard,
+        pre_rating: assessmentData[`pre_rating_${i}`] || '',
+        control_measures: assessmentData[`control_measures_${i}`] || '',
+        post_rating: assessmentData[`post_rating_${i}`] || '',
+        additional_controls: assessmentData[`additional_controls_${i}`] || '',
+        reassess_rating: assessmentData[`reassess_rating_${i}`] || ''
+      })
+    }
+  }
+
   const dbData = {
-    reference: assessmentData.reference || generateReference(assessmentData),
+    reference: assessmentData.unique_id || assessmentData.reference || generateReference(assessmentData),
     nursery: assessmentData.nursery,
-    location: assessmentData.location,
+    location: assessmentData.location || assessmentData.nursery,
     status: assessmentData.status || 'draft',
-    assessment_type: assessmentData.assessmentType,
-    assessment_date: assessmentData.assessmentDate,
-    assessor_name: assessmentData.assessorName,
-    activity_description: assessmentData.activityDescription || assessmentData.activityName,
-    people_at_risk: Array.isArray(assessmentData.peopleAtRisk)
+    assessment_type: assessmentData.assessment_type || assessmentData.assessmentType,
+    assessment_date: assessmentData.assessment_date || assessmentData.assessmentDate,
+    assessor_name: assessmentData.assessor_name || assessmentData.assessorName,
+    activity_description: assessmentData.activity_description || assessmentData.activityDescription || assessmentData.activityName,
+    people_at_risk: assessmentData.people_at_risk || (Array.isArray(assessmentData.peopleAtRisk)
       ? assessmentData.peopleAtRisk
-      : (assessmentData.peopleAtRisk || '').split(',').map(s => s.trim()),
+      : (assessmentData.peopleAtRisk || '').split(',').map(s => s.trim())),
     policies_selected: assessmentData.policiesSelected || [],
-    hazards: assessmentData.hazards || [],
-    safe_system_of_work: assessmentData.safeSystemOfWork,
-    review_date: assessmentData.reviewDate,
+    hazards: hazardsWithDetails.length > 0 ? hazardsWithDetails : (assessmentData.hazards || []),
+    safe_system_of_work: assessmentData.safe_system_of_work || assessmentData.safeSystemOfWork,
+    review_date: assessmentData.review_date || assessmentData.reviewDate,
     docx_url: assessmentData.docxUrl,
   }
 
