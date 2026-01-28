@@ -18,14 +18,6 @@ export function Home() {
   return (
     <div className="min-h-screen bg-hop-pebble px-4 py-8">
       <div className="max-w-md mx-auto">
-        {/* Prototype warning */}
-        <div className="bg-hop-marmalade/20 border-2 border-hop-marmalade rounded-xl p-4 mb-6">
-          <p className="text-center text-hop-forest">
-            <strong>PROTOTYPE ONLY</strong><br />
-            <span className="text-sm">Do not enter any sensitive or personal data into these tools.</span>
-          </p>
-        </div>
-
         {/* Issues banner */}
         {issueCount > 0 && (
           <Link to="/summary" className="block mb-6">
@@ -42,10 +34,16 @@ export function Home() {
           </Link>
         )}
 
-        {/* Logo and title */}
-        <div className="text-center mb-8">
+        {/* Logo */}
+        <div className="flex justify-center mb-4">
           <LogoWithText size="large" />
         </div>
+
+        {/* Prototype warning */}
+        <p className="text-center text-hop-forest mb-8">
+          <strong>PROTOTYPE ONLY</strong><br />
+          <span className="text-sm">Do not enter any sensitive or personal data into these tools.</span>
+        </p>
 
         {/* Title section */}
         <div className="text-center mb-8">
