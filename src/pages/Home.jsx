@@ -40,10 +40,12 @@ export function Home() {
         </div>
 
         {/* Prototype warning */}
-        <p className="text-center text-hop-forest mb-8">
-          <strong>PROTOTYPE ONLY</strong><br />
-          <span className="text-sm">Do not enter any sensitive or personal data into these tools.</span>
-        </p>
+        <div className="bg-red-100 border-2 border-red-500 rounded-xl p-4 mb-8">
+          <p className="text-center text-red-700">
+            <strong className="text-lg">PROTOTYPE ONLY</strong><br />
+            <span className="text-sm font-medium">Do not enter any sensitive or personal data into these tools.</span>
+          </p>
+        </div>
 
         {/* Title section */}
         <div className="text-center mb-8">
