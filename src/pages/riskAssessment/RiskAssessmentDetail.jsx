@@ -3,9 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
-import { getRiskAssessmentById } from '../../lib/riskAssessmentDb'
+import { getRiskAssessmentById, deleteRiskAssessment } from '../../lib/riskAssessmentDb'
 import { generateDocx } from '../../lib/riskAssessmentAi'
-import { Loader2, Download, FileText, Calendar, User, MapPin } from 'lucide-react'
+import { Loader2, Download, FileText, Calendar, User, MapPin, Trash2 } from 'lucide-react'
 
 const RISK_RATINGS = {
   H: { label: 'High', color: 'bg-red-100 text-red-800' },
@@ -19,6 +19,8 @@ export function RiskAssessmentDetail() {
   const [assessment, setAssessment] = useState(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -103,6 +105,21 @@ export function RiskAssessmentDetail() {
       month: 'short',
       year: 'numeric'
     })
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    setError(null)
+
+    try {
+      await deleteRiskAssessment(id)
+      navigate('/risk-assessment')
+    } catch (err) {
+      console.error('Delete error:', err)
+      setError('Failed to delete assessment. Please try again.')
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
   }
 
   const getRatingBadge = (rating) => {
@@ -250,6 +267,45 @@ export function RiskAssessmentDetail() {
             </>
           )}
         </Button>
+
+        {/* Delete Button */}
+        {!showDeleteConfirm ? (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full text-center text-sm text-gray-400 hover:text-red-500 mt-4 py-2 transition-colors"
+          >
+            <Trash2 className="w-4 h-4 inline mr-1" />
+            Delete this assessment
+          </button>
+        ) : (
+          <Card padding="small" className="bg-red-50 border-red-200 mt-4">
+            <p className="text-sm text-red-700 mb-3 text-center">
+              Are you sure? This cannot be undone.
+            </p>
+            <div className="flex gap-2">
+              <Button
+                color="freshair"
+                fullWidth
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                color="marmalade"
+                fullWidth
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Delete'
+                )}
+              </Button>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   )
