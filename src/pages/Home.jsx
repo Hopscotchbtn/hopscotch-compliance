@@ -18,6 +18,14 @@ export function Home() {
   return (
     <div className="min-h-screen bg-hop-pebble px-4 py-8">
       <div className="max-w-md mx-auto">
+        {/* Prototype warning */}
+        <div className="bg-hop-marmalade/20 border-2 border-hop-marmalade rounded-xl p-4 mb-6">
+          <p className="text-center text-hop-forest">
+            <strong>PROTOTYPE ONLY</strong><br />
+            <span className="text-sm">Do not enter any sensitive or personal data into these tools.</span>
+          </p>
+        </div>
+
         {/* Issues banner */}
         {issueCount > 0 && (
           <Link to="/summary" className="block mb-6">
@@ -101,13 +109,8 @@ export function Home() {
         <div className="border-t border-gray-200 pt-6 mb-8">
           <h3 className="text-center text-gray-500 text-sm font-medium mb-4">More Tools</h3>
           <div className="space-y-3">
-            <Link to="/incidents">
-              <Button color="forest" size="large" fullWidth>
-                <span className="text-lg">🚨 IncidentIQ</span>
-              </Button>
-            </Link>
             <Link to="/risk-assessment">
-              <Button color="forest" variant="secondary" size="large" fullWidth>
+              <Button color="forest" size="large" fullWidth>
                 <span className="text-lg">📋 Risk Assessments</span>
               </Button>
             </Link>
