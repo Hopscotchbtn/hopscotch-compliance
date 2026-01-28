@@ -7,7 +7,7 @@ export function Logo({ size = 'default' }) {
 
   return (
     <img
-      src="/hopscotch-logo.jpg"
+      src="/hopscotch-logo.png"
       alt="Hopscotch"
       className={`${sizeStyles[size]} object-contain`}
     />
@@ -22,13 +22,10 @@ export function LogoWithText({ size = 'default' }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <img
-        src="/hopscotch-logo.jpg"
-        alt="Hopscotch"
-        className={`${logoSizes[size]} object-contain`}
-      />
-      <p className="text-sm text-gray-500">Children's Nurseries</p>
-    </div>
+    <img
+      src="/hopscotch-logo.png"
+      alt="Hopscotch"
+      className={`${logoSizes[size]} object-contain`}
+    />
   )
 }
