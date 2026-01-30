@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2>Create New Risk Assessment</h2>
+
+    <form action="{{ url_for('generate') }}" method="POST" id="assessment-form">
+        <label for="activity_name">Activity Name *</label>
+        <input type="text" id="activity_name" name="activity_name"
+               placeholder="e.g., Water Play, Sand Pit, Forest School" required>
+
+        <label for="activity_description">Activity Description *</label>
+        <textarea id="activity_description" name="activity_description"
+                  placeholder="Describe the activity in detail. Include equipment used, how children will participate, duration, etc."
+                  required></textarea>
+
+        <label for="location">Location</label>
+        <input type="text" id="location" name="location"
+               placeholder="e.g., Outdoor Garden, Sensory Room, Main Hall" value="Nursery">
+
+        <label>Age Groups (select all that apply)</label>
+        <div class="checkbox-group">
+            <label>
+                <input type="checkbox" name="age_groups" value="baby">
+                Baby (0-12 months)
+            </label>
+            <label>
+                <input type="checkbox" name="age_groups" value="toddler" checked>
+                Toddler (1-2 years)
+            </label>
+            <label>
+                <input type="checkbox" name="age_groups" value="preschool" checked>
+                Preschool (2-3 years)
+            </label>
+            <label>
+                <input type="checkbox" name="age_groups" value="pre_k">
+                Pre-K (3-4 years)
+            </label>
+            <label>
+                <input type="checkbox" name="age_groups" value="reception">
+                Reception (4-5 years)
+            </label>
+        </div>
+
+        <label for="assessor_name">Assessor Name</label>
+        <input type="text" id="assessor_name" name="assessor_name"
+               placeholder="Your name">
+
+        <button type="submit" id="submit-btn">Generate Risk Assessment</button>
+    </form>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Analyzing activity and generating risk assessment...</p>
+        <p style="font-size: 0.9em; color: #666;">This may take 10-20 seconds</p>
+    </div>
+</div>
+
+<script>
+document.getElementById('assessment-form').addEventListener('submit', function() {
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submit-btn').textContent = 'Generating...';
+    document.getElementById('loading').classList.add('active');
+});
+</script>
+{% endblock %}

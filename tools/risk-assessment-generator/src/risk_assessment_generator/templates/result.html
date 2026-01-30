@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Assessment: {{ assessment.activity_name }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+        <h2 style="border: none; padding: 0; margin: 0;">Risk Assessment</h2>
+        <a href="{{ url_for('index') }}">
+            <button type="button" style="background: #6c757d;">New Assessment</button>
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Activity Details</h2>
+
+    <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 8px 0; font-weight: 600; width: 180px;">Activity Name:</td>
+            <td style="padding: 8px 0;">{{ assessment.activity_name }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; font-weight: 600;">Description:</td>
+            <td style="padding: 8px 0;">{{ assessment.activity_description }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; font-weight: 600;">Location:</td>
+            <td style="padding: 8px 0;">{{ assessment.location }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; font-weight: 600;">Age Groups:</td>
+            <td style="padding: 8px 0;">{{ assessment.age_groups | map(attribute='value') | join(', ') }}</td>
+        </tr>
+        <tr>
+            <td style="padding: 8px 0; font-weight: 600;">Assessment Date:</td>
+            <td style="padding: 8px 0;">{{ assessment.assessment_date.strftime('%d %B %Y') }}</td>
+        </tr>
+        {% if assessment.assessor_name %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: 600;">Assessed By:</td>
+            <td style="padding: 8px 0;">{{ assessment.assessor_name }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td style="padding: 8px 0; font-weight: 600;">Overall Risk Level:</td>
+            <td style="padding: 8px 0;">
+                <span class="risk-badge risk-{{ assessment.overall_risk_level | lower }}">
+                    {{ assessment.overall_risk_level }}
+                </span>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Identified Hazards & Control Measures</h2>
+
+    {% for hwm in assessment.hazards %}
+    <div style="border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin-bottom: 15px; {% if hwm.hazard.risk_level == 'High' %}border-left: 4px solid #dc3545;{% elif hwm.hazard.risk_level == 'Medium' %}border-left: 4px solid #ffc107;{% else %}border-left: 4px solid #28a745;{% endif %}">
+
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+            <strong style="font-size: 1.1em;">{{ loop.index }}. {{ hwm.hazard.description }}</strong>
+            <span class="risk-badge risk-{{ hwm.hazard.risk_level | lower }}">
+                {{ hwm.hazard.risk_level }} Risk
+            </span>
+        </div>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.9em; color: #666;">
+            <span><strong>Severity:</strong> {{ hwm.hazard.severity.value }}</span>
+            <span><strong>Likelihood:</strong> {{ hwm.hazard.likelihood.value }}</span>
+            <span><strong>Who at risk:</strong> {{ hwm.hazard.who_at_risk }}</span>
+        </div>
+
+        {% if hwm.existing_controls %}
+        <div style="margin-bottom: 10px;">
+            <strong style="color: #28a745;">Existing Controls:</strong>
+            <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+                {% for control in hwm.existing_controls %}
+                <li>{{ control }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if hwm.additional_controls %}
+        <div style="margin-bottom: 10px;">
+            <strong style="color: #dc3545;">Additional Controls Required:</strong>
+            <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+                {% for control in hwm.additional_controls %}
+                <li>{{ control.action }} <em style="color: #666;">({{ control.responsible_person }})</em></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div style="font-size: 0.9em;">
+            <strong>Residual Risk:</strong>
+            <span class="risk-badge risk-{{ hwm.residual_risk | lower }}">{{ hwm.residual_risk }}</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if assessment.additional_notes %}
+<div class="card">
+    <h2>Additional Notes</h2>
+    <p>{{ assessment.additional_notes }}</p>
+</div>
+{% endif %}
+
+<div class="card" style="text-align: center;">
+    <a href="{{ url_for('download', assessment_id=assessment_id) }}">
+        <button type="button" style="background: #28a745; font-size: 1.1em; padding: 15px 40px;">
+            Download as Word Document (.docx)
+        </button>
+    </a>
+    <p style="color: #666; margin: 10px 0 0 0; font-size: 0.9em;">
+        Save this risk assessment for your records
+    </p>
+</div>
+{% endblock %}
