@@ -6,7 +6,6 @@ import { SignatureCanvas } from '../components/SignatureCanvas'
 import { Button } from '../components/ui/Button'
 import { checkTypes, getChecklistItems, isMonday } from '../data/checklists'
 import { submitCheck, uploadCheckPhoto, uploadSignature } from '../lib/supabase'
-import { nurseryEmails } from '../data/config'
 
 export function SwipeChecklist() {
   const { checkTypeId, roomName } = useParams()
@@ -27,6 +26,7 @@ export function SwipeChecklist() {
   const [error, setError] = useState(null)
   const [showSummary, setShowSummary] = useState(false)
   const [postSubmit, setPostSubmit] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   // Redirect if missing required data
   useEffect(() => {
@@ -155,16 +155,31 @@ export function SwipeChecklist() {
 
   // Post-submit escalation screen
   if (postSubmit) {
-    const email = nurseryEmails[nursery] || ''
-    const subject = encodeURIComponent(`Compliance Issue — ${nursery} — ${new Date().toLocaleDateString('en-GB')}`)
-    const body = encodeURIComponent(
+    const reportText =
+      `Compliance Issue — ${nursery} — ${new Date().toLocaleDateString('en-GB')}\n\n` +
       `The following issues were reported during ${checkType.shortName} (${actualRoom}):\n\n` +
       failedItems.map(item =>
         `• ${item.text}${notes[item.id] ? ` — ${notes[item.id]}` : ''}`
       ).join('\n') +
       `\n\nCompleted by: ${completedBy}\nDate: ${new Date().toLocaleDateString('en-GB')}`
-    )
-    const mailto = `mailto:${email}?subject=${subject}&body=${body}`
+
+    const handleCopy = async () => {
+      try {
+        await navigator.clipboard.writeText(reportText)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch {
+        // Fallback for older browsers
+        const ta = document.createElement('textarea')
+        ta.value = reportText
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      }
+    }
 
     return (
       <div className="min-h-screen bg-hop-pebble">
@@ -188,12 +203,12 @@ export function SwipeChecklist() {
                 </li>
               ))}
             </ul>
-            <a
-              href={mailto}
-              className="inline-block w-full py-3 px-4 rounded-xl font-medium text-white bg-hop-marmalade-dark hover:brightness-95 transition-all text-center"
+            <button
+              onClick={handleCopy}
+              className="w-full py-3 px-4 rounded-xl font-medium text-white bg-hop-marmalade-dark hover:brightness-95 transition-all text-center"
             >
-              📧 Notify Nursery
-            </a>
+              {copied ? 'Copied!' : 'Copy Issue Report'}
+            </button>
           </div>
           <Button
             color="forest"

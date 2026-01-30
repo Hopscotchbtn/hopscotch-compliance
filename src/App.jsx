@@ -4,6 +4,7 @@ import { Summary } from './pages/Summary'
 import { RoomProgress } from './pages/RoomProgress'
 import { SwipeChecklist } from './pages/SwipeChecklist'
 import { History } from './pages/History'
+import { Issues } from './pages/Issues'
 import { RequestRecords } from './pages/RequestRecords'
 import { PasswordGate } from './components/PasswordGate'
 // Kitchen Food Safety pages
@@ -33,6 +34,7 @@ function App() {
           <Route path="/check/:checkTypeId" element={<RoomProgress />} />
           <Route path="/check/:checkTypeId/room/:roomName" element={<SwipeChecklist />} />
           <Route path="/summary" element={<Summary />} />
+          <Route path="/issues" element={<Issues />} />
           <Route path="/history" element={<History />} />
           <Route path="/history/request" element={<RequestRecords />} />
 

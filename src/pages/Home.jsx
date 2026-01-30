@@ -20,7 +20,7 @@ export function Home() {
       <div className="max-w-md mx-auto">
         {/* Issues banner */}
         {issueCount > 0 && (
-          <Link to="/summary" className="block mb-6">
+          <Link to="/issues" className="block mb-6">
             <div className="bg-hop-marmalade/15 border border-hop-marmalade rounded-xl p-4 flex items-center gap-3">
               <span className="text-2xl">⚠️</span>
               <div className="flex-1">
