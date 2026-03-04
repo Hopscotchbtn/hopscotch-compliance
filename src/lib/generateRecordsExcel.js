@@ -161,16 +161,33 @@ async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, ro
 export async function generateDailyChecksExcel(nursery, checks, startDate, endDate) {
   const columns = [
     { header: 'Date', width: 14 },
+    { header: 'Checks Completed', width: 18 },
     { header: 'Initials', width: 12 },
     { header: 'Comments', width: 60 },
   ]
 
-  const sorted = [...checks].sort((a, b) => a.created_at.localeCompare(b.created_at))
-  const rows = sorted.map(c => [
-    formatDate(c.created_at),
-    c.completed_by || '',
-    c.overall_notes || '',
-  ])
+  // Index checks by date (YYYY-MM-DD)
+  const byDate = {}
+  checks.forEach(c => {
+    const d = new Date(c.created_at).toISOString().slice(0, 10)
+    if (!byDate[d]) byDate[d] = c
+  })
+
+  // Generate a row for every date in the range
+  const rows = []
+  const cursor = new Date(startDate)
+  const end = new Date(endDate)
+  while (cursor <= end) {
+    const key = cursor.toISOString().slice(0, 10)
+    const check = byDate[key]
+    rows.push([
+      formatDate(key),
+      check ? 'Yes' : 'No',
+      check ? (check.completed_by || '') : '',
+      check ? (check.overall_notes || '') : '',
+    ])
+    cursor.setDate(cursor.getDate() + 1)
+  }
 
   const wb = await buildWorkbook('Daily Checks', nursery, startDate, endDate, columns, rows)
   const buffer = await wb.xlsx.writeBuffer()
