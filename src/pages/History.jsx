@@ -70,6 +70,7 @@ export function History() {
 
   const allowedTypes = availableCheckTypes.map(t => t.value)
   const filteredChecks = checks
+    .filter(c => nurseryFilter === 'all' ? locationOptions.includes(c.nursery) : true)
     .filter(c => allowedTypes.includes(c.check_type))
     .filter(c => checkTypeFilter === 'all' || c.check_type === checkTypeFilter)
 

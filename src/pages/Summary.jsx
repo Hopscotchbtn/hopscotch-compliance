@@ -34,8 +34,13 @@ export function Summary() {
     }
   }
 
+  // Filter to section's locations when showing all
+  const visibleChecks = filter === 'all' && section
+    ? checks.filter(c => locationOptions.includes(c.nursery))
+    : checks
+
   // Group checks by nursery
-  const groupedChecks = checks.reduce((acc, check) => {
+  const groupedChecks = visibleChecks.reduce((acc, check) => {
     const nursery = check.nursery
     if (!acc[nursery]) {
       acc[nursery] = []
@@ -65,7 +70,7 @@ export function Summary() {
             <div className="w-8 h-8 border-2 border-hop-forest border-t-transparent rounded-full animate-spin mx-auto mb-3" />
             <p className="text-gray-500">Loading checks...</p>
           </div>
-        ) : checks.length === 0 ? (
+        ) : visibleChecks.length === 0 ? (
           <div className="text-center py-12">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg

@@ -61,15 +61,13 @@ export function ChecksMenu() {
           >
             📋 View today's checks →
           </Link>
-          {!isHolidayClub && (
-            <Link
-              to="/history"
-              state={{ section }}
-              className="block text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors text-sm"
-            >
-              📅 View check history (30 days)
-            </Link>
-          )}
+          <Link
+            to="/history"
+            state={{ section }}
+            className="block text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors text-sm"
+          >
+            📅 View check history (30 days)
+          </Link>
         </div>
       </div>
     </div>
