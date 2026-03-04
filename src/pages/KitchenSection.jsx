@@ -247,7 +247,7 @@ export function KitchenSection() {
   }
 
   // Holiday club opening/closing fridge check — three fridges
-  if ((sectionId === 'opening' || sectionId === 'closing') && isHolidayClub) {
+  if (sectionId === 'opening' || sectionId === 'closing') {
     const isOpening = sectionId === 'opening'
     const tempLabel = isOpening ? 'Opening temperature' : 'Closing temperature'
     const fridges = [1, 2, 3]

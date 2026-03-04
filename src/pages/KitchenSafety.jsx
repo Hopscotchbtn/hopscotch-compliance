@@ -15,9 +15,9 @@ import { generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchen
 const holidayClubLocations = ['Holland Road', 'School Road']
 
 const NURSERY_SECTIONS = [
-  { id: 'opening', name: 'Opening Check', icon: '☀️', description: 'Morning prep & fridge temps' },
-  { id: 'deliveries', name: 'Food Deliveries', icon: '🚚', description: 'Little Tums, supermarket, packed lunches' },
-  { id: 'closing', name: 'Closing Check', icon: '🌙', description: 'End of day & fridge temps' },
+  { id: 'opening', name: 'Opening Fridge Check', icon: '☀️', description: 'Morning fridge temperatures' },
+  { id: 'packedLunch', name: 'Packed Lunches', icon: '🥪', description: 'Visual check of packed lunches' },
+  { id: 'closing', name: 'Closing Fridge Check', icon: '🌙', description: 'End of day fridge temperature' },
   { id: 'signoff', name: 'Manager Sign-off', icon: '✓', description: 'Review & approve' },
 ]
 
