@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -340,6 +340,26 @@ export function KitchenSafety() {
             Change {isHolidayClub ? 'location' : 'nursery or initials'}
           </button>
         </div>
+
+        {/* Holiday club: view checks links */}
+        {isHolidayClub && (
+          <div className="mt-4 text-center space-y-2">
+            <Link
+              to="/summary"
+              state={{ section: 'holiday-club' }}
+              className="block text-hop-forest hover:text-hop-forest-dark underline underline-offset-2 transition-colors text-sm"
+            >
+              📋 View today's checks →
+            </Link>
+            <Link
+              to="/history"
+              state={{ section: 'holiday-club' }}
+              className="block text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors text-sm"
+            >
+              📅 View check history (30 days)
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )

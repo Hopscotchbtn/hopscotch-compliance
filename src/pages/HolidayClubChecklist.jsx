@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
 import { SignatureCanvas } from '../components/SignatureCanvas'
@@ -117,6 +117,23 @@ export function HolidayClubChecklist() {
         >
           {isSubmitting ? 'Submitting...' : !comment.trim() ? 'Add a comment to submit' : !signature ? 'Sign to Submit' : 'Submit Check'}
         </Button>
+
+        <div className="text-center space-y-2 pb-4">
+          <Link
+            to="/summary"
+            state={{ section: 'holiday-club' }}
+            className="block text-hop-forest hover:text-hop-forest-dark underline underline-offset-2 transition-colors text-sm"
+          >
+            📋 View today's checks →
+          </Link>
+          <Link
+            to="/history"
+            state={{ section: 'holiday-club' }}
+            className="block text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors text-sm"
+          >
+            📅 View check history (30 days)
+          </Link>
+        </div>
       </div>
     </div>
   )
