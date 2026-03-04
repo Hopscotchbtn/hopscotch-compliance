@@ -197,16 +197,39 @@ export async function generateDailyChecksExcel(nursery, checks, startDate, endDa
 
 export async function generateFirstAidExcel(nursery, checks, startDate, endDate) {
   const columns = [
+    { header: 'Date', width: 14 },
+    { header: 'Checks Completed', width: 18 },
+    { header: 'Date Completed', width: 16 },
     { header: 'All items present?', width: 20 },
     { header: 'Initials', width: 12 },
     { header: 'Items to order', width: 50 },
   ]
 
-  const sorted = [...checks].sort((a, b) => a.created_at.localeCompare(b.created_at))
-  const rows = sorted.map(c => {
-    const { allPresent, missing } = parseFirstAidNotes(c.overall_notes)
-    return [allPresent, c.completed_by || '', missing]
+  // Index checks by date
+  const byDate = {}
+  checks.forEach(c => {
+    const d = new Date(c.created_at).toISOString().slice(0, 10)
+    if (!byDate[d]) byDate[d] = c
   })
+
+  // Generate a row for every date in the range
+  const rows = []
+  const cursor = new Date(startDate)
+  const end = new Date(endDate)
+  while (cursor <= end) {
+    const key = cursor.toISOString().slice(0, 10)
+    const check = byDate[key]
+    const { allPresent, missing } = check ? parseFirstAidNotes(check.overall_notes) : { allPresent: '', missing: '' }
+    rows.push([
+      formatDate(key),
+      check ? 'Yes' : 'No',
+      check ? formatDate(check.created_at) : '',
+      allPresent,
+      check ? (check.completed_by || '') : '',
+      missing,
+    ])
+    cursor.setDate(cursor.getDate() + 1)
+  }
 
   const wb = await buildWorkbook('First Aid Box Checks', nursery, startDate, endDate, columns, rows)
   const buffer = await wb.xlsx.writeBuffer()
