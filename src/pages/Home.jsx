@@ -82,7 +82,7 @@ export function Home() {
           <h3 className="text-center text-gray-500 text-sm font-medium mb-4">More Tools</h3>
           <div className="space-y-3">
             <Link to="/risk-assessment">
-              <Button color="forest" size="large" fullWidth>
+              <Button color="apple" size="large" fullWidth className="border border-black">
                 <span className="text-lg">📋 Risk Assessments</span>
               </Button>
             </Link>
