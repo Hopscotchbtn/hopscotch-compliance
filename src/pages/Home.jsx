@@ -56,7 +56,7 @@ export function Home() {
         {/* Title section */}
         <div className="text-center mb-8">
           <h2 className="font-display text-3xl text-hop-forest font-semibold mb-2">
-            Daily Checks
+            Compliance Checks
           </h2>
           <p className="text-gray-500 italic">Time to Care</p>
           <p className="text-hop-forest mt-4 font-medium">{formatDate()}</p>
