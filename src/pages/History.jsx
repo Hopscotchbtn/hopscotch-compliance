@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Select } from '../components/ui/Select'
 import { Card } from '../components/ui/Card'
@@ -8,7 +8,6 @@ import { getChecksHistory } from '../lib/supabase'
 import { nurseries } from '../data/nurseries'
 import { checkTypes } from '../data/checklists'
 import { storage } from '../lib/storage'
-import { generatePdf } from '../lib/generatePdf'
 
 const holidayClubLocations = ['Holland Road', 'School Road']
 
@@ -258,20 +257,6 @@ export function History() {
                   </Card>
                 ) : (
                   <>
-                    <div className="mb-3">
-                      <Button
-                        color="forest"
-                        variant="secondary"
-                        size="small"
-                        onClick={() => generatePdf(
-                          selectedDateChecks,
-                          nurseryFilter === 'all' ? 'All Locations' : nurseryFilter,
-                          selectedDate.toISOString().split('T')[0]
-                        )}
-                      >
-                        📄 Download PDF Report
-                      </Button>
-                    </div>
                     <div className="space-y-3">
                       {selectedDateChecks.map((check) => (
                         <Card key={check.id} className={check.has_issues ? 'border-l-4 border-l-hop-marmalade' : ''}>
@@ -317,14 +302,6 @@ export function History() {
               </div>
             )}
 
-            <div className="text-center pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-500 mb-3">Need to export or download records?</p>
-              <Link to="/history/request">
-                <Button color="forest" variant="secondary" size="small">
-                  📥 Download records
-                </Button>
-              </Link>
-            </div>
           </>
         )}
       </div>
