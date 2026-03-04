@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { supabase } from './supabase'
 
 const FOREST    = [26, 58, 42]
 const MARMALADE = [109, 159, 107]
@@ -29,15 +30,34 @@ function formatDate(isoStr) {
   return new Date(isoStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function blobToDataURL(blob) {
+  return new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result)
+    reader.readAsDataURL(blob)
+  })
+}
+
 async function fetchDataURL(url) {
+  if (!url) return null
   try {
     const res = await fetch(url)
     const blob = await res.blob()
-    return new Promise(resolve => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.readAsDataURL(blob)
-    })
+    return blobToDataURL(blob)
+  } catch { return null }
+}
+
+async function fetchSignatureDataURL(url) {
+  if (!url) return null
+  try {
+    // Use Supabase SDK to download — handles auth and CORS
+    const path = url.split('/check-signatures/')[1]
+    if (path && supabase) {
+      const { data, error } = await supabase.storage.from('check-signatures').download(path)
+      if (!error && data) return blobToDataURL(data)
+    }
+    // Fallback to direct fetch
+    return fetchDataURL(url)
   } catch { return null }
 }
 
@@ -93,7 +113,7 @@ export async function generateHolidayClubChecksPDF(nursery, checks, weekStart, w
 
   // Pre-fetch all signature images
   const sigImages = await Promise.all(
-    sorted.map(c => c.signature_url ? fetchDataURL(c.signature_url) : Promise.resolve(null))
+    sorted.map(c => fetchSignatureDataURL(c.signature_url))
   )
 
   // ── Sign-off table ────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { supabase } from './supabase'
 
 const FOREST    = [26, 58, 42]
 const GREEN     = [109, 159, 107]
@@ -48,15 +49,32 @@ function parseNotes(notes) {
   return { allPresent: null, missing: notes }
 }
 
+function blobToDataURL(blob) {
+  return new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result)
+    reader.readAsDataURL(blob)
+  })
+}
+
 async function fetchDataURL(url) {
+  if (!url) return null
   try {
     const res = await fetch(url)
     const blob = await res.blob()
-    return new Promise(resolve => {
-      const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result)
-      reader.readAsDataURL(blob)
-    })
+    return blobToDataURL(blob)
+  } catch { return null }
+}
+
+async function fetchSignatureDataURL(url) {
+  if (!url) return null
+  try {
+    const path = url.split('/check-signatures/')[1]
+    if (path && supabase) {
+      const { data, error } = await supabase.storage.from('check-signatures').download(path)
+      if (!error && data) return blobToDataURL(data)
+    }
+    return fetchDataURL(url)
   } catch { return null }
 }
 
@@ -109,7 +127,7 @@ export async function generateFirstAidPDF(nursery, checks, weekStart, weekEnd) {
   // ── Fetch signatures ───────────────────────────────────────────────────────
   const sorted = [...checks].sort((a, b) => a.created_at.localeCompare(b.created_at))
   const sigImages = await Promise.all(
-    sorted.map(c => c.signature_url ? fetchDataURL(c.signature_url) : Promise.resolve(null))
+    sorted.map(c => fetchSignatureDataURL(c.signature_url))
   )
 
   // ── Sign-off table ────────────────────────────────────────────────────────
