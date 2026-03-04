@@ -98,9 +98,7 @@ export function KitchenSafety() {
 
   const handleSetupComplete = () => {
     if (!nursery) return
-    if (!isHolidayClub && !name.trim()) return
     storage.setLastNursery(nursery)
-    if (!isHolidayClub) storage.setUserName(name.trim())
     // Load completion state for the selected location
     const saved = storage.getKitchenSafetyState(nursery)
     setCompletedSections(saved?.completedSections || {})
@@ -151,34 +149,24 @@ export function KitchenSafety() {
 
           <Card className="space-y-5">
             <p className="text-gray-600 text-sm">
-              Select your {isHolidayClub ? 'location' : 'nursery'}{isHolidayClub ? '' : ' and enter your initials'} to begin the Kitchen Food Safety Diary.
+              Select your location to begin the Daily Kitchen Safety Diary.
             </p>
 
             <Select
-              label={isHolidayClub ? 'Select location' : 'Select nursery'}
+              label="Select location"
               value={nursery}
               onChange={(e) => setNursery(e.target.value)}
               options={locationOptions}
-              placeholder={isHolidayClub ? 'Choose a location' : 'Choose a nursery'}
+              placeholder="Choose a location"
               required
             />
-
-            {!isHolidayClub && (
-              <Input
-                label="Your initials"
-                value={name}
-                onChange={setName}
-                placeholder="e.g. PF"
-                required
-              />
-            )}
 
             <div className="pt-2">
               <Button
                 color="marmalade"
                 size="large"
                 fullWidth
-                disabled={!nursery || (!isHolidayClub && !name.trim())}
+                disabled={!nursery}
                 onClick={handleSetupComplete}
               >
                 Continue
