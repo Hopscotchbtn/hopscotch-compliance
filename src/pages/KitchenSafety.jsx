@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Card } from '../components/ui/Card'
@@ -8,13 +8,23 @@ import { Input } from '../components/ui/Input'
 import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
-import { formatDate, formatTime } from '../lib/utils'
 
-// Section definitions
-const SECTIONS = [
+import { formatDate, formatTime } from '../lib/utils'
+import { generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
+
+const holidayClubLocations = ['Holland Road', 'School Road']
+
+const NURSERY_SECTIONS = [
   { id: 'opening', name: 'Opening Check', icon: '☀️', description: 'Morning prep & fridge temps' },
   { id: 'deliveries', name: 'Food Deliveries', icon: '🚚', description: 'Little Tums, supermarket, packed lunches' },
   { id: 'closing', name: 'Closing Check', icon: '🌙', description: 'End of day & fridge temps' },
+  { id: 'signoff', name: 'Manager Sign-off', icon: '✓', description: 'Review & approve' },
+]
+
+const HOLIDAY_CLUB_SECTIONS = [
+  { id: 'opening', name: 'Opening Fridge Check', icon: '☀️', description: 'Morning fridge temperatures' },
+  { id: 'packedLunch', name: 'Packed Lunches', icon: '🥪', description: 'Visual check of packed lunches' },
+  { id: 'closing', name: 'Closing Fridge Check', icon: '🌙', description: 'End of day fridge temperature' },
   { id: 'signoff', name: 'Manager Sign-off', icon: '✓', description: 'Review & approve' },
 ]
 
@@ -22,33 +32,79 @@ export function KitchenSafety() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [nursery, setNursery] = useState(() => storage.getLastNursery())
+  const section = location.state?.section || location.state?.returnedSection
+  const isHolidayClub = section === 'holiday-club'
+  const locationOptions = isHolidayClub ? holidayClubLocations : nurseries
+  const SECTIONS = isHolidayClub ? HOLIDAY_CLUB_SECTIONS : NURSERY_SECTIONS
+
+  const [nursery, setNursery] = useState(() => {
+    const last = storage.getLastNursery()
+    if (isHolidayClub && !holidayClubLocations.includes(last)) return ''
+    return last
+  })
   const [name, setName] = useState(() => storage.getUserName())
-  // Always show setup first for Kitchen Safety to confirm nursery/name
   const [showSetup, setShowSetup] = useState(() => {
-    // If returning from a completed section, don't show setup
+    // Only skip setup when returning from a completed section
     return !location.state?.completedSection
   })
 
-  // Section completion state
-  const [completedSections, setCompletedSections] = useState({})
-  const [sectionData, setSectionData] = useState({})
+  // Section completion state — load from storage for today
+  const [completedSections, setCompletedSections] = useState(() => {
+    const last = storage.getLastNursery()
+    const saved = last ? storage.getKitchenSafetyState(last) : null
+    return saved?.completedSections || {}
+  })
+  const [sectionData, setSectionData] = useState(() => {
+    const last = storage.getLastNursery()
+    const saved = last ? storage.getKitchenSafetyState(last) : null
+    return saved?.sectionData || {}
+  })
+
+  const processedSection = useRef(null)
+  const [selectedWeek, setSelectedWeek] = useState('')
+  const weekOptions = getWeekOptions(5)
+
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownloadPDF = async () => {
+    const week = weekOptions.find(w => w.value === selectedWeek)
+    if (!week) return
+    setDownloading(true)
+    try {
+      const history = storage.getKitchenSafetyHistory(nursery)
+      const doc = await generateKitchenSafetyPDF(nursery, history, new Date(week.value + 'T12:00:00'), new Date(week.sunday + 'T12:00:00'))
+      doc.save(`Kitchen-Safety-${nursery.replace(/\s+/g, '-')}-${week.value}.pdf`)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   // Handle returning from a completed section
   useEffect(() => {
-    if (location.state?.completedSection) {
-      const { completedSection, sectionData: newData } = location.state
-      setCompletedSections(prev => ({ ...prev, [completedSection]: true }))
-      setSectionData(prev => ({ ...prev, [completedSection]: newData }))
-      // Clear the state so it doesn't re-trigger on refresh
-      window.history.replaceState({}, document.title)
+    const { completedSection, sectionData: newData } = location.state || {}
+    if (completedSection && completedSection !== processedSection.current) {
+      processedSection.current = completedSection
+      setCompletedSections(prev => {
+        const next = { ...prev, [completedSection]: true }
+        setSectionData(prevData => {
+          const nextData = { ...prevData, [completedSection]: newData }
+          storage.setKitchenSafetyState(nursery, next, nextData)
+          return nextData
+        })
+        return next
+      })
     }
   }, [location.state])
 
   const handleSetupComplete = () => {
-    if (!nursery || !name.trim()) return
+    if (!nursery) return
+    if (!isHolidayClub && !name.trim()) return
     storage.setLastNursery(nursery)
-    storage.setUserName(name.trim())
+    if (!isHolidayClub) storage.setUserName(name.trim())
+    // Load completion state for the selected location
+    const saved = storage.getKitchenSafetyState(nursery)
+    setCompletedSections(saved?.completedSections || {})
+    setSectionData(saved?.sectionData || {})
     setShowSetup(false)
   }
 
@@ -59,6 +115,7 @@ export function KitchenSafety() {
         completedBy: name.trim(),
         sectionData,
         completedSections,
+        section,
       },
     })
   }
@@ -94,32 +151,34 @@ export function KitchenSafety() {
 
           <Card className="space-y-5">
             <p className="text-gray-600 text-sm">
-              Select your nursery and enter your initials to begin the Kitchen Food Safety Diary.
+              Select your {isHolidayClub ? 'location' : 'nursery'}{isHolidayClub ? '' : ' and enter your initials'} to begin the Kitchen Food Safety Diary.
             </p>
 
             <Select
-              label="Select nursery"
+              label={isHolidayClub ? 'Select location' : 'Select nursery'}
               value={nursery}
-              onChange={setNursery}
-              options={nurseries}
-              placeholder="Choose a nursery"
+              onChange={(e) => setNursery(e.target.value)}
+              options={locationOptions}
+              placeholder={isHolidayClub ? 'Choose a location' : 'Choose a nursery'}
               required
             />
 
-            <Input
-              label="Your initials"
-              value={name}
-              onChange={setName}
-              placeholder="e.g. PF"
-              required
-            />
+            {!isHolidayClub && (
+              <Input
+                label="Your initials"
+                value={name}
+                onChange={setName}
+                placeholder="e.g. PF"
+                required
+              />
+            )}
 
             <div className="pt-2">
               <Button
                 color="marmalade"
                 size="large"
                 fullWidth
-                disabled={!nursery || !name.trim()}
+                disabled={!nursery || (!isHolidayClub && !name.trim())}
                 onClick={handleSetupComplete}
               >
                 Continue
@@ -178,14 +237,14 @@ export function KitchenSafety() {
 
         {/* Section list */}
         <div className="space-y-3">
-          {SECTIONS.map((section) => {
-            const isComplete = completedSections[section.id]
-            const isLocked = isSectionLocked(section.id)
+          {SECTIONS.map((sectionItem) => {
+            const isComplete = completedSections[sectionItem.id]
+            const isLocked = isSectionLocked(sectionItem.id)
 
             return (
               <button
-                key={section.id}
-                onClick={() => !isLocked && handleStartSection(section.id)}
+                key={sectionItem.id}
+                onClick={() => !isLocked && handleStartSection(sectionItem.id)}
                 disabled={isLocked}
                 className={`
                   w-full p-4 rounded-xl text-left transition-all duration-200
@@ -217,17 +276,17 @@ export function KitchenSafety() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   ) : (
-                    section.icon
+                    sectionItem.icon
                   )}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1">
-                  <p className="font-medium text-hop-forest">{section.name}</p>
-                  <p className="text-sm text-gray-500">{section.description}</p>
-                  {isComplete && sectionData[section.id]?.completedAt && (
+                  <p className="font-medium text-hop-forest">{sectionItem.name}</p>
+                  <p className="text-sm text-gray-500">{sectionItem.description}</p>
+                  {isComplete && sectionData[sectionItem.id]?.completedAt && (
                     <p className="text-xs text-hop-apple mt-1">
-                      Completed at {formatTime(new Date(sectionData[section.id].completedAt))}
+                      Completed at {formatTime(new Date(sectionData[sectionItem.id].completedAt))}
                     </p>
                   )}
                 </div>
@@ -248,13 +307,37 @@ export function KitchenSafety() {
           })}
         </div>
 
+        {/* Download PDF */}
+        <div className="mt-8 p-4 bg-white rounded-xl border-2 border-gray-200">
+          <p className="text-sm font-medium text-hop-forest mb-3">Download Weekly PDF</p>
+          <select
+            value={selectedWeek}
+            onChange={(e) => setSelectedWeek(e.target.value)}
+            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest mb-3"
+          >
+            <option value="">Select a week…</option>
+            {weekOptions.map(w => (
+              <option key={w.value} value={w.value}>{w.label}</option>
+            ))}
+          </select>
+          <Button
+            color="marmalade"
+            size="large"
+            fullWidth
+            disabled={!selectedWeek || !nursery || downloading}
+            onClick={handleDownloadPDF}
+          >
+            {downloading ? 'Generating…' : 'Download PDF'}
+          </Button>
+        </div>
+
         {/* Change settings link */}
-        <div className="mt-8 text-center">
+        <div className="mt-4 text-center">
           <button
             onClick={() => setShowSetup(true)}
             className="text-sm text-gray-500 hover:text-hop-forest underline underline-offset-2"
           >
-            Change nursery or initials
+            Change {isHolidayClub ? 'location' : 'nursery or initials'}
           </button>
         </div>
       </div>

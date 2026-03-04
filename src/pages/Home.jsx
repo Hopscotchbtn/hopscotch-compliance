@@ -56,52 +56,18 @@ export function Home() {
           <p className="text-hop-forest mt-4 font-medium">{formatDate()}</p>
         </div>
 
-        {/* Check type buttons */}
-        <div className="space-y-4 mb-8">
-          <Link to="/check/roomOpening">
-            <Button color="freshair" size="large" fullWidth>
-              <span className="text-lg">🌅 Room Opening Check</span>
+        {/* Section buttons */}
+        <div className="flex flex-col gap-5 mb-8">
+          <Link to="/section/nursery">
+            <Button color="freshair" size="large" fullWidth className="border border-black">
+              <span className="text-lg">🏫 Nursery</span>
             </Button>
           </Link>
 
-          <Link to="/check/roomSafety">
-            <Button color="sunshine" size="large" fullWidth>
-              <span className="text-lg">🛡️ Room Safety Check</span>
+          <Link to="/section/holiday-club">
+            <Button color="blossom" size="large" fullWidth className="border border-black">
+              <span className="text-lg">🌞 Holiday Club</span>
             </Button>
-          </Link>
-
-          <Link to="/check/gardenOutdoor">
-            <Button color="apple" size="large" fullWidth>
-              <span className="text-lg">🌿 Garden & Outdoor Check</span>
-            </Button>
-          </Link>
-
-          <Link to="/kitchen-safety">
-            <Button color="marmalade" size="large" fullWidth>
-              <span className="text-lg">🍳 Kitchen Food Safety</span>
-            </Button>
-          </Link>
-
-          <Link to="/check/firstAidBox">
-            <Button color="blossom" size="large" fullWidth>
-              <span className="text-lg">🩹 First Aid Box Weekly Check</span>
-            </Button>
-          </Link>
-        </div>
-
-        {/* View checks links */}
-        <div className="text-center mb-8 space-y-2">
-          <Link
-            to="/summary"
-            className="block text-hop-forest hover:text-hop-forest-dark underline underline-offset-2 transition-colors"
-          >
-            📋 View today's checks →
-          </Link>
-          <Link
-            to="/history"
-            className="block text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors text-sm"
-          >
-            📅 View check history (30 days)
           </Link>
         </div>
 

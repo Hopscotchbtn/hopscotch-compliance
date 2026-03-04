@@ -2,9 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'GreycliffCF';
+  src: url('/GreycliffCF-Medium.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'IvarDisplay';
+  src: url('/IvarDisplay-Medium.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
 /* Base styles */
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'GreycliffCF', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #f2eeed;
   color: #1f4435;
   min-height: 100vh;

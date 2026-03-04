@@ -23,6 +23,9 @@ import { RiskAssessmentWizard } from './pages/riskAssessment/RiskAssessmentWizar
 import { RiskValidationScreen } from './pages/riskAssessment/RiskValidationScreen'
 import { RiskConfirmation } from './pages/riskAssessment/RiskConfirmation'
 import { RiskAssessmentDetail } from './pages/riskAssessment/RiskAssessmentDetail'
+import { HolidayClubChecklist } from './pages/HolidayClubChecklist'
+import { FirstAidChecklist } from './pages/FirstAidChecklist'
+import { ChecksMenu } from './pages/ChecksMenu'
 
 function App() {
   return (
@@ -31,7 +34,10 @@ function App() {
         <Routes>
           {/* Daily Checks - New swipe flow for all check types */}
           <Route path="/" element={<Home />} />
+          <Route path="/section/:section" element={<ChecksMenu />} />
           <Route path="/check/:checkTypeId" element={<RoomProgress />} />
+          <Route path="/check/:checkTypeId/holiday-club" element={<HolidayClubChecklist />} />
+          <Route path="/check/firstAidBox/first-aid" element={<FirstAidChecklist />} />
           <Route path="/check/:checkTypeId/room/:roomName" element={<SwipeChecklist />} />
           <Route path="/summary" element={<Summary />} />
           <Route path="/issues" element={<Issues />} />

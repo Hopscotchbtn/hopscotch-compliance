@@ -70,7 +70,7 @@ export const checkTypes = {
   },
   firstAidBox: {
     id: 'firstAidBox',
-    name: 'First Aid Box Weekly Check',
+    name: 'First Aid Box Check',
     shortName: 'First Aid Box',
     description: 'Check first aid boxes weekly. If the seal is intact, contents are all present. If the box has been used, replace missing items and reseal.',
     color: 'hop-blossom',
@@ -147,9 +147,7 @@ export const kitchenSafety = {
 
   // Packed lunch visual checks
   packedLunchChecks: [
-    { id: 'pl1', text: 'Child\'s name shown on boxes' },
-    { id: 'pl2', text: 'Foods inside boxes cool (not warm)' },
-    { id: 'pl3', text: 'Food in good condition' },
+    { id: 'pl2', text: 'Food inside boxes cool' },
     { id: 'pl4', text: 'No nuts' },
   ],
 

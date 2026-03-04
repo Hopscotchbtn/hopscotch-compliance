@@ -1,27 +1,73 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Card } from '../components/ui/Card'
 import { Select } from '../components/ui/Select'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { checkTypes } from '../data/checklists'
-import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
-import { getTodayChecksByType } from '../lib/supabase'
+import { getTodayChecksByType, getChecksForWeek, getFirstAidChecksForWeek } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
+import { generateHolidayClubChecksPDF } from '../lib/generateHolidayClubChecksPDF'
+import { generateFirstAidPDF } from '../lib/generateFirstAidPDF'
+import { getWeekOptions } from '../lib/generateKitchenSafetyPDF'
+
+const locationOptions = {
+  nursery: ['Preston Park', 'Hove Station', 'Seven Dials', 'West Hove', 'Peacehaven', 'Seaford', 'Worthing'],
+  holidayClub: ['Holland Road', 'School Road'],
+}
 
 export function RoomProgress() {
   const { checkTypeId } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const checkType = checkTypes[checkTypeId]
+  const isHolidayClub = location.state?.section === 'holiday-club'
+  const pageTitle = isHolidayClub ? 'Holiday Club Daily Checks' : checkType?.name
 
-  const [nursery, setNursery] = useState(() => storage.getLastNursery())
+  const [locationType, setLocationType] = useState(isHolidayClub ? 'holidayClub' : '')
+  const [nursery, setNursery] = useState(() => {
+    const last = storage.getLastNursery()
+    if (isHolidayClub && !locationOptions.holidayClub.includes(last)) return ''
+    return last
+  })
   const [name, setName] = useState(() => storage.getUserName())
   const [completedRooms, setCompletedRooms] = useState({})
   const [roomIssues, setRoomIssues] = useState({})
   const [loading, setLoading] = useState(false)
   const [showSetup, setShowSetup] = useState(true)
+  const [holidayMessageAcknowledged, setHolidayMessageAcknowledged] = useState(false)
+
+  const weekOptions = getWeekOptions(5)
+  const [selectedWeek, setSelectedWeek] = useState('')
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState(null)
+
+  const handleDownloadPDF = async () => {
+    const week = weekOptions.find(w => w.value === selectedWeek)
+    if (!week || !nursery) return
+    setDownloading(true)
+    setDownloadError(null)
+    try {
+      const weekStart = new Date(week.value + 'T12:00:00')
+      const weekEnd = new Date(week.sunday + 'T12:00:00')
+      if (checkTypeId === 'firstAidBox') {
+        const checks = await getFirstAidChecksForWeek(nursery, weekStart, weekEnd)
+        const doc = await generateFirstAidPDF(nursery, checks, weekStart, weekEnd)
+        doc.save(`First-Aid-Box-Check-${nursery.replace(/\s+/g, '-')}-${week.value}.pdf`)
+      } else {
+        const checks = await getChecksForWeek(nursery, weekStart, weekEnd)
+        const doc = await generateHolidayClubChecksPDF(nursery, checks, weekStart, weekEnd)
+        doc.save(`Holiday-Club-Checks-${nursery.replace(/\s+/g, '-')}-${week.value}.pdf`)
+      }
+    } catch (err) {
+      console.error('PDF download error:', err)
+      setDownloadError('Failed to generate PDF. Please try again.')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   // Redirect if invalid check type
   useEffect(() => {
@@ -33,14 +79,20 @@ export function RoomProgress() {
   // For autoRoom checks (like Garden), skip straight to swipe cards after setup
   useEffect(() => {
     if (checkType?.autoRoom && !showSetup && nursery && name) {
-      navigate(`/check/${checkTypeId}/room/${encodeURIComponent(checkType.autoRoom)}`, {
-        state: {
-          nursery,
-          room: checkType.autoRoom,
-          completedBy: name.trim(),
-          checkType: checkTypeId,
-        },
-      })
+      if (checkTypeId === 'firstAidBox') {
+        navigate('/check/firstAidBox/first-aid', {
+          state: { nursery, completedBy: name.trim() },
+        })
+      } else {
+        navigate(`/check/${checkTypeId}/room/${encodeURIComponent(checkType.autoRoom)}`, {
+          state: {
+            nursery,
+            room: checkType.autoRoom,
+            completedBy: name.trim(),
+            checkType: checkTypeId,
+          },
+        })
+      }
     }
   }, [checkType, showSetup, nursery, name, checkTypeId, navigate])
 
@@ -106,7 +158,7 @@ export function RoomProgress() {
   if (showSetup) {
     return (
       <div className="min-h-screen bg-hop-pebble">
-        <Header title={checkType.name} showBack />
+        <Header title={pageTitle} showBack />
 
         <div className="px-4 py-6 max-w-md mx-auto">
           <div className="text-center mb-6">
@@ -118,13 +170,28 @@ export function RoomProgress() {
               Select your nursery and enter your initials to begin. These will be remembered for future checks.
             </p>
 
+            {!isHolidayClub && (
+              <Select
+                label="Type"
+                value={locationType}
+                onChange={(e) => { setLocationType(e.target.value); setNursery('') }}
+                placeholder="Choose a type"
+                required
+              >
+                <option value="" disabled>Choose a type</option>
+                <option value="nursery">Nursery</option>
+                <option value="holidayClub">Holiday Club</option>
+              </Select>
+            )}
+
             <Select
-              label="Select nursery"
+              label="Location"
               value={nursery}
-              onChange={setNursery}
-              options={nurseries}
-              placeholder="Choose a nursery"
+              onChange={(e) => setNursery(e.target.value)}
+              options={locationType ? locationOptions[locationType] : []}
+              placeholder="Choose a location"
               required
+              disabled={!isHolidayClub && !locationType}
             />
 
             <Input
@@ -147,6 +214,68 @@ export function RoomProgress() {
               </Button>
             </div>
           </Card>
+
+          {(isHolidayClub || checkTypeId === 'firstAidBox') && (
+            <div className="mt-4 p-4 bg-white rounded-xl border-2 border-gray-200">
+              <p className="text-sm font-medium text-hop-forest mb-3">Download Weekly PDF</p>
+              <select
+                value={selectedWeek}
+                onChange={(e) => setSelectedWeek(e.target.value)}
+                className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest mb-3"
+              >
+                <option value="">Select a week…</option>
+                {weekOptions.map(w => (
+                  <option key={w.value} value={w.value}>{w.label}</option>
+                ))}
+              </select>
+              <Button
+                color="marmalade"
+                size="large"
+                fullWidth
+                disabled={!selectedWeek || !nursery || downloading}
+                onClick={handleDownloadPDF}
+              >
+                {downloading ? 'Generating…' : 'Download PDF'}
+              </Button>
+              {downloadError && (
+                <p className="mt-2 text-xs text-red-600">{downloadError}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Holiday Club message screen
+  if (locationType === 'holidayClub' && !holidayMessageAcknowledged) {
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header title="Holiday Club Daily Checks" showBack />
+
+        <div className="px-4 py-6 max-w-md mx-auto">
+          <Card className="space-y-5">
+            <div className="bg-hop-smiles border border-hop-smiles rounded-lg p-4">
+              <p className="text-hop-forest text-lg leading-relaxed">
+                The daily checks must be carried out before the Holiday Club is open and children are on site. The site should be monitored through the day and any defects reported immediately to the duty manager and made safe. (Comments should be added to reference any defects found).
+              </p>
+            </div>
+
+            <Button
+              color="forest"
+              size="large"
+              fullWidth
+              onClick={() => {
+                setHolidayMessageAcknowledged(true)
+                navigate(`/check/${checkTypeId}/holiday-club`, {
+                  state: { nursery, completedBy: name.trim() },
+                })
+              }}
+            >
+              Next
+            </Button>
+          </Card>
+
         </div>
       </div>
     )

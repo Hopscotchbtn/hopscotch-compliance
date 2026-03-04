@@ -1,0 +1,82 @@
+import { Link, useParams } from 'react-router-dom'
+import { Header } from '../components/Header'
+import { Button } from '../components/ui/Button'
+import { formatDate } from '../lib/utils'
+
+export function ChecksMenu() {
+  const { section } = useParams()
+  const title = section === 'holiday-club' ? 'Holiday Club' : 'Nursery'
+
+  return (
+    <div className="min-h-screen bg-hop-pebble">
+      <Header title={title} showBack />
+
+      <div className="px-4 py-8 max-w-md mx-auto">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            {section === 'holiday-club' ? (
+              <img src="/hopscotch-holiday-club-logo.png" alt="Holiday Club" className="h-48 object-contain" />
+            ) : (
+              <img src="/hopscotch-logo.png" alt="Nursery" className="h-44 object-contain" />
+            )}
+          </div>
+          <p className="text-hop-forest font-medium">{formatDate()}</p>
+        </div>
+
+        <div className="flex flex-col gap-5 mb-8">
+          {section !== 'holiday-club' && (
+            <Link to="/check/roomOpening">
+              <Button color="freshair" size="large" fullWidth className="border border-black">
+                <span className="text-lg">🌅 Room Opening Check</span>
+              </Button>
+            </Link>
+          )}
+
+          <Link to="/check/roomSafety" state={{ section }}>
+            <Button color={section === 'holiday-club' ? 'marmalade' : 'sunshine'} size="large" fullWidth className="border border-black">
+              <span className="text-lg">🛡️ {section === 'holiday-club' ? 'Holiday Club Daily Checks' : 'Room Safety Check'}</span>
+            </Button>
+          </Link>
+
+          {section !== 'holiday-club' && (
+            <Link to="/check/gardenOutdoor">
+              <Button color="apple" size="large" fullWidth className="border border-black">
+                <span className="text-lg">🌿 Garden & Outdoor Check</span>
+              </Button>
+            </Link>
+          )}
+
+          <Link to="/kitchen-safety" state={{ section }}>
+            <Button color={section === 'holiday-club' ? 'freshair' : 'marmalade'} size="large" fullWidth className="border border-black">
+              <span className="text-lg">🍳 Kitchen Food Safety</span>
+            </Button>
+          </Link>
+
+          <Link to="/check/firstAidBox" state={{ section }}>
+            <Button color="blossom" size="large" fullWidth className="border border-black">
+              <span className="text-lg">🩹 First Aid Box Check</span>
+            </Button>
+          </Link>
+        </div>
+
+        {/* View checks links */}
+        <div className="text-center mb-8 space-y-2">
+          <Link
+            to="/summary"
+            state={{ section }}
+            className="block text-hop-forest hover:text-hop-forest-dark underline underline-offset-2 transition-colors"
+          >
+            📋 View today's checks →
+          </Link>
+          <Link
+            to="/history"
+            state={{ section }}
+            className="block text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors text-sm"
+          >
+            📅 View check history (30 days)
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}

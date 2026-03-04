@@ -165,6 +165,66 @@ export const uploadSignature = async (dataUrl) => {
   return urlData.publicUrl
 }
 
+export const getChecksForWeek = async (nursery, weekStart, weekEnd) => {
+  if (!supabase) {
+    console.log('Offline mode: Would fetch checks for week')
+    return []
+  }
+
+  const start = new Date(weekStart); start.setHours(0, 0, 0, 0)
+  const end = new Date(weekEnd); end.setHours(23, 59, 59, 999)
+
+  const { data, error } = await supabase
+    .from('checks')
+    .select('*')
+    .eq('nursery', nursery)
+    .eq('room', 'Holiday Club')
+    .gte('created_at', start.toISOString())
+    .lte('created_at', end.toISOString())
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching checks for week:', error)
+    throw error
+  }
+
+  return data || []
+}
+
+export const getFirstAidChecksForWeek = async (nursery, weekStart, weekEnd) => {
+  if (!supabase) return []
+
+  const start = new Date(weekStart); start.setHours(0, 0, 0, 0)
+  const end = new Date(weekEnd); end.setHours(23, 59, 59, 999)
+
+  const { data, error } = await supabase
+    .from('checks')
+    .select('*')
+    .eq('nursery', nursery)
+    .eq('check_type', 'firstAidBox')
+    .gte('created_at', start.toISOString())
+    .lte('created_at', end.toISOString())
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
+export const getLastCheck = async (nursery, checkType) => {
+  if (!supabase) return null
+
+  const { data, error } = await supabase
+    .from('checks')
+    .select('created_at, completed_by')
+    .eq('nursery', nursery)
+    .eq('check_type', checkType)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (error || !data?.length) return null
+  return data[0]
+}
+
 export const getChecksHistory = async (nursery, days = 30) => {
   if (!supabase) {
     console.log('Offline mode: Would fetch checks history')

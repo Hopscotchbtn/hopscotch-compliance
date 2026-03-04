@@ -1,32 +1,66 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Select } from '../components/ui/Select'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { getChecksHistory } from '../lib/supabase'
 import { nurseries } from '../data/nurseries'
-import { rooms } from '../data/rooms'
 import { checkTypes } from '../data/checklists'
 import { storage } from '../lib/storage'
 import { generatePdf } from '../lib/generatePdf'
 
+const holidayClubLocations = ['Holland Road', 'School Road']
+
+const holidayClubCheckTypes = [
+  { value: 'roomSafety', label: 'Holiday Club Daily Checks' },
+  { value: 'kitchenSafety', label: 'Kitchen Food Safety' },
+  { value: 'firstAidBox', label: 'First Aid Box Weekly Check' },
+]
+
+const nurseryCheckTypes = [
+  { value: 'roomOpening', label: 'Room Opening Check' },
+  { value: 'roomSafety', label: 'Room Safety Check' },
+  { value: 'gardenOutdoor', label: 'Garden & Outdoor Check' },
+  { value: 'kitchenSafety', label: 'Kitchen Food Safety' },
+  { value: 'firstAidBox', label: 'First Aid Box Weekly Check' },
+]
+
 export function History() {
+  const routerLocation = useLocation()
+  const section = routerLocation.state?.section
+  const locationOptions = section === 'holiday-club' ? holidayClubLocations : nurseries
+  const availableCheckTypes = section === 'holiday-club' ? holidayClubCheckTypes : nurseryCheckTypes
+
+  const today = new Date()
   const [checks, setChecks] = useState([])
   const [loading, setLoading] = useState(true)
-  const [nurseryFilter, setNurseryFilter] = useState(() => storage.getLastNursery() || 'all')
-  const [roomFilter, setRoomFilter] = useState('all')
+  const [checkTypeFilter, setCheckTypeFilter] = useState('all')
+  const [nurseryFilter, setNurseryFilter] = useState(() => {
+    const last = storage.getLastNursery()
+    if (section === 'holiday-club') {
+      return holidayClubLocations.includes(last) ? last : 'all'
+    }
+    return last || 'all'
+  })
   const [selectedDate, setSelectedDate] = useState(null)
-  const [showRequestForm, setShowRequestForm] = useState(false)
+  const [viewYear, setViewYear] = useState(today.getFullYear())
+  const [viewMonth, setViewMonth] = useState(today.getMonth()) // 0-indexed
 
   useEffect(() => {
     loadHistory()
-  }, [nurseryFilter])
+  }, [nurseryFilter, viewYear, viewMonth])
 
   const loadHistory = async () => {
     setLoading(true)
     try {
-      const data = await getChecksHistory(nurseryFilter === 'all' ? null : nurseryFilter, 30)
+      // Load enough days to cover the visible month plus a buffer
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+      const now = new Date()
+      const monthStart = new Date(viewYear, viewMonth, 1)
+      const daysSinceMonthStart = Math.ceil((now - monthStart) / (1000 * 60 * 60 * 24)) + 1
+      const daysToFetch = Math.max(daysInMonth, daysSinceMonthStart)
+      const data = await getChecksHistory(nurseryFilter === 'all' ? null : nurseryFilter, daysToFetch + 31)
       setChecks(data)
     } catch (err) {
       console.error('Error loading history:', err)
@@ -35,45 +69,25 @@ export function History() {
     }
   }
 
-  // Generate last 30 days
-  const getLast30Days = () => {
-    const days = []
-    for (let i = 0; i < 30; i++) {
-      const date = new Date()
-      date.setDate(date.getDate() - i)
-      date.setHours(0, 0, 0, 0)
-      days.push(date)
-    }
-    return days
-  }
+  const allowedTypes = availableCheckTypes.map(t => t.value)
+  const filteredChecks = checks
+    .filter(c => allowedTypes.includes(c.check_type))
+    .filter(c => checkTypeFilter === 'all' || c.check_type === checkTypeFilter)
 
-  const days = getLast30Days()
-
-  // Group checks by date
-  const checksByDate = checks.reduce((acc, check) => {
+  const checksByDate = filteredChecks.reduce((acc, check) => {
     const date = new Date(check.created_at)
     date.setHours(0, 0, 0, 0)
     const dateKey = date.toISOString().split('T')[0]
-    if (!acc[dateKey]) {
-      acc[dateKey] = []
-    }
+    if (!acc[dateKey]) acc[dateKey] = []
     acc[dateKey].push(check)
     return acc
   }, {})
 
-  // Filter checks for selected date
   const getChecksForDate = (date) => {
     const dateKey = date.toISOString().split('T')[0]
-    let dayChecks = checksByDate[dateKey] || []
-
-    if (roomFilter !== 'all') {
-      dayChecks = dayChecks.filter(c => c.room === roomFilter)
-    }
-
-    return dayChecks
+    return checksByDate[dateKey] || []
   }
 
-  // Get status for a day (for calendar display)
   const getDayStatus = (date) => {
     const dayChecks = getChecksForDate(date)
     if (dayChecks.length === 0) return 'none'
@@ -81,79 +95,80 @@ export function History() {
     return 'complete'
   }
 
-  const formatDateShort = (date) => {
-    return date.toLocaleDateString('en-GB', { day: 'numeric' })
+  // Build calendar grid for the viewed month
+  const getCalendarDays = () => {
+    const firstDay = new Date(viewYear, viewMonth, 1)
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+
+    // Monday = 0, ..., Sunday = 6
+    let startOffset = firstDay.getDay() - 1
+    if (startOffset < 0) startOffset = 6 // Sunday becomes 6
+
+    const cells = []
+    // Empty cells before month starts
+    for (let i = 0; i < startOffset; i++) cells.push(null)
+    // Days of the month
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push(new Date(viewYear, viewMonth, d))
+    }
+    return cells
   }
 
-  const formatDateFull = (date) => {
-    return date.toLocaleDateString('en-GB', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    })
+  const prevMonth = () => {
+    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1) }
+    else setViewMonth(m => m - 1)
+    setSelectedDate(null)
   }
 
-  const formatTime = (dateString) => {
-    return new Date(dateString).toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+  const nextMonth = () => {
+    const now = new Date()
+    if (viewYear > now.getFullYear() || (viewYear === now.getFullYear() && viewMonth >= now.getMonth())) return
+    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1) }
+    else setViewMonth(m => m + 1)
+    setSelectedDate(null)
   }
 
-  const isToday = (date) => {
-    const today = new Date()
-    return date.toDateString() === today.toDateString()
-  }
+  const isCurrentMonth = viewYear === today.getFullYear() && viewMonth === today.getMonth()
 
-  const isWeekend = (date) => {
-    const day = date.getDay()
-    return day === 0 || day === 6
-  }
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 
-  // Group days by week for calendar display
-  const getWeeks = () => {
-    const weeks = []
-    let currentWeek = []
+  const formatDateFull = (date) => date.toLocaleDateString('en-GB', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  })
 
-    // Start from today and go back
-    days.forEach((day, index) => {
-      currentWeek.unshift(day) // Add to beginning to maintain chronological order
-      if (day.getDay() === 1 || index === days.length - 1) { // Monday or last day
-        if (currentWeek.length > 0) {
-          weeks.unshift([...currentWeek])
-          currentWeek = []
-        }
-      }
-    })
+  const formatTime = (dateString) => new Date(dateString).toLocaleTimeString('en-GB', {
+    hour: '2-digit', minute: '2-digit'
+  })
 
-    return weeks
-  }
+  const isToday = (date) => date?.toDateString() === today.toDateString()
+  const isFuture = (date) => date > today
 
+  const calendarDays = getCalendarDays()
   const selectedDateChecks = selectedDate ? getChecksForDate(selectedDate) : []
+
 
   return (
     <div className="min-h-screen bg-hop-pebble">
-      <Header title="Check History" subtitle="Last 30 days" showBack />
+      <Header title="Check History" showBack />
 
       <div className="px-4 py-4 max-w-xl mx-auto">
         {/* Filters */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="mb-6 space-y-2">
           <Select
             value={nurseryFilter}
-            onChange={setNurseryFilter}
-            options={['all', ...nurseries]}
-            placeholder="All nurseries"
+            onChange={(e) => { setNurseryFilter(e.target.value); setSelectedDate(null) }}
+            options={['all', ...locationOptions]}
+            placeholder="All locations"
           />
           <Select
-            value={roomFilter}
-            onChange={(val) => {
-              setRoomFilter(val)
-              setSelectedDate(null)
-            }}
-            options={['all', ...rooms]}
-            placeholder="All rooms"
-          />
+            value={checkTypeFilter}
+            onChange={(e) => { setCheckTypeFilter(e.target.value); setSelectedDate(null) }}
+          >
+            <option value="all">All check types</option>
+            {availableCheckTypes.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </Select>
         </div>
 
         {loading ? (
@@ -163,40 +178,55 @@ export function History() {
           </div>
         ) : (
           <>
-            {/* Calendar grid */}
+            {/* Calendar */}
             <Card className="mb-6">
+              {/* Month navigation */}
+              <div className="flex items-center justify-between mb-4">
+                <button onClick={prevMonth} className="p-1 rounded hover:bg-hop-pebble text-hop-forest">
+                  ←
+                </button>
+                <span className="font-display font-semibold text-hop-forest">{monthLabel}</span>
+                <button
+                  onClick={nextMonth}
+                  disabled={isCurrentMonth}
+                  className="p-1 rounded hover:bg-hop-pebble text-hop-forest disabled:opacity-30"
+                >
+                  →
+                </button>
+              </div>
+
               {/* Day headers */}
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-                  <div key={i} className="text-center text-xs font-medium text-gray-400 py-1">
-                    {day}
-                  </div>
+                  <div key={i} className="text-center text-xs font-medium text-gray-400 py-1">{day}</div>
                 ))}
               </div>
 
-              {/* Calendar days - simple linear grid */}
+              {/* Calendar grid */}
               <div className="grid grid-cols-7 gap-1">
-                {days.slice().reverse().map((day) => {
+                {calendarDays.map((day, i) => {
+                  if (!day) return <div key={`empty-${i}`} />
                   const status = getDayStatus(day)
                   const isSelected = selectedDate?.toDateString() === day.toDateString()
+                  const future = isFuture(day)
 
                   return (
                     <button
                       key={day.toISOString()}
-                      onClick={() => setSelectedDate(day)}
+                      onClick={() => !future && setSelectedDate(day)}
+                      disabled={future}
                       className={`
                         aspect-square rounded-lg flex flex-col items-center justify-center
-                        text-sm transition-all relative
-                        ${isSelected ? 'ring-2 ring-hop-forest ring-offset-2' : ''}
+                        text-sm transition-all
+                        ${isSelected ? 'ring-2 ring-hop-forest ring-offset-1' : ''}
                         ${isToday(day) ? 'font-bold' : ''}
-                        ${isWeekend(day) ? 'bg-gray-50' : 'bg-white'}
-                        hover:bg-hop-pebble
+                        ${future ? 'opacity-30 cursor-default' : 'hover:bg-hop-pebble'}
+                        bg-white
                       `}
                     >
                       <span className={isToday(day) ? 'text-hop-forest' : 'text-gray-700'}>
-                        {formatDateShort(day)}
+                        {day.getDate()}
                       </span>
-                      {/* Status dot */}
                       <div className={`
                         w-2 h-2 rounded-full mt-0.5
                         ${status === 'complete' ? 'bg-hop-apple' : ''}
@@ -210,15 +240,9 @@ export function History() {
 
               {/* Legend */}
               <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-hop-apple" /> Complete
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-hop-marmalade" /> Issues
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-gray-200" /> No checks
-                </span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-hop-apple" /> Complete</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-hop-marmalade" /> Issues</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200" /> No checks</span>
               </div>
             </Card>
 
@@ -228,89 +252,73 @@ export function History() {
                 <h3 className="font-display text-lg text-hop-forest font-semibold mb-3">
                   {formatDateFull(selectedDate)}
                 </h3>
-
                 {selectedDateChecks.length === 0 ? (
                   <Card className="text-center py-6">
                     <p className="text-gray-500">No checks recorded</p>
                   </Card>
                 ) : (
                   <>
-                  {/* Download PDF button */}
-                  <div className="mb-3">
-                    <Button
-                      color="forest"
-                      variant="secondary"
-                      size="small"
-                      onClick={() => generatePdf(
-                        selectedDateChecks,
-                        nurseryFilter === 'all' ? 'All Nurseries' : nurseryFilter,
-                        selectedDate.toISOString().split('T')[0]
-                      )}
-                    >
-                      📄 Download PDF Report
-                    </Button>
-                  </div>
-
-                  <div className="space-y-3">
-                    {selectedDateChecks.map((check) => (
-                      <Card key={check.id} className={check.has_issues ? 'border-l-4 border-l-hop-marmalade' : ''}>
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-medium text-hop-forest">
-                              {checkTypes[check.check_type]?.shortName || check.check_type}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {check.room} · {formatTime(check.created_at)}
-                            </p>
-                            <p className="text-sm text-gray-400">
-                              By {check.completed_by}
-                            </p>
+                    <div className="mb-3">
+                      <Button
+                        color="forest"
+                        variant="secondary"
+                        size="small"
+                        onClick={() => generatePdf(
+                          selectedDateChecks,
+                          nurseryFilter === 'all' ? 'All Locations' : nurseryFilter,
+                          selectedDate.toISOString().split('T')[0]
+                        )}
+                      >
+                        📄 Download PDF Report
+                      </Button>
+                    </div>
+                    <div className="space-y-3">
+                      {selectedDateChecks.map((check) => (
+                        <Card key={check.id} className={check.has_issues ? 'border-l-4 border-l-hop-marmalade' : ''}>
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-medium text-hop-forest">
+                                {availableCheckTypes.find(t => t.value === check.check_type)?.label
+                                  || checkTypes[check.check_type]?.shortName
+                                  || check.check_type}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {check.room} · {formatTime(check.created_at)}
+                              </p>
+                              <p className="text-sm text-gray-400">By {check.completed_by}</p>
+                            </div>
+                            <div className={`
+                              px-2 py-1 rounded text-xs font-medium
+                              ${check.has_issues ? 'bg-hop-marmalade/10 text-hop-marmalade-dark' : 'bg-hop-apple/10 text-hop-apple'}
+                            `}>
+                              {check.has_issues ? 'Issues' : 'OK'}
+                            </div>
                           </div>
-                          <div className={`
-                            px-2 py-1 rounded text-xs font-medium
-                            ${check.has_issues
-                              ? 'bg-hop-marmalade/10 text-hop-marmalade-dark'
-                              : 'bg-hop-apple/10 text-hop-apple'
-                            }
-                          `}>
-                            {check.has_issues ? 'Issues' : 'OK'}
-                          </div>
-                        </div>
-
-                        {/* Show issues if any */}
-                        {check.has_issues && check.items && (
-                          <div className="mt-3 pt-3 border-t border-gray-100">
-                            <p className="text-xs font-medium text-gray-500 mb-2">Issues reported:</p>
-                            <ul className="text-sm space-y-1">
-                              {check.items
-                                .filter(item => item.status === 'fail')
-                                .map((item, idx) => (
+                          {check.has_issues && check.items && (
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <p className="text-xs font-medium text-gray-500 mb-2">Issues reported:</p>
+                              <ul className="text-sm space-y-1">
+                                {check.items.filter(item => item.status === 'fail').map((item, idx) => (
                                   <li key={idx} className="text-hop-marmalade-dark">
                                     • {item.text}
                                     {item.note && (
-                                      <span className="block text-gray-500 text-xs ml-3">
-                                        {item.note}
-                                      </span>
+                                      <span className="block text-gray-500 text-xs ml-3">{item.note}</span>
                                     )}
                                   </li>
-                                ))
-                              }
-                            </ul>
-                          </div>
-                        )}
-                      </Card>
-                    ))}
-                  </div>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </Card>
+                      ))}
+                    </div>
                   </>
                 )}
               </div>
             )}
 
-            {/* Download records */}
             <div className="text-center pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-500 mb-3">
-                Need to export or download records?
-              </p>
+              <p className="text-sm text-gray-500 mb-3">Need to export or download records?</p>
               <Link to="/history/request">
                 <Button color="forest" variant="secondary" size="small">
                   📥 Download records

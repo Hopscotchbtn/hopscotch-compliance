@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Select } from '../components/ui/Select'
 import { SummaryEntry } from '../components/SummaryEntry'
@@ -6,7 +7,13 @@ import { getTodayChecks } from '../lib/supabase'
 import { nurseries } from '../data/nurseries'
 import { formatDate } from '../lib/utils'
 
+const holidayClubLocations = ['Holland Road', 'School Road']
+
 export function Summary() {
+  const location = useLocation()
+  const section = location.state?.section
+  const locationOptions = section === 'holiday-club' ? holidayClubLocations : nurseries
+
   const [checks, setChecks] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -46,9 +53,9 @@ export function Summary() {
         <div className="mb-6">
           <Select
             value={filter}
-            onChange={setFilter}
-            options={['all', ...nurseries]}
-            placeholder="Filter by nursery"
+            onChange={(e) => setFilter(e.target.value)}
+            options={['all', ...locationOptions]}
+            placeholder="Filter by location"
           />
         </div>
 
