@@ -19,8 +19,8 @@ const holidayClubCheckTypes = [
 ]
 
 const nurseryCheckTypes = [
-  { value: 'roomSafety', label: 'Daily Opening Checks - Rooms' },
-  { value: 'gardenOutdoor', label: 'Daily Opening Checks - Garden' },
+  { value: 'roomSafety', label: 'Daily Room Opening Checks' },
+  { value: 'gardenOutdoor', label: 'Daily Garden Opening Checks' },
   { value: 'kitchenSafety', label: 'Daily Kitchen Safety' },
   { value: 'firstAidBox', label: 'Weekly First Aid Box Check' },
 ]

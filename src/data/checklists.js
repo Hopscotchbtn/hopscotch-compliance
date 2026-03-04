@@ -32,8 +32,8 @@ export const checkTypes = {
   },
   roomSafety: {
     id: 'roomSafety',
-    name: 'Daily Opening Checks - Rooms',
-    shortName: 'Daily Opening - Rooms',
+    name: 'Daily Room Opening Checks',
+    shortName: 'Daily Room Opening',
     description: 'These checks should be carried out before opening. Report any defects immediately to the duty manager.',
     color: 'hop-sunshine',
     rooms: CHECK_ROOMS.roomSafety,
@@ -50,8 +50,8 @@ export const checkTypes = {
   },
   gardenOutdoor: {
     id: 'gardenOutdoor',
-    name: 'Daily Opening Checks - Garden',
-    shortName: 'Daily Opening - Garden',
+    name: 'Daily Garden Opening Checks',
+    shortName: 'Daily Garden Opening',
     description: 'Complete before nursery opens. Monitor throughout the day and report any defects immediately. Inform all staff of any hazards.',
     color: 'hop-apple',
     rooms: CHECK_ROOMS.gardenOutdoor,
