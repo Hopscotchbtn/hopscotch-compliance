@@ -319,13 +319,23 @@ export function KitchenSafety() {
           </Button>
         </div>
 
-        {/* Change settings link */}
-        <div className="mt-4 text-center">
+        {/* Change settings / clear checks */}
+        <div className="mt-4 text-center space-y-2">
           <button
             onClick={() => setShowSetup(true)}
-            className="text-sm text-gray-500 hover:text-hop-forest underline underline-offset-2"
+            className="block w-full text-sm text-gray-500 hover:text-hop-forest underline underline-offset-2"
           >
-            Change {isHolidayClub ? 'location' : 'nursery or initials'}
+            Change location
+          </button>
+          <button
+            onClick={() => {
+              setCompletedSections({})
+              setSectionData({})
+              if (nursery) storage.setKitchenSafetyState(nursery, {}, {})
+            }}
+            className="block w-full text-sm text-red-400 hover:text-red-600 underline underline-offset-2"
+          >
+            Clear today's checks
           </button>
         </div>
 
