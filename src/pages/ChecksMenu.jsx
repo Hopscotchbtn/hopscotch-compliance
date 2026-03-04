@@ -26,7 +26,7 @@ export function ChecksMenu() {
 
         <div className="flex flex-col gap-5 mb-8">
           <Link to="/check/roomSafety" state={{ section }}>
-            <Button color={isHolidayClub ? 'marmalade' : 'sunshine'} size="large" fullWidth className="border border-black">
+            <Button color={isHolidayClub ? 'marmalade' : 'marmalade'} size="large" fullWidth className="border border-black">
               <span className="text-lg">🛡️ {isHolidayClub ? 'Holiday Club Daily Checks' : 'Daily Room Opening Checks'}</span>
             </Button>
           </Link>
@@ -40,7 +40,7 @@ export function ChecksMenu() {
           )}
 
           <Link to="/kitchen-safety" state={{ section }}>
-            <Button color={isHolidayClub ? 'freshair' : 'marmalade'} size="large" fullWidth className="border border-black">
+            <Button color={isHolidayClub ? 'freshair' : 'freshair'} size="large" fullWidth className="border border-black">
               <span className="text-lg">🍳 Daily Kitchen Safety</span>
             </Button>
           </Link>
