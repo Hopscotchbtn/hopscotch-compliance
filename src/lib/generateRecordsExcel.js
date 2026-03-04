@@ -73,7 +73,7 @@ async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, ro
 
   // ── Logo ──────────────────────────────────────────────────────────────────
   const logo = await fetchLogo(logoPath)
-  const LOGO_ROWS = 7
+  const LOGO_ROWS = 9
   if (logo) {
     const logoId = wb.addImage({ base64: logo.base64, extension: 'png' })
     const targetWidth = 180
@@ -184,7 +184,7 @@ export async function generateDailyChecksExcel(nursery, checks, startDate, endDa
       formatDate(key),
       check ? 'Yes' : 'No',
       check ? (check.completed_by || '') : '',
-      check ? (check.overall_notes || '') : '',
+      check ? (check.overall_notes || 'No defects found') : '',
     ])
     cursor.setDate(cursor.getDate() + 1)
   }
