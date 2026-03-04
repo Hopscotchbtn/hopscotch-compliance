@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      exceljs: 'exceljs/dist/exceljs.browser.min.js',
+      exceljs: 'exceljs/dist/exceljs.bare.min.js',
     },
   },
 })
