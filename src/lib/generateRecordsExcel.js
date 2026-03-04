@@ -22,15 +22,23 @@ function parseFirstAidNotes(notes) {
   return { allPresent: '', missing: notes }
 }
 
-async function fetchLogoBase64() {
+async function fetchLogo() {
   try {
     const res = await fetch('/hopscotch-holiday-club-logo.png')
     const blob = await res.blob()
-    return new Promise(resolve => {
+    const dataUrl = await new Promise(resolve => {
       const reader = new FileReader()
-      reader.onloadend = () => resolve(reader.result.split(',')[1])
+      reader.onloadend = () => resolve(reader.result)
       reader.readAsDataURL(blob)
     })
+    // Get natural dimensions to preserve aspect ratio
+    const dims = await new Promise(resolve => {
+      const img = new Image()
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight })
+      img.onerror = () => resolve(null)
+      img.src = dataUrl
+    })
+    return { base64: dataUrl.split(',')[1], dims }
   } catch { return null }
 }
 
@@ -64,13 +72,17 @@ async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, ro
   const colCount = columns.length
 
   // ── Logo ──────────────────────────────────────────────────────────────────
-  const logoBase64 = await fetchLogoBase64()
+  const logo = await fetchLogo()
   const LOGO_ROWS = 5
-  if (logoBase64) {
-    const logoId = wb.addImage({ base64: logoBase64, extension: 'png' })
+  if (logo) {
+    const logoId = wb.addImage({ base64: logo.base64, extension: 'png' })
+    const targetWidth = 180
+    const targetHeight = logo.dims
+      ? Math.round(targetWidth * (logo.dims.height / logo.dims.width))
+      : 100
     ws.addImage(logoId, {
       tl: { col: 0, row: 0 },
-      ext: { width: 160, height: 90 },
+      ext: { width: targetWidth, height: targetHeight },
     })
   }
   for (let i = 0; i < LOGO_ROWS; i++) ws.addRow([])
