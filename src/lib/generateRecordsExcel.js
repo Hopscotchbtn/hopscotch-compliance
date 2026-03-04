@@ -73,7 +73,7 @@ async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, ro
 
   // ── Logo ──────────────────────────────────────────────────────────────────
   const logo = await fetchLogo()
-  const LOGO_ROWS = 9
+  const LOGO_ROWS = 6
   if (logo) {
     const logoId = wb.addImage({ base64: logo.base64, extension: 'png' })
     const targetWidth = 180
