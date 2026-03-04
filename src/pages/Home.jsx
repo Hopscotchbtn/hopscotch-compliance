@@ -91,7 +91,7 @@ export function Home() {
         <div className="text-center mt-4">
           <button
             onClick={handleLogout}
-            className="text-sm text-gray-400 hover:text-hop-forest underline underline-offset-2 transition-colors"
+            className="text-base text-gray-500 hover:text-hop-forest underline underline-offset-2 transition-colors font-medium"
           >
             Log out
           </button>
