@@ -32,8 +32,8 @@ export const checkTypes = {
   },
   roomSafety: {
     id: 'roomSafety',
-    name: 'Room Safety Check',
-    shortName: 'Room Safety',
+    name: 'Daily Opening Checks - Rooms',
+    shortName: 'Daily Opening - Rooms',
     description: 'These checks should be carried out before opening. Report any defects immediately to the duty manager.',
     color: 'hop-sunshine',
     rooms: CHECK_ROOMS.roomSafety,
@@ -50,8 +50,8 @@ export const checkTypes = {
   },
   gardenOutdoor: {
     id: 'gardenOutdoor',
-    name: 'Garden & Outdoor Check',
-    shortName: 'Garden/Outdoor',
+    name: 'Daily Opening Checks - Garden',
+    shortName: 'Daily Opening - Garden',
     description: 'Complete before nursery opens. Monitor throughout the day and report any defects immediately. Inform all staff of any hazards.',
     color: 'hop-apple',
     rooms: CHECK_ROOMS.gardenOutdoor,
@@ -70,7 +70,7 @@ export const checkTypes = {
   },
   firstAidBox: {
     id: 'firstAidBox',
-    name: 'First Aid Box Check',
+    name: 'Weekly First Aid Box Check',
     shortName: 'First Aid Box',
     description: 'Check first aid boxes weekly. If the seal is intact, contents are all present. If the box has been used, replace missing items and reseal.',
     color: 'hop-blossom',
@@ -115,7 +115,7 @@ export const isFirstOfMonth = () => new Date().getDate() === 1
 // Kitchen Food Safety configuration
 export const kitchenSafety = {
   id: 'kitchenSafety',
-  name: 'Kitchen Food Safety',
+  name: 'Daily Kitchen Safety',
   shortName: 'Kitchen Safety',
   description: 'Daily food safety diary for kitchen compliance.',
   color: 'hop-marmalade',

@@ -27,27 +27,27 @@ export function ChecksMenu() {
         <div className="flex flex-col gap-5 mb-8">
           <Link to="/check/roomSafety" state={{ section }}>
             <Button color={isHolidayClub ? 'marmalade' : 'sunshine'} size="large" fullWidth className="border border-black">
-              <span className="text-lg">🛡️ {isHolidayClub ? 'Holiday Club Daily Checks' : 'Room Safety Check'}</span>
+              <span className="text-lg">🛡️ {isHolidayClub ? 'Holiday Club Daily Checks' : 'Daily Opening Checks - Rooms'}</span>
             </Button>
           </Link>
 
           {!isHolidayClub && (
             <Link to="/check/gardenOutdoor" state={{ section }}>
               <Button color="apple" size="large" fullWidth className="border border-black">
-                <span className="text-lg">🌿 Garden & Outdoor Check</span>
+                <span className="text-lg">🌿 Daily Opening Checks - Garden</span>
               </Button>
             </Link>
           )}
 
           <Link to="/kitchen-safety" state={{ section }}>
             <Button color={isHolidayClub ? 'freshair' : 'marmalade'} size="large" fullWidth className="border border-black">
-              <span className="text-lg">🍳 Kitchen Food Safety</span>
+              <span className="text-lg">🍳 Daily Kitchen Safety</span>
             </Button>
           </Link>
 
           <Link to="/check/firstAidBox" state={{ section }}>
             <Button color="blossom" size="large" fullWidth className="border border-black">
-              <span className="text-lg">🩹 First Aid Box Check</span>
+              <span className="text-lg">🩹 Weekly First Aid Box Check</span>
             </Button>
           </Link>
         </div>

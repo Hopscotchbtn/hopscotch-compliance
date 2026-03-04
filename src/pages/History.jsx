@@ -14,16 +14,15 @@ const holidayClubLocations = ['Holland Road', 'School Road']
 
 const holidayClubCheckTypes = [
   { value: 'roomSafety', label: 'Holiday Club Daily Checks' },
-  { value: 'kitchenSafety', label: 'Kitchen Food Safety' },
-  { value: 'firstAidBox', label: 'First Aid Box Weekly Check' },
+  { value: 'kitchenSafety', label: 'Daily Kitchen Safety' },
+  { value: 'firstAidBox', label: 'Weekly First Aid Box Check' },
 ]
 
 const nurseryCheckTypes = [
-  { value: 'roomOpening', label: 'Room Opening Check' },
-  { value: 'roomSafety', label: 'Room Safety Check' },
-  { value: 'gardenOutdoor', label: 'Garden & Outdoor Check' },
-  { value: 'kitchenSafety', label: 'Kitchen Food Safety' },
-  { value: 'firstAidBox', label: 'First Aid Box Weekly Check' },
+  { value: 'roomSafety', label: 'Daily Opening Checks - Rooms' },
+  { value: 'gardenOutdoor', label: 'Daily Opening Checks - Garden' },
+  { value: 'kitchenSafety', label: 'Daily Kitchen Safety' },
+  { value: 'firstAidBox', label: 'Weekly First Aid Box Check' },
 ]
 
 export function History() {
