@@ -44,8 +44,8 @@ export function KitchenSafety() {
   })
   const [name, setName] = useState(() => storage.getUserName())
   const [showSetup, setShowSetup] = useState(() => {
-    // Only skip setup when returning from a completed section
-    return !location.state?.completedSection
+    // Only skip setup when returning from a completed section or explicit skipSetup flag
+    return !location.state?.completedSection && !location.state?.skipSetup
   })
 
   // Section completion state — load from storage for today

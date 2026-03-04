@@ -222,7 +222,10 @@ export function KitchenSection() {
 
   const isHolidayClub = section === 'holiday-club'
 
-  const goBackToSections = () => navigate(-1)
+  const goBackToSections = () => navigate('/kitchen-safety', {
+    replace: true,
+    state: { returnedSection: section, skipSetup: true },
+  })
 
   const handleComplete = (extraData = {}) => {
     navigate('/kitchen-safety', {
@@ -855,8 +858,8 @@ export function KitchenSection() {
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <input
-                            type="number"
-                            step="0.1"
+                            type="text"
+                            inputMode="decimal"
                             value={temp}
                             onChange={(e) => setDeliveryData(prev => ({
                               ...prev,
