@@ -3,38 +3,45 @@ import { Link, useParams } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
 import { formatDate } from '../lib/utils'
-import { getChecksForWeek, getFirstAidChecksForWeek } from '../lib/supabase'
-import { getWeekOptions } from '../lib/generateKitchenSafetyPDF'
+import { getChecksForDateRange } from '../lib/supabase'
 import { generateDailyChecksExcel, generateFirstAidExcel } from '../lib/generateRecordsExcel'
 
 const HOLIDAY_LOCATIONS = ['Holland Road', 'School Road']
+
+function prevMonthRange() {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const end = new Date(now.getFullYear(), now.getMonth(), 0)
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10),
+  }
+}
 
 export function ChecksMenu() {
   const { section } = useParams()
   const title = section === 'holiday-club' ? 'Holiday Club' : 'Nursery'
   const isHolidayClub = section === 'holiday-club'
 
-  const weekOptions = getWeekOptions(8)
+  const defaultRange = prevMonthRange()
   const [dlLocation, setDlLocation] = useState('')
   const [dlType, setDlType] = useState('daily')
-  const [dlWeek, setDlWeek] = useState('')
+  const [dlStart, setDlStart] = useState(defaultRange.start)
+  const [dlEnd, setDlEnd] = useState(defaultRange.end)
   const [downloading, setDownloading] = useState(false)
   const [dlError, setDlError] = useState(null)
 
   const handleDownload = async () => {
-    const week = weekOptions.find(w => w.value === dlWeek)
-    if (!week || !dlLocation) return
+    if (!dlLocation || !dlStart || !dlEnd) return
     setDownloading(true)
     setDlError(null)
     try {
-      const weekStart = new Date(week.value + 'T12:00:00')
-      const weekEnd = new Date(week.sunday + 'T12:00:00')
       if (dlType === 'daily') {
-        const checks = await getChecksForWeek(dlLocation, weekStart, weekEnd)
-        generateDailyChecksExcel(dlLocation, checks, weekStart, weekEnd)
+        const checks = await getChecksForDateRange(dlLocation, dlStart, dlEnd, { room: 'Holiday Club' })
+        await generateDailyChecksExcel(dlLocation, checks, dlStart, dlEnd)
       } else {
-        const checks = await getFirstAidChecksForWeek(dlLocation, weekStart, weekEnd)
-        generateFirstAidExcel(dlLocation, checks, weekStart, weekEnd)
+        const checks = await getChecksForDateRange(dlLocation, dlStart, dlEnd, { checkType: 'firstAidBox' })
+        await generateFirstAidExcel(dlLocation, checks, dlStart, dlEnd)
       }
     } catch (err) {
       console.error('Download error:', err)
@@ -45,6 +52,7 @@ export function ChecksMenu() {
   }
 
   const selectClass = 'w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest mb-3'
+  const inputClass = 'w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest mb-3'
 
   return (
     <div className="min-h-screen bg-hop-pebble">
@@ -133,16 +141,24 @@ export function ChecksMenu() {
               <option value="firstAid">First Aid Box Checks</option>
             </select>
 
-            <select value={dlWeek} onChange={e => setDlWeek(e.target.value)} className={selectClass}>
-              <option value="">Select a week…</option>
-              {weekOptions.map(w => <option key={w.value} value={w.value}>{w.label}</option>)}
-            </select>
+            <div className="flex gap-2 mb-3">
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 mb-1">From</p>
+                <input type="date" value={dlStart} onChange={e => setDlStart(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 mb-1">To</p>
+                <input type="date" value={dlEnd} onChange={e => setDlEnd(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest" />
+              </div>
+            </div>
 
             <Button
               color="marmalade"
               size="large"
               fullWidth
-              disabled={!dlLocation || !dlWeek || downloading}
+              disabled={!dlLocation || !dlStart || !dlEnd || downloading}
               onClick={handleDownload}
             >
               {downloading ? 'Generating…' : 'Download Excel'}

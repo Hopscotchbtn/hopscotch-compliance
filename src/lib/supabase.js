@@ -210,6 +210,28 @@ export const getFirstAidChecksForWeek = async (nursery, weekStart, weekEnd) => {
   return data || []
 }
 
+export const getChecksForDateRange = async (nursery, startDate, endDate, filters = {}) => {
+  if (!supabase) return []
+
+  const start = new Date(startDate); start.setHours(0, 0, 0, 0)
+  const end = new Date(endDate); end.setHours(23, 59, 59, 999)
+
+  let query = supabase
+    .from('checks')
+    .select('*')
+    .eq('nursery', nursery)
+    .gte('created_at', start.toISOString())
+    .lte('created_at', end.toISOString())
+    .order('created_at', { ascending: true })
+
+  if (filters.room) query = query.eq('room', filters.room)
+  if (filters.checkType) query = query.eq('check_type', filters.checkType)
+
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
 export const getLastCheck = async (nursery, checkType) => {
   if (!supabase) return null
 
