@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+
+const STORAGE_KEY = 'hopscotch_authenticated'
+function handleLogout() {
+  localStorage.removeItem(STORAGE_KEY)
+  window.location.href = '/'
+}
 import { LogoWithText } from '../components/Logo'
 import { Button } from '../components/ui/Button'
 import { formatDate } from '../lib/utils'
@@ -81,6 +87,14 @@ export function Home() {
               </Button>
             </Link>
           </div>
+        </div>
+        <div className="text-center mt-4">
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-400 hover:text-hop-forest underline underline-offset-2 transition-colors"
+          >
+            Log out
+          </button>
         </div>
       </div>
     </div>
