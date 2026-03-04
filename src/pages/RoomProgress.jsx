@@ -86,7 +86,7 @@ export function RoomProgress() {
     if (checkType?.autoRoom && !showSetup && nursery && name) {
       if (checkTypeId === 'firstAidBox') {
         navigate('/check/firstAidBox/first-aid', {
-          state: { nursery, completedBy: name.trim() },
+          state: { nursery, completedBy: name.trim(), section: location.state?.section },
         })
       } else {
         navigate(`/check/${checkTypeId}/room/${encodeURIComponent(checkType.autoRoom)}`, {

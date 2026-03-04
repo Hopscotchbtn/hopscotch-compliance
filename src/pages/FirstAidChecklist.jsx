@@ -34,7 +34,7 @@ const ITEMS = [
 export function FirstAidChecklist() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { nursery, completedBy: initialCompletedBy } = location.state || {}
+  const { nursery, completedBy: initialCompletedBy, section } = location.state || {}
 
   const [lastCheck, setLastCheck] = useState(undefined) // undefined = loading, null = none found
   const [allPresent, setAllPresent] = useState(null) // true | false | null
@@ -82,7 +82,7 @@ export function FirstAidChecklist() {
         signatureUrl,
       })
 
-      navigate('/')
+      navigate(section ? `/section/${section}` : '/')
     } catch (err) {
       console.error('Submit error:', err)
       setError('Failed to submit. Please try again.')
