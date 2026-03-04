@@ -25,6 +25,7 @@ import { RiskConfirmation } from './pages/riskAssessment/RiskConfirmation'
 import { RiskAssessmentDetail } from './pages/riskAssessment/RiskAssessmentDetail'
 import { HolidayClubChecklist } from './pages/HolidayClubChecklist'
 import { FirstAidChecklist } from './pages/FirstAidChecklist'
+import { GardenChecklist } from './pages/GardenChecklist'
 import { ChecksMenu } from './pages/ChecksMenu'
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
           <Route path="/check/:checkTypeId" element={<RoomProgress />} />
           <Route path="/check/:checkTypeId/holiday-club" element={<HolidayClubChecklist />} />
           <Route path="/check/firstAidBox/first-aid" element={<FirstAidChecklist />} />
+          <Route path="/check/gardenOutdoor/nursery" element={<GardenChecklist />} />
           <Route path="/check/:checkTypeId/room/:roomName" element={<SwipeChecklist />} />
           <Route path="/summary" element={<Summary />} />
           <Route path="/issues" element={<Issues />} />

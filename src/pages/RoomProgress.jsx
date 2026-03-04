@@ -88,6 +88,10 @@ export function RoomProgress() {
         navigate('/check/firstAidBox/first-aid', {
           state: { nursery, completedBy: name.trim(), section: location.state?.section },
         })
+      } else if (checkTypeId === 'gardenOutdoor') {
+        navigate('/check/gardenOutdoor/nursery', {
+          state: { nursery, completedBy: name.trim() },
+        })
       } else {
         navigate(`/check/${checkTypeId}/room/${encodeURIComponent(checkType.autoRoom)}`, {
           state: {
