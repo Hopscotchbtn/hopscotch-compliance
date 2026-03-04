@@ -61,10 +61,13 @@ export function RoomProgress() {
     try {
       if (checkTypeId === 'firstAidBox') {
         const checks = await getChecksForDateRange(nursery, dlStart, dlEnd, { checkType: 'firstAidBox' })
-        await generateFirstAidExcel(nursery, checks, dlStart, dlEnd, { isHolidayClub })
+        await generateFirstAidExcel(nursery, checks, dlStart, dlEnd, { isHolidayClub, logoPath: isHolidayClub ? '/hopscotch-holiday-club-logo.png' : '/hopscotch-logo.png' })
+      } else if (checkTypeId === 'gardenOutdoor') {
+        const checks = await getChecksForDateRange(nursery, dlStart, dlEnd, { room: 'Garden/Outdoor Area' })
+        await generateDailyChecksExcel(nursery, checks, dlStart, dlEnd, { isHolidayClub: false, logoPath: '/hopscotch-logo.png' })
       } else {
         const checks = await getChecksForDateRange(nursery, dlStart, dlEnd, { room: 'Holiday Club' })
-        await generateDailyChecksExcel(nursery, checks, dlStart, dlEnd, { isHolidayClub })
+        await generateDailyChecksExcel(nursery, checks, dlStart, dlEnd, { isHolidayClub, logoPath: '/hopscotch-holiday-club-logo.png' })
       }
     } catch (err) {
       console.error('Excel download error:', err)
@@ -224,7 +227,7 @@ export function RoomProgress() {
             </div>
           </Card>
 
-          {(isHolidayClub || checkTypeId === 'firstAidBox') && (
+          {(isHolidayClub || checkTypeId === 'firstAidBox' || checkTypeId === 'gardenOutdoor') && (
             <div className="mt-4 p-4 bg-white rounded-xl border-2 border-gray-200">
               <p className="text-sm font-medium text-hop-forest mb-3">📥 Download Records</p>
               <div className="flex gap-2 mb-3">

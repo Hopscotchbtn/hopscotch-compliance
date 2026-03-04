@@ -22,9 +22,9 @@ function parseFirstAidNotes(notes) {
   return { allPresent: '', missing: notes }
 }
 
-async function fetchLogo() {
+async function fetchLogo(path = '/hopscotch-holiday-club-logo.png') {
   try {
-    const res = await fetch('/hopscotch-holiday-club-logo.png')
+    const res = await fetch(path)
     const blob = await res.blob()
     const dataUrl = await new Promise(resolve => {
       const reader = new FileReader()
@@ -64,7 +64,7 @@ function applyHeaderStyle(cell, isColumnHeader = false) {
   cell.alignment = { vertical: 'middle', wrapText: true }
 }
 
-async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, rows, { orgLabel = 'Holiday Club' } = {}) {
+async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, rows, { orgLabel = 'Holiday Club', logoPath = '/hopscotch-holiday-club-logo.png' } = {}) {
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Hopscotch'
   const ws = wb.addWorksheet(sheetName)
@@ -72,7 +72,7 @@ async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, ro
   const colCount = columns.length
 
   // ── Logo ──────────────────────────────────────────────────────────────────
-  const logo = await fetchLogo()
+  const logo = await fetchLogo(logoPath)
   const LOGO_ROWS = 7
   if (logo) {
     const logoId = wb.addImage({ base64: logo.base64, extension: 'png' })
@@ -158,7 +158,7 @@ async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, ro
   return wb
 }
 
-export async function generateDailyChecksExcel(nursery, checks, startDate, endDate, { isHolidayClub = true } = {}) {
+export async function generateDailyChecksExcel(nursery, checks, startDate, endDate, { isHolidayClub = true, logoPath } = {}) {
   const columns = [
     { header: 'Date', width: 14 },
     { header: 'Checks Completed', width: 18 },
@@ -189,13 +189,13 @@ export async function generateDailyChecksExcel(nursery, checks, startDate, endDa
     cursor.setDate(cursor.getDate() + 1)
   }
 
-  const wb = await buildWorkbook('Daily Checks', nursery, startDate, endDate, columns, rows, { orgLabel: isHolidayClub ? 'Holiday Club' : 'Nursery' })
+  const wb = await buildWorkbook('Daily Checks', nursery, startDate, endDate, columns, rows, { orgLabel: isHolidayClub ? 'Holiday Club' : 'Nursery', logoPath })
   const buffer = await wb.xlsx.writeBuffer()
   const start = new Date(startDate).toISOString().slice(0, 10)
   downloadBuffer(buffer, `Holiday-Club-Daily-Checks-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
 }
 
-export async function generateFirstAidExcel(nursery, checks, startDate, endDate, { isHolidayClub = true } = {}) {
+export async function generateFirstAidExcel(nursery, checks, startDate, endDate, { isHolidayClub = true, logoPath } = {}) {
   const columns = [
     { header: 'Date', width: 14 },
     { header: 'Checks Completed', width: 18 },
@@ -231,7 +231,7 @@ export async function generateFirstAidExcel(nursery, checks, startDate, endDate,
     cursor.setDate(cursor.getDate() + 1)
   }
 
-  const wb = await buildWorkbook('First Aid Box Checks', nursery, startDate, endDate, columns, rows, { orgLabel: isHolidayClub ? 'Holiday Club' : 'Nursery' })
+  const wb = await buildWorkbook('First Aid Box Checks', nursery, startDate, endDate, columns, rows, { orgLabel: isHolidayClub ? 'Holiday Club' : 'Nursery', logoPath })
   const buffer = await wb.xlsx.writeBuffer()
   const start = new Date(startDate).toISOString().slice(0, 10)
   downloadBuffer(buffer, `First-Aid-Box-Checks-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
