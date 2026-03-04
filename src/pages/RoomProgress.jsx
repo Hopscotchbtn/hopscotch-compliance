@@ -6,13 +6,14 @@ import { Select } from '../components/ui/Select'
 import { Input } from '../components/ui/Input'
 import { Button } from '../components/ui/Button'
 import { checkTypes } from '../data/checklists'
+import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 import { getTodayChecksByType, getChecksForDateRange } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
 import { generateDailyChecksExcel, generateFirstAidExcel } from '../lib/generateRecordsExcel'
 
 const locationOptions = {
-  nursery: ['Preston Park', 'Hove Station', 'Seven Dials', 'West Hove', 'Peacehaven', 'Seaford', 'Worthing'],
+  nursery: nurseries,
   holidayClub: ['Holland Road', 'School Road'],
 }
 
@@ -22,12 +23,16 @@ export function RoomProgress() {
   const location = useLocation()
   const checkType = checkTypes[checkTypeId]
   const isHolidayClub = location.state?.section === 'holiday-club'
+  const isNursery = location.state?.section === 'nursery'
   const pageTitle = isHolidayClub ? 'Holiday Club Daily Checks' : checkType?.name
 
-  const [locationType, setLocationType] = useState(isHolidayClub ? 'holidayClub' : '')
+  const [locationType, setLocationType] = useState(
+    isHolidayClub ? 'holidayClub' : isNursery ? 'nursery' : ''
+  )
   const [nursery, setNursery] = useState(() => {
     const last = storage.getLastNursery()
     if (isHolidayClub && !locationOptions.holidayClub.includes(last)) return ''
+    if (isNursery && !locationOptions.nursery.includes(last)) return ''
     return last
   })
   const [name, setName] = useState(() => storage.getUserName())
@@ -56,10 +61,10 @@ export function RoomProgress() {
     try {
       if (checkTypeId === 'firstAidBox') {
         const checks = await getChecksForDateRange(nursery, dlStart, dlEnd, { checkType: 'firstAidBox' })
-        await generateFirstAidExcel(nursery, checks, dlStart, dlEnd)
+        await generateFirstAidExcel(nursery, checks, dlStart, dlEnd, { isHolidayClub })
       } else {
         const checks = await getChecksForDateRange(nursery, dlStart, dlEnd, { room: 'Holiday Club' })
-        await generateDailyChecksExcel(nursery, checks, dlStart, dlEnd)
+        await generateDailyChecksExcel(nursery, checks, dlStart, dlEnd, { isHolidayClub })
       }
     } catch (err) {
       console.error('Excel download error:', err)
@@ -170,7 +175,7 @@ export function RoomProgress() {
               Select your nursery and enter your initials to begin. These will be remembered for future checks.
             </p>
 
-            {!isHolidayClub && (
+            {!isHolidayClub && !isNursery && (
               <Select
                 label="Type"
                 value={locationType}
@@ -191,7 +196,7 @@ export function RoomProgress() {
               options={locationType ? locationOptions[locationType] : []}
               placeholder="Choose a location"
               required
-              disabled={!isHolidayClub && !locationType}
+              disabled={!isHolidayClub && !isNursery && !locationType}
             />
 
             <Input

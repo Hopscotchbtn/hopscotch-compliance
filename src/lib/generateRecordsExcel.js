@@ -64,7 +64,7 @@ function applyHeaderStyle(cell, isColumnHeader = false) {
   cell.alignment = { vertical: 'middle', wrapText: true }
 }
 
-async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, rows) {
+async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, rows, { orgLabel = 'Holiday Club' } = {}) {
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Hopscotch'
   const ws = wb.addWorksheet(sheetName)
@@ -88,7 +88,7 @@ async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, ro
   for (let i = 0; i < LOGO_ROWS; i++) ws.addRow([])
 
   // ── Title ──────────────────────────────────────────────────────────────────
-  const titleRow = ws.addRow([`Hopscotch Holiday Club – ${sheetName}`])
+  const titleRow = ws.addRow([`Hopscotch ${orgLabel} – ${sheetName}`])
   ws.mergeCells(titleRow.number, 1, titleRow.number, colCount)
   applyHeaderStyle(titleRow.getCell(1))
   titleRow.height = 20
@@ -158,7 +158,7 @@ async function buildWorkbook(sheetName, nursery, startDate, endDate, columns, ro
   return wb
 }
 
-export async function generateDailyChecksExcel(nursery, checks, startDate, endDate) {
+export async function generateDailyChecksExcel(nursery, checks, startDate, endDate, { isHolidayClub = true } = {}) {
   const columns = [
     { header: 'Date', width: 14 },
     { header: 'Checks Completed', width: 18 },
@@ -189,13 +189,13 @@ export async function generateDailyChecksExcel(nursery, checks, startDate, endDa
     cursor.setDate(cursor.getDate() + 1)
   }
 
-  const wb = await buildWorkbook('Daily Checks', nursery, startDate, endDate, columns, rows)
+  const wb = await buildWorkbook('Daily Checks', nursery, startDate, endDate, columns, rows, { orgLabel: isHolidayClub ? 'Holiday Club' : 'Nursery' })
   const buffer = await wb.xlsx.writeBuffer()
   const start = new Date(startDate).toISOString().slice(0, 10)
   downloadBuffer(buffer, `Holiday-Club-Daily-Checks-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
 }
 
-export async function generateFirstAidExcel(nursery, checks, startDate, endDate) {
+export async function generateFirstAidExcel(nursery, checks, startDate, endDate, { isHolidayClub = true } = {}) {
   const columns = [
     { header: 'Date', width: 14 },
     { header: 'Checks Completed', width: 18 },
@@ -231,7 +231,7 @@ export async function generateFirstAidExcel(nursery, checks, startDate, endDate)
     cursor.setDate(cursor.getDate() + 1)
   }
 
-  const wb = await buildWorkbook('First Aid Box Checks', nursery, startDate, endDate, columns, rows)
+  const wb = await buildWorkbook('First Aid Box Checks', nursery, startDate, endDate, columns, rows, { orgLabel: isHolidayClub ? 'Holiday Club' : 'Nursery' })
   const buffer = await wb.xlsx.writeBuffer()
   const start = new Date(startDate).toISOString().slice(0, 10)
   downloadBuffer(buffer, `First-Aid-Box-Checks-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
