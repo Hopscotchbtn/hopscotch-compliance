@@ -18,7 +18,7 @@ export function LogoWithText({ size = 'default' }) {
   const logoSizes = {
     small: 'w-16 h-16',
     default: 'w-24 h-24',
-    large: 'w-32 h-32',
+    large: 'w-48 h-48',
   }
 
   return (
