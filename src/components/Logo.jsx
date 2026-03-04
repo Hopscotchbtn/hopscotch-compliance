@@ -25,7 +25,7 @@ export function LogoWithText({ size = 'default' }) {
     <img
       src="/hopscotch-logo.png"
       alt="Hopscotch"
-      className={`${logoSizes[size]} object-contain`}
+      className={`${logoSizes[size]} object-contain mx-auto`}
     />
   )
 }
