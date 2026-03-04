@@ -9,8 +9,7 @@ import { checkTypes } from '../data/checklists'
 import { storage } from '../lib/storage'
 import { getTodayChecksByType, getChecksForWeek, getFirstAidChecksForWeek } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
-import { generateHolidayClubChecksPDF } from '../lib/generateHolidayClubChecksPDF'
-import { generateFirstAidPDF } from '../lib/generateFirstAidPDF'
+import { generateDailyChecksExcel, generateFirstAidExcel } from '../lib/generateRecordsExcel'
 import { getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 
 const locationOptions = {
@@ -44,7 +43,7 @@ export function RoomProgress() {
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState(null)
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadExcel = async () => {
     const week = weekOptions.find(w => w.value === selectedWeek)
     if (!week || !nursery) return
     setDownloading(true)
@@ -54,16 +53,14 @@ export function RoomProgress() {
       const weekEnd = new Date(week.sunday + 'T12:00:00')
       if (checkTypeId === 'firstAidBox') {
         const checks = await getFirstAidChecksForWeek(nursery, weekStart, weekEnd)
-        const doc = await generateFirstAidPDF(nursery, checks, weekStart, weekEnd)
-        doc.save(`First-Aid-Box-Check-${nursery.replace(/\s+/g, '-')}-${week.value}.pdf`)
+        generateFirstAidExcel(nursery, checks, weekStart, weekEnd)
       } else {
         const checks = await getChecksForWeek(nursery, weekStart, weekEnd)
-        const doc = await generateHolidayClubChecksPDF(nursery, checks, weekStart, weekEnd)
-        doc.save(`Holiday-Club-Checks-${nursery.replace(/\s+/g, '-')}-${week.value}.pdf`)
+        generateDailyChecksExcel(nursery, checks, weekStart, weekEnd)
       }
     } catch (err) {
-      console.error('PDF download error:', err)
-      setDownloadError('Failed to generate PDF. Please try again.')
+      console.error('Excel download error:', err)
+      setDownloadError('Failed to download. Please try again.')
     } finally {
       setDownloading(false)
     }
@@ -217,7 +214,7 @@ export function RoomProgress() {
 
           {(isHolidayClub || checkTypeId === 'firstAidBox') && (
             <div className="mt-4 p-4 bg-white rounded-xl border-2 border-gray-200">
-              <p className="text-sm font-medium text-hop-forest mb-3">Download Weekly PDF</p>
+              <p className="text-sm font-medium text-hop-forest mb-3">Download Weekly Excel</p>
               <select
                 value={selectedWeek}
                 onChange={(e) => setSelectedWeek(e.target.value)}
@@ -233,9 +230,9 @@ export function RoomProgress() {
                 size="large"
                 fullWidth
                 disabled={!selectedWeek || !nursery || downloading}
-                onClick={handleDownloadPDF}
+                onClick={handleDownloadExcel}
               >
-                {downloading ? 'Generating…' : 'Download PDF'}
+                {downloading ? 'Generating…' : 'Download Excel'}
               </Button>
               {downloadError && (
                 <p className="mt-2 text-xs text-red-600">{downloadError}</p>
