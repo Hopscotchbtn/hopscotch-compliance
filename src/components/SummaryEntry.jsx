@@ -58,7 +58,6 @@ export function RoomSafetyGroupEntry({ nursery, checks }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-hop-forest">Daily Room Opening Checks</span>
-            <Badge color="sunshine" size="small">Daily Room Opening</Badge>
           </div>
           <p className="text-sm text-gray-500 mt-0.5">
             {completedCount} of {expectedRooms.length} rooms complete
