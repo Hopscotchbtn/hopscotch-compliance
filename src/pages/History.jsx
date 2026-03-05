@@ -8,6 +8,7 @@ import { getChecksHistory } from '../lib/supabase'
 import { nurseries } from '../data/nurseries'
 import { checkTypes } from '../data/checklists'
 import { storage } from '../lib/storage'
+import { RoomSafetyGroupEntry } from '../components/SummaryEntry'
 
 const holidayClubLocations = ['Holland Road', 'School Road']
 
@@ -23,6 +24,50 @@ const nurseryCheckTypes = [
   { value: 'kitchenSafety', label: 'Daily Kitchen Safety' },
   { value: 'firstAidBox', label: 'Weekly First Aid Box Check' },
 ]
+
+function HistoryCheckCard({ check, section, availableCheckTypes, formatTime }) {
+  return (
+    <Card className={check.has_issues ? 'border-l-4 border-l-hop-marmalade' : ''}>
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="font-medium text-hop-forest">
+            {availableCheckTypes.find(t => t.value === check.check_type)?.label
+              || checkTypes[check.check_type]?.shortName
+              || check.check_type}
+          </p>
+          <p className="text-sm text-gray-500">
+            {section === 'holiday-club' && <>{check.nursery} · </>}{check.room} · {formatTime(check.created_at)}
+          </p>
+          <p className="text-sm text-gray-400">By {check.completed_by}</p>
+          {check.overall_notes && (
+            <p className="text-xs text-gray-400">{check.overall_notes}</p>
+          )}
+        </div>
+        <div className={`
+          px-2 py-1 rounded text-xs font-medium
+          ${check.has_issues ? 'bg-hop-marmalade/10 text-hop-marmalade-dark' : 'bg-hop-apple/10 text-hop-apple'}
+        `}>
+          {check.has_issues ? 'Issues' : 'OK'}
+        </div>
+      </div>
+      {check.has_issues && check.items && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <p className="text-xs font-medium text-gray-500 mb-2">Issues reported:</p>
+          <ul className="text-sm space-y-1">
+            {check.items.filter(item => item.status === 'fail').map((item, idx) => (
+              <li key={idx} className="text-hop-marmalade-dark">
+                • {item.text}
+                {item.note && (
+                  <span className="block text-gray-500 text-xs ml-3">{item.note}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </Card>
+  )
+}
 
 export function History() {
   const routerLocation = useLocation()
@@ -255,47 +300,33 @@ export function History() {
                 ) : (
                   <>
                     <div className="space-y-3">
-                      {selectedDateChecks.map((check) => (
-                        <Card key={check.id} className={check.has_issues ? 'border-l-4 border-l-hop-marmalade' : ''}>
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-medium text-hop-forest">
-                                {availableCheckTypes.find(t => t.value === check.check_type)?.label
-                                  || checkTypes[check.check_type]?.shortName
-                                  || check.check_type}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {section === 'holiday-club' && <>{check.nursery} · </>}{check.room} · {formatTime(check.created_at)}
-                              </p>
-                              <p className="text-sm text-gray-400">By {check.completed_by}</p>
-                              {check.overall_notes && (
-                                <p className="text-xs text-gray-400">{check.overall_notes}</p>
-                              )}
-                            </div>
-                            <div className={`
-                              px-2 py-1 rounded text-xs font-medium
-                              ${check.has_issues ? 'bg-hop-marmalade/10 text-hop-marmalade-dark' : 'bg-hop-apple/10 text-hop-apple'}
-                            `}>
-                              {check.has_issues ? 'Issues' : 'OK'}
-                            </div>
-                          </div>
-                          {check.has_issues && check.items && (
-                            <div className="mt-3 pt-3 border-t border-gray-100">
-                              <p className="text-xs font-medium text-gray-500 mb-2">Issues reported:</p>
-                              <ul className="text-sm space-y-1">
-                                {check.items.filter(item => item.status === 'fail').map((item, idx) => (
-                                  <li key={idx} className="text-hop-marmalade-dark">
-                                    • {item.text}
-                                    {item.note && (
-                                      <span className="block text-gray-500 text-xs ml-3">{item.note}</span>
-                                    )}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </Card>
-                      ))}
+                      {(() => {
+                        // Group nursery roomSafety checks (multiple rooms) into one entry
+                        const roomSafetyByNursery = {}
+                        const otherChecks = []
+                        selectedDateChecks.forEach(check => {
+                          if (check.check_type === 'roomSafety' && section !== 'holiday-club') {
+                            if (!roomSafetyByNursery[check.nursery]) roomSafetyByNursery[check.nursery] = []
+                            roomSafetyByNursery[check.nursery].push(check)
+                          } else {
+                            otherChecks.push(check)
+                          }
+                        })
+                        return (
+                          <>
+                            {Object.entries(roomSafetyByNursery).map(([nurseryName, roomChecks]) =>
+                              roomChecks.length > 1 ? (
+                                <RoomSafetyGroupEntry key={`rs-${nurseryName}`} nursery={nurseryName} checks={roomChecks} />
+                              ) : (
+                                <HistoryCheckCard key={roomChecks[0].id} check={roomChecks[0]} section={section} availableCheckTypes={availableCheckTypes} formatTime={formatTime} />
+                              )
+                            )}
+                            {otherChecks.map(check => (
+                              <HistoryCheckCard key={check.id} check={check} section={section} availableCheckTypes={availableCheckTypes} formatTime={formatTime} />
+                            ))}
+                          </>
+                        )
+                      })()}
                     </div>
                   </>
                 )}
