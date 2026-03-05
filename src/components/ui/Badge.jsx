@@ -33,7 +33,7 @@ export function StatusDot({ status }) {
   const statusStyles = {
     pass: 'bg-hop-apple',
     fail: 'bg-hop-marmalade-dark',
-    pending: 'bg-gray-300',
+    pending: 'bg-hop-sunshine',
   }
 
   return (
