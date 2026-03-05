@@ -214,7 +214,7 @@ async function addRoomSheet(wb, logo, nursery, room, checks, startDate, endDate)
   }
   for (let i = 0; i < LOGO_ROWS; i++) ws.addRow([])
 
-  const titleRow = ws.addRow([`Hopscotch Nursery – ${room}`])
+  const titleRow = ws.addRow([`Hopscotch ${nursery} – ${room}`])
   ws.mergeCells(titleRow.number, 1, titleRow.number, colCount)
   applyHeaderStyle(titleRow.getCell(1))
   titleRow.height = 20
