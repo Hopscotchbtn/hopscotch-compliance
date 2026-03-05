@@ -99,9 +99,10 @@ export function NurseryRoomChecklist() {
 
         {/* Comments */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <label className="block text-sm font-medium text-hop-forest mb-2">
+          <label className="block text-sm font-medium text-hop-forest mb-1">
             Comments
           </label>
+          <p className="text-xs text-gray-500 mb-2">Record any defects and report to duty manager</p>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
