@@ -49,6 +49,7 @@ export const getTodayChecks = async (nurseryFilter = null) => {
     .from('checks')
     .select('*')
     .gte('created_at', today.toISOString())
+    .neq('check_type', 'customRoomList')
     .order('created_at', { ascending: false })
 
   if (nurseryFilter && nurseryFilter !== 'all') {
@@ -360,6 +361,7 @@ export const getChecksHistory = async (nursery, days = 30) => {
     .from('checks')
     .select('*')
     .gte('created_at', startDate.toISOString())
+    .neq('check_type', 'customRoomList')
     .order('created_at', { ascending: false })
 
   if (nursery && nursery !== 'all') {
