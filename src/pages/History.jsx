@@ -268,7 +268,7 @@ export function History() {
                                   || check.check_type}
                               </p>
                               <p className="text-sm text-gray-500">
-                                {check.room} · {formatTime(check.created_at)}
+                                {section === 'holiday-club' && <>{check.nursery} · </>}{check.room} · {formatTime(check.created_at)}
                               </p>
                               <p className="text-sm text-gray-400">By {check.completed_by}</p>
                             </div>
