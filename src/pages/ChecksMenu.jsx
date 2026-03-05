@@ -1,12 +1,29 @@
+import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
 import { formatDate } from '../lib/utils'
+import { getLastCheck } from '../lib/supabase'
+
+const HOLIDAY_CLUB_LOCATIONS = ['Holland Road', 'School Road']
 
 export function ChecksMenu() {
   const { section } = useParams()
   const title = section === 'holiday-club' ? 'Holiday Club' : 'Nursery'
   const isHolidayClub = section === 'holiday-club'
+  const [lastFirstAidDate, setLastFirstAidDate] = useState(undefined)
+
+  useEffect(() => {
+    if (!isHolidayClub) return
+    Promise.all(
+      HOLIDAY_CLUB_LOCATIONS.map(loc => getLastCheck(loc, 'firstAidBox'))
+    ).then(results => {
+      const latest = results
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null
+      setLastFirstAidDate(latest)
+    })
+  }, [isHolidayClub])
 
   return (
     <div className="min-h-screen bg-hop-pebble">
@@ -45,11 +62,18 @@ export function ChecksMenu() {
             </Button>
           </Link>
 
-          <Link to="/check/firstAidBox" state={{ section }}>
-            <Button color={isHolidayClub ? 'blossom' : 'marmalade'} size="large" fullWidth className="border border-black">
-              <span className="text-lg">🩹 Weekly First Aid Box Check</span>
-            </Button>
-          </Link>
+          <div>
+            <Link to="/check/firstAidBox" state={{ section }}>
+              <Button color={isHolidayClub ? 'blossom' : 'marmalade'} size="large" fullWidth className="border border-black">
+                <span className="text-lg">🩹 First Aid Box Checklist</span>
+              </Button>
+            </Link>
+            {isHolidayClub && lastFirstAidDate && (
+              <p className="text-xs text-center text-gray-500 mt-1">
+                Last completed: <span className="font-medium">{new Date(lastFirstAidDate.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              </p>
+            )}
+          </div>
         </div>
 
         {/* View checks links */}

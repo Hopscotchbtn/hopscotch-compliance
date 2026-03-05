@@ -92,7 +92,7 @@ export function FirstAidChecklist() {
 
   return (
     <div className="min-h-screen bg-hop-pebble">
-      <Header title="Weekly First Aid Box Check" subtitle={nursery} showBack />
+      <Header title="First Aid Box Checklist" subtitle={nursery} showBack />
 
       <div className="px-4 py-6 max-w-2xl mx-auto space-y-4">
         {/* Last check date */}

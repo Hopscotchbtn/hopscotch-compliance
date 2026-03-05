@@ -70,7 +70,7 @@ export const checkTypes = {
   },
   firstAidBox: {
     id: 'firstAidBox',
-    name: 'Weekly First Aid Box Check',
+    name: 'First Aid Box Checklist',
     shortName: 'First Aid Box',
     description: 'Check first aid boxes weekly. If the seal is intact, contents are all present. If the box has been used, replace missing items and reseal.',
     color: 'hop-blossom',
