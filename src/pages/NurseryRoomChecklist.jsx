@@ -67,7 +67,7 @@ export function NurseryRoomChecklist() {
         <div className="px-4 py-6 max-w-2xl mx-auto">
           <div className="bg-hop-smiles border border-hop-smiles rounded-xl p-4 mb-6">
             <p className="text-hop-forest text-lg leading-relaxed">
-              The daily checks must be carried out before the nursery is open and children are on site. The rooms should be monitored through the day and any defects reported immediately to the duty manager and made safe.
+              Any defects should be added to the comment section and reported immediately to the duty manager.
             </p>
           </div>
 
