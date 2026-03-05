@@ -43,6 +43,7 @@ export function RoomProgress() {
   const [holidayMessageAcknowledged, setHolidayMessageAcknowledged] = useState(false)
   const [showOtherInput, setShowOtherInput] = useState(false)
   const [otherRoomName, setOtherRoomName] = useState('')
+  const [customRooms, setCustomRooms] = useState([])
 
   const prevMonth = (() => {
     const now = new Date()
@@ -148,7 +149,23 @@ export function RoomProgress() {
     if (!nursery || !name.trim()) return
     storage.setLastNursery(nursery)
     storage.setUserName(name.trim())
+    setCustomRooms(storage.getCustomRooms(nursery, checkTypeId))
     setShowSetup(false)
+  }
+
+  const handleAddCustomRoom = (roomName) => {
+    const updated = [...customRooms, roomName]
+    setCustomRooms(updated)
+    storage.setCustomRooms(nursery, checkTypeId, updated)
+    handleStartRoom(roomName)
+    setShowOtherInput(false)
+    setOtherRoomName('')
+  }
+
+  const handleDeleteCustomRoom = (roomName) => {
+    const updated = customRooms.filter(r => r !== roomName)
+    setCustomRooms(updated)
+    storage.setCustomRooms(nursery, checkTypeId, updated)
   }
 
   const handleStartRoom = (room) => {
@@ -431,6 +448,59 @@ export function RoomProgress() {
           })}
         </div>
 
+        {/* Custom rooms (saved via Other) */}
+        {showOtherOption && customRooms.map((room) => {
+          const isComplete = completedRooms[room]
+          const hasIssues = roomIssues[room]?.length > 0
+          return (
+            <div key={room} className="relative mt-3">
+              <button
+                onClick={() => handleStartRoom(room)}
+                disabled={loading}
+                className={`
+                  w-full p-4 rounded-xl text-left transition-all duration-200
+                  flex items-center gap-4
+                  ${isComplete
+                    ? 'bg-white border-2 border-hop-apple'
+                    : 'bg-white border-2 border-gray-200 hover:border-hop-forest hover:shadow-md'
+                  }
+                `}
+              >
+                <div className={`
+                  w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                  ${isComplete ? (hasIssues ? 'bg-hop-marmalade' : 'bg-hop-apple') : 'bg-gray-100'}
+                `}>
+                  {isComplete ? (
+                    hasIssues
+                      ? <span className="text-white text-lg">!</span>
+                      : <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                  ) : (
+                    <div className="w-3 h-3 rounded-full bg-gray-300" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-hop-forest">{room}</p>
+                  {isComplete && (
+                    <p className={`text-sm ${hasIssues ? 'text-hop-marmalade-dark' : 'text-hop-apple'}`}>
+                      {hasIssues ? `${roomIssues[room].length} issue${roomIssues[room].length !== 1 ? 's' : ''} recorded` : 'Completed'}
+                    </p>
+                  )}
+                </div>
+                <svg className={`w-5 h-5 ${isComplete ? 'text-gray-400' : 'text-hop-forest'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => handleDeleteCustomRoom(room)}
+                className="absolute top-2 right-10 text-gray-300 hover:text-red-400 text-lg leading-none p-1"
+                title="Remove room"
+              >
+                ×
+              </button>
+            </div>
+          )
+        })}
+
         {/* Other room option */}
         {showOtherOption && (
           <div className="mt-3">
@@ -453,13 +523,7 @@ export function RoomProgress() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => {
-                      if (otherRoomName.trim()) {
-                        handleStartRoom(otherRoomName.trim())
-                        setShowOtherInput(false)
-                        setOtherRoomName('')
-                      }
-                    }}
+                    onClick={() => otherRoomName.trim() && handleAddCustomRoom(otherRoomName.trim())}
                     disabled={!otherRoomName.trim()}
                     className="flex-1 py-2 rounded-lg text-sm font-medium bg-hop-forest text-white disabled:opacity-40"
                   >

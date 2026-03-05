@@ -2,6 +2,7 @@ const STORAGE_KEYS = {
   USER_NAME: 'hopscotch_user_name',
   LAST_NURSERY: 'hopscotch_last_nursery',
   KITCHEN_SAFETY: 'hopscotch_kitchen_safety',
+  CUSTOM_ROOMS: 'hopscotch_custom_rooms',
 }
 
 const todayStr = () => new Date().toISOString().slice(0, 10)
@@ -84,5 +85,25 @@ export const storage = {
 
   getKitchenSafetyHistory: (nursery) => {
     return loadHistory(nursery)
+  },
+
+  getCustomRooms: (nursery, checkTypeId) => {
+    try {
+      const raw = localStorage.getItem(`${STORAGE_KEYS.CUSTOM_ROOMS}_${nursery}_${checkTypeId}`)
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  },
+
+  setCustomRooms: (nursery, checkTypeId, rooms) => {
+    try {
+      localStorage.setItem(
+        `${STORAGE_KEYS.CUSTOM_ROOMS}_${nursery}_${checkTypeId}`,
+        JSON.stringify(rooms)
+      )
+    } catch {
+      console.warn('Could not save custom rooms to localStorage')
+    }
   },
 }
