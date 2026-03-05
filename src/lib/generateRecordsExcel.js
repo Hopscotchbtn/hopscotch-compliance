@@ -201,6 +201,7 @@ async function addRoomSheet(wb, logo, nursery, room, checks, startDate, endDate)
     { header: 'Date', width: 14 },
     { header: 'Checks Completed', width: 18 },
     { header: 'Initials', width: 12 },
+    { header: 'Signed', width: 12 },
     { header: 'Comments', width: 60 },
   ]
   const colCount = columns.length
@@ -219,7 +220,7 @@ async function addRoomSheet(wb, logo, nursery, room, checks, startDate, endDate)
   applyHeaderStyle(titleRow.getCell(1))
   titleRow.height = 20
 
-  const subRow = ws.addRow([`${nursery}  ·  ${formatDateRange(startDate, endDate)}`])
+  const subRow = ws.addRow([formatDateRange(startDate, endDate)])
   ws.mergeCells(subRow.number, 1, subRow.number, colCount)
   subRow.getCell(1).font = { color: { argb: FOREST_ARGB }, size: 9 }
   subRow.getCell(1).alignment = { vertical: 'middle' }
@@ -245,6 +246,7 @@ async function addRoomSheet(wb, logo, nursery, room, checks, startDate, endDate)
       formatDate(key),
       check ? 'Yes' : 'No',
       check ? (check.completed_by || '') : '',
+      check ? (check.signature_url ? 'Yes' : 'No') : '',
       check ? (check.overall_notes || 'No defects found') : '',
     ])
     r.height = 16
