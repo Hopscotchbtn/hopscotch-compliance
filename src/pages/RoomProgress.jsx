@@ -39,7 +39,7 @@ export function RoomProgress() {
   const [completedRooms, setCompletedRooms] = useState({})
   const [roomIssues, setRoomIssues] = useState({})
   const [loading, setLoading] = useState(false)
-  const [showSetup, setShowSetup] = useState(true)
+  const [showSetup, setShowSetup] = useState(!location.state?.skipSetup)
   const [holidayMessageAcknowledged, setHolidayMessageAcknowledged] = useState(false)
   const [showOtherInput, setShowOtherInput] = useState(false)
   const [otherRoomName, setOtherRoomName] = useState('')
@@ -118,6 +118,12 @@ export function RoomProgress() {
       }
     }
   }, [checkType, showSetup, nursery, name, checkTypeId, navigate])
+
+  useEffect(() => {
+    if (location.state?.skipSetup && nursery) {
+      getCustomRooms(nursery, checkTypeId).then(setCustomRooms).catch(() => {})
+    }
+  }, [])
 
   useEffect(() => {
     if (nursery && checkType && !checkType.autoRoom) {

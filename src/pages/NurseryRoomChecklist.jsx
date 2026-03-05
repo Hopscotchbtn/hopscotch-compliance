@@ -50,7 +50,7 @@ export function NurseryRoomChecklist() {
       })
 
       navigate(`/check/roomSafety`, {
-        state: { section },
+        state: { section, skipSetup: true },
       })
     } catch (err) {
       console.error('Submit error:', err)
