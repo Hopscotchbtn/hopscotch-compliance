@@ -102,8 +102,8 @@ export function Summary() {
                 </h3>
                 <div className="space-y-3">
                   {(() => {
-                    const roomSafetyChecks = nurseryChecks.filter(c => c.check_type === 'roomSafety')
-                    const otherChecks = nurseryChecks.filter(c => c.check_type !== 'roomSafety')
+                    const roomSafetyChecks = section !== 'holiday-club' ? nurseryChecks.filter(c => c.check_type === 'roomSafety') : []
+                    const otherChecks = section !== 'holiday-club' ? nurseryChecks.filter(c => c.check_type !== 'roomSafety') : nurseryChecks
                     return (
                       <>
                         {roomSafetyChecks.length > 0 && (
