@@ -228,9 +228,7 @@ export function History() {
                       </span>
                       <div className={`
                         w-2 h-2 rounded-full mt-0.5
-                        ${status === 'complete' ? 'bg-hop-apple' : ''}
-                        ${status === 'issues' ? 'bg-hop-marmalade' : ''}
-                        ${status === 'none' ? 'bg-gray-200' : ''}
+                        ${status !== 'none' ? 'bg-hop-apple' : 'bg-gray-200'}
                       `} />
                     </button>
                   )
@@ -239,8 +237,7 @@ export function History() {
 
               {/* Legend */}
               <div className="flex justify-center gap-4 mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-hop-apple" /> Complete</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-hop-marmalade" /> Issues</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-hop-apple" /> Checks done</span>
                 <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200" /> No checks</span>
               </div>
             </Card>
