@@ -10,6 +10,14 @@ import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 
 import { formatDate, formatTime } from '../lib/utils'
+import { upsertKitchenSafetyCheck } from '../lib/supabase'
+
+const KITCHEN_SECTION_LABELS = {
+  opening: 'Opening Fridge Check',
+  packedLunch: 'Packed Lunches',
+  closing: 'Closing Fridge Check',
+  signoff: 'Manager Sign-off',
+}
 import { generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 
 const holidayClubLocations = ['Holland Road', 'School Road']
@@ -89,6 +97,26 @@ export function KitchenSafety() {
         setSectionData(prevData => {
           const nextData = { ...prevData, [completedSection]: newData }
           storage.setKitchenSafetyState(nursery, next, nextData)
+
+          // Sync to Supabase so it appears in today's checks & history
+          if (nursery) {
+            const items = Object.entries(KITCHEN_SECTION_LABELS).map(([id, text]) => ({
+              id, text, status: next[id] ? 'pass' : 'na',
+            }))
+            const doneSections = Object.entries(KITCHEN_SECTION_LABELS)
+              .filter(([id]) => next[id])
+              .map(([, label]) => label)
+            const managerName = nextData.signoff?.responses?.managerName
+            const notes = next.signoff
+              ? `Signed off by ${managerName || 'manager'}`
+              : `In progress — ${doneSections.join(', ')} complete`
+            upsertKitchenSafetyCheck(nursery, {
+              completedBy: managerName || name,
+              items,
+              notes,
+            }).catch(err => console.error('Kitchen safety upsert error:', err))
+          }
+
           return nextData
         })
         return next

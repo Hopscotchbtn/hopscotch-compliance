@@ -35,6 +35,9 @@ export function SummaryEntry({ check }) {
           <p className="text-sm text-gray-500 truncate">
             {time} • {check.completed_by}
           </p>
+          {check.overall_notes && (
+            <p className="text-xs text-gray-400 truncate">{check.overall_notes}</p>
+          )}
         </div>
 
         <svg

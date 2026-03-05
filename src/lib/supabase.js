@@ -232,6 +232,38 @@ export const getChecksForDateRange = async (nursery, startDate, endDate, filters
   return data || []
 }
 
+export const upsertKitchenSafetyCheck = async (nursery, checkData) => {
+  if (!supabase) return null
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const { data: existing } = await supabase
+    .from('checks')
+    .select('id')
+    .eq('nursery', nursery)
+    .eq('check_type', 'kitchenSafety')
+    .gte('created_at', today.toISOString())
+    .limit(1)
+
+  const record = {
+    nursery,
+    room: 'Kitchen',
+    check_type: 'kitchenSafety',
+    completed_by: checkData.completedBy,
+    items: checkData.items,
+    has_issues: false,
+    overall_notes: checkData.notes || null,
+    signature_url: null,
+  }
+
+  if (existing?.length) {
+    await supabase.from('checks').update(record).eq('id', existing[0].id)
+  } else {
+    await supabase.from('checks').insert([record])
+  }
+}
+
 export const getLastCheck = async (nursery, checkType) => {
   if (!supabase) return null
 

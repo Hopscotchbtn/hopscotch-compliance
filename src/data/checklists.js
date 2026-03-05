@@ -94,6 +94,9 @@ export const checkTypes = {
   },
 }
 
+// Minimal entry so SummaryEntry/History can resolve the badge/color
+checkTypes.kitchenSafety = { id: 'kitchenSafety', shortName: 'Kitchen Safety', color: 'hop-marmalade' }
+
 export const getChecklistItems = (checkTypeId) => {
   const checkType = checkTypes[checkTypeId]
   if (!checkType) return []
