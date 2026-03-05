@@ -18,7 +18,7 @@ export function SummaryEntry({ check }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-hop-forest">{check.room}</span>
-            <Badge color={checkType?.color || 'gray'} size="small">
+            <Badge color={checkType?.color?.replace('hop-', '') || 'gray'} size="small">
               {checkType?.shortName || check.check_type}
             </Badge>
           </div>
@@ -38,15 +38,11 @@ export function RoomSafetyGroupEntry({ nursery, checks }) {
   const completedRooms = new Set(checks.map(c => c.room))
 
   const base = checkTypes.roomSafety?.rooms || []
-  const expectedRooms = (() => {
-    if (nursery === 'Preston Park') {
-      const idx = base.indexOf('Softplay')
-      return [...base.slice(0, idx), 'Preschool', ...base.slice(idx)]
-    }
-    return [...base]
-  })()
-  // Append any completed custom rooms not in the standard list
-  checks.forEach(c => { if (!expectedRooms.includes(c.room)) expectedRooms.push(c.room) })
+  const standardRooms = nursery === 'Preston Park'
+    ? (() => { const idx = base.indexOf('Softplay'); return [...base.slice(0, idx), 'Preschool', ...base.slice(idx)] })()
+    : [...base]
+  const customCompleted = checks.map(c => c.room).filter(r => !standardRooms.includes(r))
+  const expectedRooms = [...standardRooms, ...customCompleted]
 
   const completedCount = expectedRooms.filter(r => completedRooms.has(r)).length
   const allDone = completedCount === expectedRooms.length

@@ -35,7 +35,7 @@ export function RoomProgress() {
     if (isNursery && !locationOptions.nursery.includes(last)) return ''
     return last
   })
-  const [name, setName] = useState('')
+  const [name, setName] = useState(location.state?.completedBy || '')
   const [completedRooms, setCompletedRooms] = useState({})
   const [roomIssues, setRoomIssues] = useState({})
   const [loading, setLoading] = useState(false)
@@ -199,7 +199,7 @@ export function RoomProgress() {
   const checkRooms = (() => {
     const base = checkType.rooms || []
     if (checkTypeId === 'roomSafety' && nursery === 'Preston Park') {
-      const idx = base.indexOf('Soft Room')
+      const idx = base.indexOf('Softplay')
       return [...base.slice(0, idx), 'Preschool', ...base.slice(idx)]
     }
     return base
