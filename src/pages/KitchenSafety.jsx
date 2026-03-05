@@ -10,7 +10,7 @@ import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 
 import { formatDate, formatTime } from '../lib/utils'
-import { upsertKitchenSafetyCheck } from '../lib/supabase'
+import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck } from '../lib/supabase'
 
 const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Fridge Check',
@@ -124,13 +124,16 @@ export function KitchenSafety() {
     }
   }, [location.state])
 
-  const handleSetupComplete = () => {
+  const handleSetupComplete = async () => {
     if (!nursery) return
     storage.setLastNursery(nursery)
-    // Load completion state for the selected location
+    // Load local state
     const saved = storage.getKitchenSafetyState(nursery)
-    setCompletedSections(saved?.completedSections || {})
+    const localCompleted = saved?.completedSections || {}
     setSectionData(saved?.sectionData || {})
+    // Merge with Supabase state so cross-device completions show up
+    const remoteCompleted = await getTodayKitchenSafetyCheck(nursery).catch(() => null)
+    setCompletedSections({ ...localCompleted, ...(remoteCompleted || {}) })
     setShowSetup(false)
   }
 

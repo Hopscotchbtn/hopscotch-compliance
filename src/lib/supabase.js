@@ -232,6 +232,30 @@ export const getChecksForDateRange = async (nursery, startDate, endDate, filters
   return data || []
 }
 
+export const getTodayKitchenSafetyCheck = async (nursery) => {
+  if (!supabase) return null
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const { data } = await supabase
+    .from('checks')
+    .select('items')
+    .eq('nursery', nursery)
+    .eq('check_type', 'kitchenSafety')
+    .gte('created_at', today.toISOString())
+    .limit(1)
+
+  if (!data?.length) return null
+
+  // Return completed sections derived from items
+  const completed = {}
+  data[0].items?.forEach(item => {
+    if (item.status === 'pass') completed[item.id] = true
+  })
+  return completed
+}
+
 export const upsertKitchenSafetyCheck = async (nursery, checkData) => {
   if (!supabase) return null
 
