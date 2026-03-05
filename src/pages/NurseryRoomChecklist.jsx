@@ -67,7 +67,7 @@ export function NurseryRoomChecklist() {
         <div className="px-4 py-6 max-w-2xl mx-auto">
           <div className="bg-hop-smiles border border-hop-smiles rounded-xl p-4 mb-6">
             <p className="text-hop-forest text-lg leading-relaxed">
-              {checkType?.description}
+              The daily checks must be carried out before the nursery is open and children are on site. The rooms should be monitored through the day and any defects reported immediately to the duty manager and made safe.
             </p>
           </div>
 
@@ -86,7 +86,7 @@ export function NurseryRoomChecklist() {
       <div className="px-4 py-6 max-w-2xl mx-auto space-y-4">
         {/* Items list */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-          <p className="text-hop-forest text-lg font-bold mb-4">Checks to carry out:</p>
+          <p className="text-hop-forest text-lg font-bold mb-4">The checks carried out will consist of the following:</p>
           <ul className="space-y-3">
             {items.map((item, index) => (
               <li key={item.id} className="flex gap-3 text-hop-forest">
