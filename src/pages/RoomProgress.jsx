@@ -507,7 +507,7 @@ export function RoomProgress() {
               </button>
               <button
                 onClick={() => handleDeleteCustomRoom(room)}
-                className="absolute top-2 right-10 text-gray-300 hover:text-red-400 text-lg leading-none p-1"
+                className="absolute top-2 right-10 text-gray-400 hover:text-red-400 text-2xl leading-none p-1"
                 title="Remove room"
               >
                 ×
