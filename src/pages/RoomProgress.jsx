@@ -166,8 +166,8 @@ export function RoomProgress() {
   const checkRooms = (() => {
     const base = checkType.rooms || []
     if (checkTypeId === 'roomSafety' && nursery === 'Preston Park') {
-      const withoutMessy = base.slice(0, -1)
-      return [...withoutMessy, 'Preschool', 'Messy Room']
+      const idx = base.indexOf('Soft Room')
+      return [...base.slice(0, idx), 'Preschool', ...base.slice(idx)]
     }
     return base
   })()
