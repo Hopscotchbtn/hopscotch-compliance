@@ -41,6 +41,8 @@ export function RoomProgress() {
   const [loading, setLoading] = useState(false)
   const [showSetup, setShowSetup] = useState(true)
   const [holidayMessageAcknowledged, setHolidayMessageAcknowledged] = useState(false)
+  const [showOtherInput, setShowOtherInput] = useState(false)
+  const [otherRoomName, setOtherRoomName] = useState('')
 
   const prevMonth = (() => {
     const now = new Date()
@@ -160,8 +162,15 @@ export function RoomProgress() {
     })
   }
 
-  // Get rooms for this check type
-  const checkRooms = checkType.rooms || []
+  // Get rooms for this check type (dynamically add Preschool for Preston Park)
+  const checkRooms = (() => {
+    const base = checkType.rooms || []
+    if (checkTypeId === 'roomSafety' && nursery === 'Preston Park') {
+      return [...base, 'Preschool']
+    }
+    return base
+  })()
+  const showOtherOption = checkTypeId === 'roomSafety' && isNursery
   const completedCount = checkRooms.filter(room => completedRooms[room]).length
   const totalCount = checkRooms.length
   const allComplete = completedCount === totalCount
@@ -420,6 +429,56 @@ export function RoomProgress() {
             )
           })}
         </div>
+
+        {/* Other room option */}
+        {showOtherOption && (
+          <div className="mt-3">
+            {showOtherInput ? (
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-4 space-y-3">
+                <p className="text-sm font-medium text-hop-forest">Specify room name</p>
+                <input
+                  type="text"
+                  value={otherRoomName}
+                  onChange={(e) => setOtherRoomName(e.target.value)}
+                  placeholder="e.g. Art Room"
+                  autoFocus
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowOtherInput(false); setOtherRoomName('') }}
+                    className="flex-1 py-2 rounded-lg text-sm text-gray-500 bg-gray-100 hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (otherRoomName.trim()) {
+                        handleStartRoom(otherRoomName.trim())
+                        setShowOtherInput(false)
+                        setOtherRoomName('')
+                      }
+                    }}
+                    disabled={!otherRoomName.trim()}
+                    className="flex-1 py-2 rounded-lg text-sm font-medium bg-hop-forest text-white disabled:opacity-40"
+                  >
+                    Start Check
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowOtherInput(true)}
+                className="w-full p-4 rounded-xl text-left bg-white border-2 border-dashed border-gray-300 hover:border-hop-forest flex items-center gap-4 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-gray-400 text-xl">+</span>
+                </div>
+                <p className="font-medium text-gray-500">Other</p>
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Change settings link */}
         <div className="mt-8 text-center">
