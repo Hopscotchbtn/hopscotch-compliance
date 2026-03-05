@@ -50,7 +50,7 @@ export function KitchenSafety() {
     if (isHolidayClub && !holidayClubLocations.includes(last)) return ''
     return last
   })
-  const [name, setName] = useState(() => storage.getUserName())
+  const [name, setName] = useState('')
   const [showSetup, setShowSetup] = useState(() => {
     // Only skip setup when returning from a completed section or explicit skipSetup flag
     return !location.state?.completedSection && !location.state?.skipSetup

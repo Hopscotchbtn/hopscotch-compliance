@@ -35,7 +35,7 @@ export function RoomProgress() {
     if (isNursery && !locationOptions.nursery.includes(last)) return ''
     return last
   })
-  const [name, setName] = useState(() => storage.getUserName())
+  const [name, setName] = useState('')
   const [completedRooms, setCompletedRooms] = useState({})
   const [roomIssues, setRoomIssues] = useState({})
   const [loading, setLoading] = useState(false)
@@ -162,7 +162,6 @@ export function RoomProgress() {
   const handleSetupComplete = async () => {
     if (!nursery || !name.trim()) return
     storage.setLastNursery(nursery)
-    storage.setUserName(name.trim())
     const rooms = await getCustomRooms(nursery, checkTypeId).catch(() => [])
     setCustomRooms(rooms)
     setShowSetup(false)

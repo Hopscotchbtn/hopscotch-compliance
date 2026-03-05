@@ -18,7 +18,7 @@ export function CheckSetup() {
 
   const [nursery, setNursery] = useState(() => storage.getLastNursery())
   const [room, setRoom] = useState(checkType?.autoRoom || '')
-  const [name, setName] = useState(() => storage.getUserName())
+  const [name, setName] = useState('')
 
   useEffect(() => {
     if (checkType?.autoRoom) {
@@ -35,7 +35,6 @@ export function CheckSetup() {
   const isRoomDisabled = !!checkType.autoRoom
 
   const handleStartCheck = () => {
-    storage.setUserName(name.trim())
     storage.setLastNursery(nursery)
 
     navigate(`/check/${checkTypeId}/checklist`, {
