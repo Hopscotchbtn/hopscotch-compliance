@@ -71,7 +71,7 @@ export function HolidayClubChecklist() {
     <div className="min-h-screen bg-hop-pebble">
       <Header title="Holiday Club Daily Checks" subtitle={nursery} showBack />
 
-      <div className="px-4 py-6 max-w-2xl mx-auto space-y-4">
+      <div className="px-4 py-6 max-w-4xl mx-auto space-y-4">
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <p className="text-hop-forest text-lg font-bold mb-4">The checks carried out will consist of the following:</p>
           <ul className="space-y-3">
