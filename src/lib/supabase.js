@@ -232,6 +232,49 @@ export const getChecksForDateRange = async (nursery, startDate, endDate, filters
   return data || []
 }
 
+export const getCustomRooms = async (nursery, checkTypeId) => {
+  if (!supabase) return []
+
+  const { data } = await supabase
+    .from('checks')
+    .select('id, items')
+    .eq('nursery', nursery)
+    .eq('check_type', 'customRoomList')
+    .eq('room', checkTypeId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  if (!data?.length) return []
+  return data[0].items?.map(i => i.text) || []
+}
+
+export const saveCustomRooms = async (nursery, checkTypeId, rooms) => {
+  if (!supabase) return
+
+  const { data: existing } = await supabase
+    .from('checks')
+    .select('id')
+    .eq('nursery', nursery)
+    .eq('check_type', 'customRoomList')
+    .eq('room', checkTypeId)
+    .limit(1)
+
+  const record = {
+    nursery,
+    room: checkTypeId,
+    check_type: 'customRoomList',
+    completed_by: 'system',
+    items: rooms.map((text, i) => ({ id: String(i), text, status: 'pass' })),
+    has_issues: false,
+  }
+
+  if (existing?.length) {
+    await supabase.from('checks').update(record).eq('id', existing[0].id)
+  } else {
+    await supabase.from('checks').insert([record])
+  }
+}
+
 export const getTodayKitchenSafetyCheck = async (nursery) => {
   if (!supabase) return null
 

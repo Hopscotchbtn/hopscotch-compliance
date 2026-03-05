@@ -1,7 +1,7 @@
 // Rooms that each check type applies to
 export const CHECK_ROOMS = {
   roomOpening: ['Baby Room', 'Toddler Room', 'Pre-School Room', 'Garden/Outdoor Area'],
-  roomSafety: ['Blue Room', 'Yellow Room', 'Green Room', 'Red Room', 'Soft Room', 'Messy Room'],
+  roomSafety: ['Blue Room', 'Yellow Room', 'Green Room', 'Red Room', 'Softplay', 'Messy Room'],
   gardenOutdoor: ['Garden/Outdoor Area'], // autoRoom - no picker needed
 }
 

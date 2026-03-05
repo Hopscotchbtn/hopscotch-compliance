@@ -8,7 +8,7 @@ import { Button } from '../components/ui/Button'
 import { checkTypes } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
-import { getTodayChecksByType, getChecksForDateRange } from '../lib/supabase'
+import { getTodayChecksByType, getChecksForDateRange, getCustomRooms, saveCustomRooms } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
 import { generateDailyChecksExcel, generateFirstAidExcel } from '../lib/generateRecordsExcel'
 
@@ -145,18 +145,19 @@ export function RoomProgress() {
     return null
   }
 
-  const handleSetupComplete = () => {
+  const handleSetupComplete = async () => {
     if (!nursery || !name.trim()) return
     storage.setLastNursery(nursery)
     storage.setUserName(name.trim())
-    setCustomRooms(storage.getCustomRooms(nursery, checkTypeId))
+    const rooms = await getCustomRooms(nursery, checkTypeId).catch(() => [])
+    setCustomRooms(rooms)
     setShowSetup(false)
   }
 
   const handleAddCustomRoom = (roomName) => {
     const updated = [...customRooms, roomName]
     setCustomRooms(updated)
-    storage.setCustomRooms(nursery, checkTypeId, updated)
+    saveCustomRooms(nursery, checkTypeId, updated).catch(console.error)
     handleStartRoom(roomName)
     setShowOtherInput(false)
     setOtherRoomName('')
@@ -165,7 +166,7 @@ export function RoomProgress() {
   const handleDeleteCustomRoom = (roomName) => {
     const updated = customRooms.filter(r => r !== roomName)
     setCustomRooms(updated)
-    storage.setCustomRooms(nursery, checkTypeId, updated)
+    saveCustomRooms(nursery, checkTypeId, updated).catch(console.error)
   }
 
   const handleStartRoom = (room) => {
