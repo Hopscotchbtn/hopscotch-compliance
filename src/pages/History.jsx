@@ -271,6 +271,9 @@ export function History() {
                                 {section === 'holiday-club' && <>{check.nursery} · </>}{check.room} · {formatTime(check.created_at)}
                               </p>
                               <p className="text-sm text-gray-400">By {check.completed_by}</p>
+                              {check.overall_notes && (
+                                <p className="text-xs text-gray-400">{check.overall_notes}</p>
+                              )}
                             </div>
                             <div className={`
                               px-2 py-1 rounded text-xs font-medium
