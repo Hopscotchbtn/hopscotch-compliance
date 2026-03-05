@@ -189,6 +189,7 @@ export function RoomProgress() {
         room,
         completedBy: name.trim(),
         checkType: checkTypeId,
+        section: location.state?.section,
       },
     })
   }
