@@ -195,6 +195,107 @@ export async function generateDailyChecksExcel(nursery, checks, startDate, endDa
   downloadBuffer(buffer, `Holiday-Club-Daily-Checks-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
 }
 
+async function addRoomSheet(wb, logo, nursery, room, checks, startDate, endDate) {
+  const LOGO_ROWS = 9
+  const columns = [
+    { header: 'Date', width: 14 },
+    { header: 'Checks Completed', width: 18 },
+    { header: 'Initials', width: 12 },
+    { header: 'Comments', width: 60 },
+  ]
+  const colCount = columns.length
+  const ws = wb.addWorksheet(room.slice(0, 31))
+
+  if (logo) {
+    const logoId = wb.addImage({ base64: logo.base64, extension: 'png' })
+    const targetWidth = 180
+    const targetHeight = logo.dims ? Math.round(targetWidth * (logo.dims.height / logo.dims.width)) : 100
+    ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: targetWidth, height: targetHeight } })
+  }
+  for (let i = 0; i < LOGO_ROWS; i++) ws.addRow([])
+
+  const titleRow = ws.addRow([`Hopscotch Nursery – ${room}`])
+  ws.mergeCells(titleRow.number, 1, titleRow.number, colCount)
+  applyHeaderStyle(titleRow.getCell(1))
+  titleRow.height = 20
+
+  const subRow = ws.addRow([`${nursery}  ·  ${formatDateRange(startDate, endDate)}`])
+  ws.mergeCells(subRow.number, 1, subRow.number, colCount)
+  subRow.getCell(1).font = { color: { argb: FOREST_ARGB }, size: 9 }
+  subRow.getCell(1).alignment = { vertical: 'middle' }
+
+  ws.addRow([])
+
+  const headerRow = ws.addRow(columns.map(c => c.header))
+  headerRow.height = 18
+  headerRow.eachCell(cell => applyHeaderStyle(cell, true))
+
+  const byDate = {}
+  checks.forEach(c => {
+    const d = new Date(c.created_at).toISOString().slice(0, 10)
+    if (!byDate[d]) byDate[d] = c
+  })
+
+  const cursor = new Date(startDate)
+  const end = new Date(endDate)
+  while (cursor <= end) {
+    const key = cursor.toISOString().slice(0, 10)
+    const check = byDate[key]
+    const r = ws.addRow([
+      formatDate(key),
+      check ? 'Yes' : 'No',
+      check ? (check.completed_by || '') : '',
+      check ? (check.overall_notes || 'No defects found') : '',
+    ])
+    r.height = 16
+    r.eachCell(cell => { cell.alignment = { vertical: 'middle', wrapText: true }; cell.font = { size: 10 } })
+    if (r.number % 2 === 0) {
+      r.eachCell(cell => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } } })
+    }
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
+  columns.forEach((col, i) => { ws.getColumn(i + 1).width = col.width })
+
+  const dataStart = LOGO_ROWS + 4
+  const dataEnd = ws.rowCount
+  for (let r = dataStart; r <= dataEnd; r++) {
+    for (let c = 1; c <= colCount; c++) {
+      ws.getCell(r, c).border = {
+        top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+        bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+        left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+        right: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+      }
+    }
+  }
+
+  await ws.protect('', {
+    selectLockedCells: true, selectUnlockedCells: false,
+    formatCells: false, formatColumns: false, formatRows: false,
+    insertRows: false, insertColumns: false, deleteRows: false,
+    deleteColumns: false, sort: false, autoFilter: false,
+  })
+}
+
+export async function generateNurseryRoomChecksExcel(nursery, rooms, allChecks, startDate, endDate) {
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Hopscotch'
+  const logo = await fetchLogo('/hopscotch-logo.png')
+
+  // All rooms that have checks + all standard/custom rooms supplied
+  const allRooms = [...new Set([...rooms, ...allChecks.map(c => c.room).filter(Boolean)])]
+
+  for (const room of allRooms) {
+    const roomChecks = allChecks.filter(c => c.room === room)
+    await addRoomSheet(wb, logo, nursery, room, roomChecks, startDate, endDate)
+  }
+
+  const buffer = await wb.xlsx.writeBuffer()
+  const start = new Date(startDate).toISOString().slice(0, 10)
+  downloadBuffer(buffer, `Nursery-Room-Checks-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
+}
+
 export async function generateFirstAidExcel(nursery, checks, startDate, endDate, { isHolidayClub = true, logoPath } = {}) {
   const columns = [
     { header: 'Date', width: 14 },

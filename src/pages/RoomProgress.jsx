@@ -10,7 +10,7 @@ import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 import { getTodayChecksByType, getChecksForDateRange, getCustomRooms, saveCustomRooms } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
-import { generateDailyChecksExcel, generateFirstAidExcel } from '../lib/generateRecordsExcel'
+import { generateDailyChecksExcel, generateFirstAidExcel, generateNurseryRoomChecksExcel } from '../lib/generateRecordsExcel'
 
 const locationOptions = {
   nursery: nurseries,
@@ -68,6 +68,14 @@ export function RoomProgress() {
       } else if (checkTypeId === 'gardenOutdoor') {
         const checks = await getChecksForDateRange(nursery, dlStart, dlEnd, { room: 'Garden/Outdoor Area' })
         await generateDailyChecksExcel(nursery, checks, dlStart, dlEnd, { isHolidayClub: false, logoPath: '/hopscotch-logo.png' })
+      } else if (isNursery && checkTypeId === 'roomSafety') {
+        const allChecks = await getChecksForDateRange(nursery, dlStart, dlEnd, { checkType: 'roomSafety' })
+        const base = checkType.rooms || []
+        const standard = nursery === 'Preston Park'
+          ? (() => { const idx = base.indexOf('Softplay'); return [...base.slice(0, idx), 'Preschool', ...base.slice(idx)] })()
+          : base
+        const custom = await getCustomRooms(nursery, 'roomSafety').catch(() => [])
+        await generateNurseryRoomChecksExcel(nursery, [...standard, ...custom], allChecks, dlStart, dlEnd)
       } else {
         const checks = await getChecksForDateRange(nursery, dlStart, dlEnd, { room: 'Holiday Club' })
         await generateDailyChecksExcel(nursery, checks, dlStart, dlEnd, { isHolidayClub, logoPath: '/hopscotch-holiday-club-logo.png' })
@@ -255,7 +263,7 @@ export function RoomProgress() {
             </div>
           </Card>
 
-          {(isHolidayClub || checkTypeId === 'firstAidBox' || checkTypeId === 'gardenOutdoor') && (
+          {(isHolidayClub || checkTypeId === 'firstAidBox' || checkTypeId === 'gardenOutdoor' || (isNursery && checkTypeId === 'roomSafety')) && (
             <div className="mt-4 p-4 bg-white rounded-xl border-2 border-gray-200">
               <p className="text-sm font-medium text-hop-forest mb-3">📥 Download Records</p>
               <div className="flex gap-2 mb-3">
