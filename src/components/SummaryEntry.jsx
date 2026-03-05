@@ -36,7 +36,7 @@ export function SummaryEntry({ check, section }) {
             <span className="font-medium text-hop-forest">{title}</span>
           </div>
           <p className="text-sm text-gray-500 truncate">
-            {time} • {check.completed_by}
+            {isHolidayClub && check.nursery && <>{check.nursery} · </>}{time} • {check.completed_by}
           </p>
           {check.overall_notes && (
             <p className="text-xs text-gray-400 truncate">{check.overall_notes}</p>

@@ -104,7 +104,7 @@ export function RoomProgress() {
         })
       } else if (checkTypeId === 'gardenOutdoor') {
         navigate('/check/gardenOutdoor/nursery', {
-          state: { nursery, completedBy: name.trim() },
+          state: { nursery, completedBy: name.trim(), section: location.state?.section },
         })
       } else {
         navigate(`/check/${checkTypeId}/room/${encodeURIComponent(checkType.autoRoom)}`, {
