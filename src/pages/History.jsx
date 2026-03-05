@@ -314,13 +314,9 @@ export function History() {
                         })
                         return (
                           <>
-                            {Object.entries(roomSafetyByNursery).map(([nurseryName, roomChecks]) =>
-                              roomChecks.length > 1 ? (
-                                <RoomSafetyGroupEntry key={`rs-${nurseryName}`} nursery={nurseryName} checks={roomChecks} />
-                              ) : (
-                                <HistoryCheckCard key={roomChecks[0].id} check={roomChecks[0]} section={section} availableCheckTypes={availableCheckTypes} formatTime={formatTime} />
-                              )
-                            )}
+                            {Object.entries(roomSafetyByNursery).map(([nurseryName, roomChecks]) => (
+                              <RoomSafetyGroupEntry key={`rs-${nurseryName}`} nursery={nurseryName} checks={roomChecks} />
+                            ))}
                             {otherChecks.map(check => (
                               <HistoryCheckCard key={check.id} check={check} section={section} availableCheckTypes={availableCheckTypes} formatTime={formatTime} />
                             ))}

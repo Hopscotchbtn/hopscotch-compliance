@@ -106,11 +106,8 @@ export function Summary() {
                     const otherChecks = nurseryChecks.filter(c => c.check_type !== 'roomSafety')
                     return (
                       <>
-                        {roomSafetyChecks.length > 1 && (
+                        {roomSafetyChecks.length > 0 && (
                           <RoomSafetyGroupEntry key="rs-group" nursery={nurseryName} checks={roomSafetyChecks} />
-                        )}
-                        {roomSafetyChecks.length === 1 && (
-                          <SummaryEntry key={roomSafetyChecks[0].id} check={roomSafetyChecks[0]} />
                         )}
                         {otherChecks.map(check => (
                           <SummaryEntry key={check.id} check={check} />
