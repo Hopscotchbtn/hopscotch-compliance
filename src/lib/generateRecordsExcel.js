@@ -293,7 +293,7 @@ export async function generateNurseryRoomChecksExcel(nursery, rooms, allChecks, 
 
   const buffer = await wb.xlsx.writeBuffer()
   const start = new Date(startDate).toISOString().slice(0, 10)
-  downloadBuffer(buffer, `Nursery-Room-Checks-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
+  downloadBuffer(buffer, `${nursery.replace(/\s+/g, '-')}-Room-Checks-${start}.xlsx`)
 }
 
 export async function generateFirstAidExcel(nursery, checks, startDate, endDate, { isHolidayClub = true, logoPath } = {}) {
