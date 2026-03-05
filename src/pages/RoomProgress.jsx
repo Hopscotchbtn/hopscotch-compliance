@@ -191,6 +191,7 @@ export function RoomProgress() {
         checkType: checkTypeId,
         section: location.state?.section,
       },
+      replace: true,
     })
   }
 
