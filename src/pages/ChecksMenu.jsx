@@ -65,7 +65,7 @@ export function ChecksMenu() {
           <div>
             <Link to="/check/firstAidBox" state={{ section }}>
               <Button color={isHolidayClub ? 'blossom' : 'marmalade'} size="large" fullWidth className="border border-black">
-                <span className="text-lg">🩹 First Aid Box Checklist</span>
+                <span className="text-lg">🩹 {isHolidayClub ? 'First Aid Box Checklist' : 'Weekly First Aid Box Check'}</span>
               </Button>
             </Link>
             {isHolidayClub && lastFirstAidDate && (
