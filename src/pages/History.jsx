@@ -269,7 +269,7 @@ const isToday = (date) => date?.toDateString() === today.toDateString()
                               <RoomSafetyGroupEntry key={`rs-${nurseryName}`} nursery={nurseryName} checks={roomChecks} />
                             ))}
                             {otherChecks.map(check => (
-                              <SummaryEntry key={check.id} check={check} />
+                              <SummaryEntry key={check.id} check={check} section={section} />
                             ))}
                           </>
                         )

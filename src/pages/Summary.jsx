@@ -110,7 +110,7 @@ export function Summary() {
                           <RoomSafetyGroupEntry key="rs-group" nursery={nurseryName} checks={roomSafetyChecks} />
                         )}
                         {otherChecks.map(check => (
-                          <SummaryEntry key={check.id} check={check} />
+                          <SummaryEntry key={check.id} check={check} section={section} />
                         ))}
                       </>
                     )
