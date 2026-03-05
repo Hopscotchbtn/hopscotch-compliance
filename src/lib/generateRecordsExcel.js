@@ -246,7 +246,7 @@ async function addRoomSheet(wb, logo, nursery, room, checks, startDate, endDate)
       formatDate(key),
       check ? 'Yes' : 'No',
       check ? (check.completed_by || '') : '',
-      check ? (check.signature_url ? 'Yes' : 'No') : '',
+      check ? 'Yes' : '',
       check ? (check.overall_notes || 'No defects found') : '',
     ])
     r.height = 16
