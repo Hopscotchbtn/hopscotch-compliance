@@ -33,7 +33,7 @@ export function HolidayClubChecklist() {
     if (!nursery) navigate('/')
   }, [nursery, navigate])
 
-  const isValid = comment.trim() && signature
+  const isValid = signature
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
@@ -86,13 +86,12 @@ export function HolidayClubChecklist() {
 
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <label className="block text-sm font-medium text-hop-forest mb-2">
-            Comments <span className="text-hop-marmalade-dark">*</span>
-            <span className="text-gray-400 font-normal ml-1">(enter N/A if no defects found)</span>
+            Comments
           </label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="N/A if no defects found"
+            placeholder="Any defects or notes (optional)"
             rows={4}
             className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest resize-none"
           />
@@ -115,7 +114,7 @@ export function HolidayClubChecklist() {
           disabled={isSubmitting || !isValid}
           onClick={handleSubmit}
         >
-          {isSubmitting ? 'Submitting...' : !comment.trim() ? 'Add a comment to submit' : !signature ? 'Sign to Submit' : 'Submit Check'}
+          {isSubmitting ? 'Submitting...' : !signature ? 'Sign to Submit' : 'Submit Check'}
         </Button>
 
         <div className="text-center space-y-2 pb-4">
