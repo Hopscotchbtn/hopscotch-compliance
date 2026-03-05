@@ -1,20 +1,25 @@
 import { Card } from './ui/Card'
-import { Badge, StatusDot } from './ui/Badge'
+import { StatusDot } from './ui/Badge'
 import { checkTypes } from '../data/checklists'
 
-const holidayClubLabels = {
-  roomSafety: 'Holiday Club Daily Checks',
-  kitchenSafety: 'Daily Kitchen Safety',
-  firstAidBox: 'First Aid Box Checklist',
+const checkLabels = {
+  'holiday-club': {
+    roomSafety: 'Holiday Club Daily Checks',
+    kitchenSafety: 'Daily Kitchen Safety',
+    firstAidBox: 'First Aid Box Checklist',
+  },
+  nursery: {
+    gardenOutdoor: 'Daily Garden Opening Checks',
+    kitchenSafety: 'Daily Kitchen Safety',
+    firstAidBox: 'Weekly First Aid Box Check',
+  },
 }
 
 export function SummaryEntry({ check, section }) {
   const checkType = checkTypes[check.check_type]
   const hasIssues = check.has_issues
-  const isHolidayClub = section === 'holiday-club'
-  const title = isHolidayClub
-    ? (holidayClubLabels[check.check_type] || checkType?.name || check.check_type)
-    : check.room
+  const labels = checkLabels[section] || checkLabels.nursery
+  const title = labels[check.check_type] || checkType?.name || check.check_type
   const time = new Date(check.created_at).toLocaleTimeString('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
@@ -29,11 +34,6 @@ export function SummaryEntry({ check, section }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-hop-forest">{title}</span>
-            {!isHolidayClub && (
-              <Badge color={checkType?.color?.replace('hop-', '') || 'gray'} size="small">
-                {checkType?.shortName || check.check_type}
-              </Badge>
-            )}
           </div>
           <p className="text-sm text-gray-500 truncate">
             {time} • {check.completed_by}
