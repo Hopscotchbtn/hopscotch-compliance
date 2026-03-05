@@ -9,10 +9,11 @@ export function SummaryEntry({ check }) {
     hour: '2-digit',
     minute: '2-digit',
   })
+  const failedItems = check.items?.filter(item => item.status === 'fail') || []
 
   return (
-    <Card>
-      <div className="flex items-center gap-3">
+    <Card className={hasIssues ? 'border-l-4 border-l-hop-marmalade' : ''}>
+      <div className="flex items-start gap-3">
         <StatusDot status={hasIssues ? 'fail' : 'pass'} />
 
         <div className="flex-1 min-w-0">
@@ -27,6 +28,21 @@ export function SummaryEntry({ check }) {
           </p>
           {check.overall_notes && (
             <p className="text-xs text-gray-400 truncate">{check.overall_notes}</p>
+          )}
+          {hasIssues && failedItems.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p className="text-xs font-medium text-gray-500 mb-2">Issues reported:</p>
+              <ul className="text-sm space-y-1">
+                {failedItems.map((item, idx) => (
+                  <li key={idx} className="text-hop-marmalade-dark">
+                    • {item.text}
+                    {item.note && (
+                      <span className="block text-gray-500 text-xs ml-3">{item.note}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </div>
