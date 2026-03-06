@@ -5,8 +5,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
 import { Input } from '../components/ui/Input'
-import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
-import { nurseries } from '../data/nurseries'
+import { kitchenSafety, isMonday, isFirstOfMonth, CHECK_ROOMS } from '../data/checklists'
 import { storage } from '../lib/storage'
 
 import { formatDate, formatTime } from '../lib/utils'
@@ -42,12 +41,13 @@ export function KitchenSafety() {
 
   const section = location.state?.section || location.state?.returnedSection
   const isHolidayClub = section === 'holiday-club'
-  const locationOptions = isHolidayClub ? holidayClubLocations : nurseries
+  const locationOptions = isHolidayClub ? holidayClubLocations : CHECK_ROOMS.roomSafety
   const SECTIONS = isHolidayClub ? HOLIDAY_CLUB_SECTIONS : NURSERY_SECTIONS
 
   const [nursery, setNursery] = useState(() => {
     const last = storage.getLastNursery()
     if (isHolidayClub && !holidayClubLocations.includes(last)) return ''
+    if (!isHolidayClub && !CHECK_ROOMS.roomSafety.includes(last)) return ''
     return last
   })
   const [name, setName] = useState('')
