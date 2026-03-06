@@ -161,13 +161,11 @@ export function KitchenSafety() {
     saveCustomRooms(nursery, 'kitchenSafety', updated).catch(console.error)
   }
 
-  const handleSelectRoom = async (room) => {
+  const handleSelectRoom = (room) => {
     const key = roomKey(nursery, room)
     const saved = storage.getKitchenSafetyState(key)
-    const localCompleted = saved?.completedSections || {}
     setSectionData(saved?.sectionData || {})
-    const remoteCompleted = await getTodayKitchenSafetyCheck(nursery).catch(() => null)
-    setCompletedSections({ ...localCompleted, ...(remoteCompleted || {}) })
+    setCompletedSections(saved?.completedSections || {})
     setSelectedRoom(room)
   }
 
