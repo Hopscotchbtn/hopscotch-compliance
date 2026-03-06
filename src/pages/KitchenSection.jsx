@@ -261,41 +261,18 @@ export function KitchenSection() {
 
   // Opening section — checklist first, then fridge temps
   if (sectionId === 'opening') {
-    const openingResponses = responses.openingChecks || {}
-    const allChecked = OPENING_CHECKS.every(item => openingResponses[item.id])
-
     if (phase === 'checks') {
       return (
         <div className="min-h-screen bg-hop-pebble">
-          <Header title="Opening Checks" subtitle="Tick all items to confirm" showBack onBack={goBackToSections} />
+          <Header title="Opening Checks" subtitle="Confirm all items are in place" showBack onBack={goBackToSections} />
           <div className="px-4 py-6 max-w-md mx-auto space-y-4">
             <Card className="space-y-2">
-              {OPENING_CHECKS.map(item => {
-                const checked = !!openingResponses[item.id]
-                return (
-                  <button
-                    key={item.id}
-                    onClick={() => setResponses(prev => ({
-                      ...prev,
-                      openingChecks: { ...prev.openingChecks, [item.id]: !checked }
-                    }))}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${
-                      checked ? 'border-hop-apple bg-hop-apple/10' : 'border-gray-200 bg-white'
-                    }`}
-                  >
-                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                      checked ? 'bg-hop-apple border-hop-apple' : 'border-gray-300 bg-white'
-                    }`}>
-                      {checked && (
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-sm text-hop-forest">{item.text}</span>
-                  </button>
-                )
-              })}
+              {OPENING_CHECKS.map(item => (
+                <div key={item.id} className="flex items-center gap-3 p-3">
+                  <span className="text-hop-marmalade font-bold text-sm flex-shrink-0">•</span>
+                  <span className="text-sm text-hop-forest">{item.text}</span>
+                </div>
+              ))}
             </Card>
 
             <Card>
@@ -315,7 +292,7 @@ export function KitchenSection() {
               color="marmalade"
               size="large"
               fullWidth
-              disabled={!allChecked || !signedBy.trim()}
+              disabled={!signedBy.trim()}
               onClick={() => setPhase('temps')}
             >
               Continue to Fridge Temperatures
