@@ -317,7 +317,7 @@ export function KitchenSection() {
     const isValid = fridge1Temp !== '' && signedBy.trim()
     return (
       <div className="min-h-screen bg-hop-pebble">
-        <Header title="Opening Fridge Check" showBack onBack={() => setPhase('checks')} />
+        <Header title="Opening Kitchen Checks" showBack onBack={() => setPhase('checks')} />
         <div className="px-4 py-6 max-w-md mx-auto space-y-4">
           {[1, 2, 3].map((n) => {
             const key = `fridge${n}`

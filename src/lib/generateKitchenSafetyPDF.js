@@ -138,9 +138,9 @@ export async function generateKitchenSafetyPDF(nursery, history, weekStart, week
 
     const sd = dayData.sectionData
 
-    // ── Opening Fridge Check ──────────────────────────────────────────────
+    // ── Opening Kitchen Checks ──────────────────────────────────────────────
     if (sd.opening) {
-      y = sectionLabel(doc, 'Opening Fridge Check', y, margin)
+      y = sectionLabel(doc, 'Opening Kitchen Checks', y, margin)
       const rows = [1, 2, 3].map(n => {
         const f = sd.opening.temperatures?.[`fridge${n}`]
         return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
