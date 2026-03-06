@@ -49,6 +49,13 @@ const getSectionConfig = (sectionId) => {
         tempType: 'closing',
         includeMonthlyCalibration: isFirstOfMonth(),
       }
+    case 'littleTums':
+      return {
+        title: 'Little Tums',
+        subtitle: 'Nursery meals & tea',
+        items: [],
+        isLittleTums: true,
+      }
     case 'packedLunch':
       return {
         title: 'Packed Lunches',
@@ -209,9 +216,10 @@ export function KitchenSection() {
   const isAlreadyCompleted = !!completedSections?.[sectionId]
 
   const [phase, setPhase] = useState(() => {
-    if (isAlreadyCompleted && config && !config.isPackedLunchOnly && !config.isDeliverySection && !config.isSignoff) {
+    if (isAlreadyCompleted && config && !config.isPackedLunchOnly && !config.isDeliverySection && !config.isSignoff && !config.isLittleTums) {
       return 'summary'
     }
+    if (config?.isLittleTums) return 'ltMenu'
     return 'checks'
   })
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -839,6 +847,153 @@ export function KitchenSection() {
             onClick={() => handleComplete()}
           >
             Done
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Render Little Tums section — menu with Lunch and Tea sub-sections
+  if (config.isLittleTums) {
+    const lunchItems = kitchenSafety.littleTumsItems.filter(i => ['lt1','lt2','lt3','lt4'].includes(i.id))
+    const teaItems = kitchenSafety.littleTumsItems.filter(i => ['lt5','lt6'].includes(i.id))
+    const lunchDone = !!deliveryData.lunchDone
+    const teaDone = !!deliveryData.teaDone
+
+    const renderTempItems = (items, dataKey, doneKey, backPhase) => {
+      const threshold = (item) => item.type === 'hot' ? 63 : 8
+      const isValidTemp = (item) => {
+        const t = parseFloat(deliveryData[dataKey]?.[item.id]?.temp)
+        return item.type === 'hot' ? t >= threshold(item) : t <= threshold(item)
+      }
+      const allFilled = items.every(i => deliveryData[dataKey]?.[i.id]?.temp || deliveryData[dataKey]?.[i.id]?.skipped)
+      return (
+        <div className="min-h-screen bg-hop-pebble">
+          <Header title={dataKey === 'lunch' ? 'Lunch' : 'Tea'} subtitle="Little Tums temperatures" showBack onBack={() => setPhase(backPhase)} />
+          <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+            <Card className="space-y-4">
+              <p className="text-xs text-gray-500">Hot ≥63°C · Cold ≤8°C</p>
+              {items.map(item => {
+                const temp = deliveryData[dataKey]?.[item.id]?.temp || ''
+                const skipped = deliveryData[dataKey]?.[item.id]?.skipped
+                const valid = temp && isValidTemp(item)
+                const invalid = temp && !isValidTemp(item)
+                return (
+                  <div key={item.id}>
+                    <label className="block text-sm text-hop-forest mb-1">{item.label}</label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={skipped ? '' : temp}
+                          disabled={skipped}
+                          onChange={(e) => setDeliveryData(prev => ({
+                            ...prev,
+                            [dataKey]: { ...prev[dataKey], [item.id]: { temp: e.target.value } }
+                          }))}
+                          placeholder={item.type === 'hot' ? '≥63' : '≤8'}
+                          className={`w-full px-3 py-2 pr-10 rounded-lg border-2 text-sm ${
+                            skipped ? 'bg-gray-100 border-gray-200 text-gray-400' :
+                            valid ? 'border-hop-apple bg-hop-apple/10' :
+                            invalid ? 'border-hop-marmalade-dark bg-hop-marmalade/10' :
+                            'border-gray-200'
+                          }`}
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">°C</span>
+                      </div>
+                      <button
+                        onClick={() => setDeliveryData(prev => ({
+                          ...prev,
+                          [dataKey]: { ...prev[dataKey], [item.id]: { skipped: !skipped } }
+                        }))}
+                        className={`px-3 py-2 border-2 rounded-lg text-sm ${skipped ? 'border-hop-marmalade bg-hop-marmalade/20 text-hop-marmalade-dark font-medium' : 'border-gray-200 text-gray-500'}`}
+                      >
+                        N/A
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </Card>
+            <Button
+              color="marmalade"
+              size="large"
+              fullWidth
+              disabled={!allFilled}
+              onClick={() => {
+                setDeliveryData(prev => ({ ...prev, [doneKey]: true }))
+                setPhase('ltMenu')
+              }}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    if (phase === 'lunch') return renderTempItems(lunchItems, 'lunch', 'lunchDone', 'ltMenu')
+    if (phase === 'tea') return renderTempItems(teaItems, 'tea', 'teaDone', 'ltMenu')
+
+    // Menu screen
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header title="Little Tums" subtitle="Nursery meals & tea" showBack onBack={goBackToSections} />
+        <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+          <div className="space-y-3">
+            {[
+              { key: 'lunch', label: 'Lunch', done: lunchDone },
+              { key: 'tea', label: 'Tea', done: teaDone },
+            ].map(({ key, label, done }) => (
+              <button
+                key={key}
+                onClick={() => setPhase(key)}
+                className={`w-full p-4 rounded-xl text-left flex items-center gap-4 border-2 transition-all ${
+                  done ? 'bg-white border-hop-apple' : 'bg-white border-gray-200 hover:border-hop-marmalade hover:shadow-md'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-hop-apple' : 'bg-gray-100'}`}>
+                  {done ? (
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <div className="w-3 h-3 rounded-full bg-gray-300" />
+                  )}
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-hop-forest">{label}</p>
+                  {done && <p className="text-sm text-hop-apple">Completed</p>}
+                </div>
+                <svg className={`w-5 h-5 ${done ? 'text-gray-400' : 'text-hop-marmalade'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
+          </div>
+
+          <Card>
+            <label className="block text-sm font-medium text-hop-forest mb-2">
+              Your initials <span className="text-hop-marmalade-dark">*</span>
+            </label>
+            <input
+              type="text"
+              value={signedBy}
+              onChange={(e) => setSignedBy(e.target.value)}
+              placeholder="e.g. PF"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+            />
+          </Card>
+
+          <Button
+            color="marmalade"
+            size="large"
+            fullWidth
+            disabled={(!lunchDone && !teaDone) || !signedBy.trim()}
+            onClick={() => handleComplete()}
+          >
+            Complete
           </Button>
         </div>
       </div>

@@ -15,6 +15,7 @@ import { generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchen
 const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Kitchen Checks',
   packedLunch: 'Packed Lunches',
+  littleTums: 'Little Tums',
   closing: 'Closing Fridge Check',
   signoff: 'Manager Sign-off',
 }
@@ -24,15 +25,17 @@ const holidayClubLocations = ['Holland Road', 'School Road']
 const BASE_KITCHEN_ROOMS = ['Blue Room', 'Yellow Room', 'Green Room', 'Red Room']
 
 const NURSERY_SECTIONS = [
-  { id: 'opening', name: 'Opening Kitchen Checks', icon: '☀️', description: 'Morning fridge temperatures' },
+  { id: 'opening', name: 'Opening Kitchen Checks', icon: '☀️', description: 'Morning checks & fridge temperatures' },
   { id: 'packedLunch', name: 'Packed Lunches', icon: '🥪', description: 'Visual check of packed lunches' },
+  { id: 'littleTums', name: 'Little Tums', icon: '🍱', description: 'Nursery meals & tea' },
   { id: 'closing', name: 'Closing Fridge Check', icon: '🌙', description: 'End of day fridge temperature' },
   { id: 'signoff', name: 'Manager Sign-off', icon: '✓', description: 'Review & approve' },
 ]
 
 const HOLIDAY_CLUB_SECTIONS = [
-  { id: 'opening', name: 'Opening Kitchen Checks', icon: '☀️', description: 'Morning fridge temperatures' },
+  { id: 'opening', name: 'Opening Kitchen Checks', icon: '☀️', description: 'Morning checks & fridge temperatures' },
   { id: 'packedLunch', name: 'Packed Lunches', icon: '🥪', description: 'Visual check of packed lunches' },
+  { id: 'littleTums', name: 'Little Tums', icon: '🍱', description: 'Nursery meals & tea' },
   { id: 'closing', name: 'Closing Fridge Check', icon: '🌙', description: 'End of day fridge temperature' },
   { id: 'signoff', name: 'Manager Sign-off', icon: '✓', description: 'Review & approve' },
 ]
