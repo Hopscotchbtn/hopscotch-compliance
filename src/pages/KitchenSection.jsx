@@ -860,16 +860,26 @@ export function KitchenSection() {
     const lunchDone = !!deliveryData.lunchDone
     const teaDone = !!deliveryData.teaDone
 
-    const renderTempItems = (items, dataKey, doneKey, backPhase) => {
+    const saveToStorage = (updatedDeliveryData) => {
+      const key = room ? `${nursery}::${room}` : nursery
+      const existing = storage.getKitchenSafetyState(key)
+      storage.setKitchenSafetyState(key, existing?.completedSections || {}, {
+        ...(existing?.sectionData || {}),
+        littleTums: { responses, notes, temperatures, deliveryData: updatedDeliveryData },
+      })
+    }
+
+    const renderTempItems = (items, dataKey, doneKey, initialsKey) => {
       const threshold = (item) => item.type === 'hot' ? 63 : 8
       const isValidTemp = (item) => {
         const t = parseFloat(deliveryData[dataKey]?.[item.id]?.temp)
         return item.type === 'hot' ? t >= threshold(item) : t <= threshold(item)
       }
       const allFilled = items.every(i => deliveryData[dataKey]?.[i.id]?.temp || deliveryData[dataKey]?.[i.id]?.skipped)
+      const initials = deliveryData[initialsKey] || ''
       return (
         <div className="min-h-screen bg-hop-pebble">
-          <Header title={dataKey === 'lunch' ? 'Lunch' : 'Tea'} subtitle="Little Tums temperatures" showBack onBack={() => setPhase(backPhase)} />
+          <Header title={dataKey === 'lunch' ? 'Lunch' : 'Tea'} subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
           <div className="px-4 py-6 max-w-md mx-auto space-y-4">
             <Card className="space-y-4">
               <p className="text-xs text-gray-500">Hot ≥63°C · Cold ≤8°C</p>
@@ -916,13 +926,29 @@ export function KitchenSection() {
                 )
               })}
             </Card>
+
+            <Card>
+              <label className="block text-sm font-medium text-hop-forest mb-2">
+                Your initials <span className="text-hop-marmalade-dark">*</span>
+              </label>
+              <input
+                type="text"
+                value={initials}
+                onChange={(e) => setDeliveryData(prev => ({ ...prev, [initialsKey]: e.target.value }))}
+                placeholder="e.g. PF"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+              />
+            </Card>
+
             <Button
               color="marmalade"
               size="large"
               fullWidth
-              disabled={!allFilled}
+              disabled={!allFilled || !initials.trim()}
               onClick={() => {
-                setDeliveryData(prev => ({ ...prev, [doneKey]: true }))
+                const updated = { ...deliveryData, [doneKey]: true, [initialsKey]: initials }
+                setDeliveryData(updated)
+                saveToStorage(updated)
                 setPhase('ltMenu')
               }}
             >
@@ -933,8 +959,8 @@ export function KitchenSection() {
       )
     }
 
-    if (phase === 'lunch') return renderTempItems(lunchItems, 'lunch', 'lunchDone', 'ltMenu')
-    if (phase === 'tea') return renderTempItems(teaItems, 'tea', 'teaDone', 'ltMenu')
+    if (phase === 'lunch') return renderTempItems(lunchItems, 'lunch', 'lunchDone', 'lunchInitials')
+    if (phase === 'tea') return renderTempItems(teaItems, 'tea', 'teaDone', 'teaInitials')
 
     // Menu screen
     return (
@@ -973,24 +999,11 @@ export function KitchenSection() {
             ))}
           </div>
 
-          <Card>
-            <label className="block text-sm font-medium text-hop-forest mb-2">
-              Your initials <span className="text-hop-marmalade-dark">*</span>
-            </label>
-            <input
-              type="text"
-              value={signedBy}
-              onChange={(e) => setSignedBy(e.target.value)}
-              placeholder="e.g. PF"
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
-            />
-          </Card>
-
           <Button
             color="marmalade"
             size="large"
             fullWidth
-            disabled={(!lunchDone && !teaDone) || !signedBy.trim()}
+            disabled={!lunchDone && !teaDone}
             onClick={() => handleComplete()}
           >
             Complete
