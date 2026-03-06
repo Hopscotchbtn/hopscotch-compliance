@@ -68,6 +68,8 @@ function randomDateInMonth(year, month) {
   return new Date(year, month, day, hour, min)
 }
 
+const SITE_NAME_MAP = Object.fromEntries(MOCK_SITES.map(s => [s.id, s.name]))
+
 function makeIncident(id, child, month, year, siteId) {
   const template = randomFrom(TEMPLATES)
   const happened = randomDateInMonth(year, month)
@@ -84,7 +86,7 @@ function makeIncident(id, child, month, year, siteId) {
     firstAid: template.firstAid,
     witnesses: [randomFrom(STAFF.filter(s => s !== creator))],
     siteId,
-    siteName: siteId,
+    siteName: SITE_NAME_MAP[siteId] ?? siteId,
     childId: childId(child),
   }
 }
@@ -133,7 +135,7 @@ export function generateMockIncidents(siteId) {
       firstAid: template.firstAid,
       witnesses: [randomFrom(STAFF)],
       siteId,
-      siteName: siteId,
+      siteName: SITE_NAME_MAP[siteId] ?? siteId,
       childId: childId(child),
     })
   }

@@ -100,6 +100,7 @@ export default function RepeatChildrenPanel({ incidents, loading }) {
   const [selectedChild, setSelectedChild] = useState(null)
 
   const children = repeatChildren(rollingWindow(incidents, 3), 2)
+  const multiSite = new Set(incidents.map(i => i.siteId)).size > 1
 
   return (
     <>
@@ -155,7 +156,7 @@ export default function RepeatChildrenPanel({ incidents, loading }) {
                         )}
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        {child.siteName && (
+                        {multiSite && child.siteName && (
                           <span className="font-medium">{child.siteName} · </span>
                         )}
                         Last: {child.mostRecentLocation} · {formatDate(child.mostRecentDate)}
