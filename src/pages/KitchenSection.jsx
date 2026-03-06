@@ -71,6 +71,10 @@ const getSectionConfig = (sectionId) => {
         items: [],
         isSignoff: true,
       }
+    case 'probeCheck':
+      return { title: 'Probe Thermometer Check', subtitle: 'Weekly check', items: [] }
+    case 'supermarketTemp':
+      return { title: 'Supermarket Food Temperatures', subtitle: 'Weekly check', items: [] }
     default:
       return null
   }
@@ -508,6 +512,172 @@ export function KitchenSection() {
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
             />
           </Card>
+
+          <Button color="marmalade" size="large" fullWidth disabled={!isValid} onClick={() => handleComplete()}>
+            Complete
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Probe Thermometer Check ────────────────────────────────────────────────
+  if (sectionId === 'probeCheck') {
+    const openingInitials = responses.openingInitials || ''
+    const closingInitials = responses.closingInitials || ''
+    const openingTemp = temperatures.probeOpening || ''
+    const closingTemp = temperatures.probeClosing || ''
+    const isValid = openingInitials.trim() && openingTemp !== '' && closingInitials.trim() && closingTemp !== ''
+
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header title="Probe Thermometer Check" subtitle="Weekly check" showBack onBack={goBackToSections} />
+        <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+          <Card className="space-y-4">
+            <p className="font-medium text-hop-forest">Opening Check</p>
+            <div>
+              <label className="block text-sm font-medium text-hop-forest mb-2">Temperature <span className="text-hop-marmalade-dark">*</span></label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={openingTemp}
+                  onChange={(e) => setTemperatures(prev => ({ ...prev, probeOpening: e.target.value }))}
+                  placeholder="0.0"
+                  className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">°C</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-hop-forest mb-2">Initials <span className="text-hop-marmalade-dark">*</span></label>
+              <input
+                type="text"
+                value={openingInitials}
+                onChange={(e) => setResponses(prev => ({ ...prev, openingInitials: e.target.value }))}
+                placeholder="e.g. PF"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+              />
+            </div>
+          </Card>
+
+          <Card className="space-y-4">
+            <p className="font-medium text-hop-forest">Closing Check</p>
+            <div>
+              <label className="block text-sm font-medium text-hop-forest mb-2">Temperature <span className="text-hop-marmalade-dark">*</span></label>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={closingTemp}
+                  onChange={(e) => setTemperatures(prev => ({ ...prev, probeClosing: e.target.value }))}
+                  placeholder="0.0"
+                  className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">°C</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-hop-forest mb-2">Initials <span className="text-hop-marmalade-dark">*</span></label>
+              <input
+                type="text"
+                value={closingInitials}
+                onChange={(e) => setResponses(prev => ({ ...prev, closingInitials: e.target.value }))}
+                placeholder="e.g. PF"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+              />
+            </div>
+          </Card>
+
+          <Button color="marmalade" size="large" fullWidth disabled={!isValid} onClick={() => handleComplete()}>
+            Complete
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Supermarket Food Temperature Checks ───────────────────────────────────
+  if (sectionId === 'supermarketTemp') {
+    const entries = deliveryData.supermarketEntries || [
+      { food: '', time: '', temp: '', initials: '' },
+      { food: '', time: '', temp: '', initials: '' },
+    ]
+
+    const updateEntry = (index, field, value) => {
+      const updated = entries.map((e, i) => i === index ? { ...e, [field]: value } : e)
+      setDeliveryData(prev => ({ ...prev, supermarketEntries: updated }))
+    }
+
+    const isValid = entries.some(e => e.food.trim() && e.initials.trim() && e.temp !== '')
+
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header title="Supermarket Food Temperatures" subtitle="Weekly check" showBack onBack={goBackToSections} />
+        <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+          <div className="bg-hop-freshair/30 border border-hop-freshair rounded-xl px-4 py-3">
+            <p className="text-sm text-hop-forest">
+              Check the temperatures of cold high risk foods bought in from the supermarket. Use a clean disinfected thermometer to ensure cold foods are 8°C or below.
+            </p>
+          </div>
+
+          {entries.map((entry, index) => (
+            <Card key={index} className="space-y-4">
+              <p className="font-medium text-hop-forest">Check {index + 1}</p>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Name / details of food</label>
+                <input
+                  type="text"
+                  value={entry.food}
+                  onChange={(e) => updateEntry(index, 'food', e.target.value)}
+                  placeholder="e.g. Cooked chicken slices"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Time of check</label>
+                <input
+                  type="time"
+                  value={entry.time}
+                  onChange={(e) => updateEntry(index, 'time', e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Temperature of food</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={entry.temp}
+                    onChange={(e) => updateEntry(index, 'temp', e.target.value)}
+                    placeholder="0.0"
+                    className={`w-full px-4 py-3 pr-12 border-2 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest ${
+                      entry.temp !== '' && parseFloat(entry.temp) > 8
+                        ? 'border-hop-marmalade-dark bg-hop-marmalade/10'
+                        : entry.temp !== '' && parseFloat(entry.temp) <= 8
+                        ? 'border-hop-apple bg-hop-apple/10'
+                        : 'border-gray-200'
+                    }`}
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">°C</span>
+                </div>
+                {entry.temp !== '' && parseFloat(entry.temp) > 8 && (
+                  <p className="text-xs text-hop-marmalade-dark mt-1">Above 8°C — food may not be safe</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Initials of checker</label>
+                <input
+                  type="text"
+                  value={entry.initials}
+                  onChange={(e) => updateEntry(index, 'initials', e.target.value)}
+                  placeholder="e.g. PF"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                />
+              </div>
+            </Card>
+          ))}
 
           <Button color="marmalade" size="large" fullWidth disabled={!isValid} onClick={() => handleComplete()}>
             Complete
