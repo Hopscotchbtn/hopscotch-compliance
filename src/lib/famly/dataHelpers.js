@@ -1,4 +1,5 @@
 import { classifyInjury } from './classifyInjury'
+import { classifySeverity } from './classifySeverity'
 
 export function childDisplayName(fullName) {
   const parts = fullName.trim().split(' ')
@@ -10,6 +11,7 @@ export function classifyAll(incidents) {
   return incidents.map(inc => ({
     ...inc,
     injuryCategory: classifyInjury(inc.id, inc.nature),
+    severity: classifySeverity(inc.id, inc.nature, inc.firstAid),
   }))
 }
 

@@ -32,6 +32,7 @@ export default function MonthlySummaryCards({ incidents, loading }) {
   const thisIncidents = thisMonth.filter(x => x.kind === 'Incident').length
   const lastAccidents = lastYear.filter(x => x.kind === 'Accident').length
   const lastIncidents = lastYear.filter(x => x.kind === 'Incident').length
+  const needsReview = thisMonth.filter(x => x.severity === 'high' || x.severity === 'medium').length
 
   const monthLabel = new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 
@@ -45,6 +46,20 @@ export default function MonthlySummaryCards({ incidents, loading }) {
         </div>
       ) : (
         <>
+          {needsReview > 0 && (
+            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+              <span className="text-red-500 text-lg leading-none mt-0.5">⚑</span>
+              <div>
+                <p className="text-sm font-semibold text-red-800">
+                  {needsReview} incident{needsReview !== 1 ? 's' : ''} this month may need formal review
+                </p>
+                <p className="text-xs text-red-600 mt-0.5">
+                  Flagged based on description — scroll to Recent Incidents to review and log in IncidentIQ
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Accidents — primary/large */}
             <div className="bg-white border border-stone-200 rounded-lg p-4 col-span-2">

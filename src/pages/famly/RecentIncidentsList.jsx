@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { childDisplayName, formatDate, formatTime } from '../../lib/famly/dataHelpers'
+import { SEVERITY_LABEL, SEVERITY_STYLE } from '../../lib/famly/classifySeverity'
 
 const KIND_COLOUR = {
   Accident: 'text-amber-700 bg-amber-50 border-amber-100',
@@ -59,6 +61,11 @@ export default function RecentIncidentsList({ incidents, loading }) {
                     <span className={`text-xs font-medium px-1.5 py-0.5 rounded border shrink-0 mt-0.5 ${KIND_COLOUR[inc.kind] ?? KIND_COLOUR.Incident}`}>
                       {inc.kind}
                     </span>
+                    {SEVERITY_LABEL[inc.severity] && (
+                      <span className={`text-xs font-medium px-1.5 py-0.5 rounded border shrink-0 mt-0.5 ${SEVERITY_STYLE[inc.severity]}`}>
+                        {SEVERITY_LABEL[inc.severity]}
+                      </span>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-baseline gap-x-2">
                         <span className="text-sm font-medium text-slate-800">{childDisplayName(inc.childName)}</span>
@@ -92,6 +99,35 @@ export default function RecentIncidentsList({ incidents, loading }) {
                       {inc.approvedBy && <div><p className="font-medium text-slate-500 mb-0.5 uppercase tracking-wide text-[10px]">Approved by</p><p>{inc.approvedBy}</p></div>}
                       {inc.acknowledgedBy && <div><p className="font-medium text-slate-500 mb-0.5 uppercase tracking-wide text-[10px]">Acknowledged by</p><p>{inc.acknowledgedBy}</p></div>}
                     </div>
+                    {(inc.severity === 'high' || inc.severity === 'medium') && (
+                      <div className={`rounded-md px-3 py-2.5 border ${SEVERITY_STYLE[inc.severity]} flex items-center justify-between gap-3`}>
+                        <p className="leading-snug">
+                          <span className="font-semibold">
+                            {inc.severity === 'high' ? 'This incident may require formal recording in IncidentIQ.' : 'This incident may be worth reviewing in IncidentIQ.'}
+                          </span>
+                          {' '}Famly data has been pre-filled.
+                        </p>
+                        <Link
+                          to="/incidents/new"
+                          state={{
+                            prefill: {
+                              childName: inc.childName,
+                              happenedAt: inc.happenedAt,
+                              location: inc.location,
+                              nature: inc.nature,
+                              firstAid: inc.firstAid,
+                              kind: inc.kind,
+                              createdBy: inc.createdBy,
+                              siteName: inc.siteName,
+                              famlyId: inc.id,
+                            }
+                          }}
+                          className="shrink-0 text-xs font-semibold underline underline-offset-2 whitespace-nowrap"
+                        >
+                          Log in IncidentIQ →
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
