@@ -5,11 +5,11 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
 import { Input } from '../components/ui/Input'
-import { kitchenSafety, isMonday, isFirstOfMonth, CHECK_ROOMS } from '../data/checklists'
+import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 import { formatDate, formatTime } from '../lib/utils'
-import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck } from '../lib/supabase'
+import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms } from '../lib/supabase'
 import { generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 
 const KITCHEN_SECTION_LABELS = {
@@ -20,6 +20,8 @@ const KITCHEN_SECTION_LABELS = {
 }
 
 const holidayClubLocations = ['Holland Road', 'School Road']
+
+const BASE_KITCHEN_ROOMS = ['Blue Room', 'Yellow Room', 'Green Room', 'Red Room']
 
 const NURSERY_SECTIONS = [
   { id: 'opening', name: 'Opening Fridge Check', icon: '☀️', description: 'Morning fridge temperatures' },
@@ -72,6 +74,10 @@ export function KitchenSafety() {
     const saved = last ? storage.getKitchenSafetyState(roomKey(last, room)) : null
     return saved?.sectionData || {}
   })
+
+  const [customRooms, setCustomRooms] = useState([])
+  const [showOtherInput, setShowOtherInput] = useState(false)
+  const [otherRoomName, setOtherRoomName] = useState('')
 
   const processedSection = useRef(null)
   const [selectedWeek, setSelectedWeek] = useState('')
@@ -132,7 +138,24 @@ export function KitchenSafety() {
   const handleSetupComplete = async () => {
     if (!nursery) return
     storage.setLastNursery(nursery)
+    const rooms = await getCustomRooms(nursery, 'kitchenSafety').catch(() => [])
+    setCustomRooms(rooms)
     setShowSetup(false)
+  }
+
+  const handleAddCustomRoom = (roomName) => {
+    const updated = [...customRooms, roomName]
+    setCustomRooms(updated)
+    saveCustomRooms(nursery, 'kitchenSafety', updated).catch(console.error)
+    handleSelectRoom(roomName)
+    setShowOtherInput(false)
+    setOtherRoomName('')
+  }
+
+  const handleDeleteCustomRoom = (roomName) => {
+    const updated = customRooms.filter(r => r !== roomName)
+    setCustomRooms(updated)
+    saveCustomRooms(nursery, 'kitchenSafety', updated).catch(console.error)
   }
 
   const handleSelectRoom = async (room) => {
@@ -176,7 +199,9 @@ export function KitchenSafety() {
   const showWeeklyProbeCheck = isMonday()
   const showMonthlyCalibration = isFirstOfMonth()
 
-  const nurseryRooms = CHECK_ROOMS.roomSafety
+  const nurseryRooms = nursery === 'Preston Park'
+    ? [...BASE_KITCHEN_ROOMS, 'Preschool']
+    : BASE_KITCHEN_ROOMS
 
   // Setup screen
   if (showSetup) {
@@ -231,54 +256,105 @@ export function KitchenSafety() {
         />
         <div className="px-4 py-6 max-w-md mx-auto">
           <div className="space-y-3">
-            {nurseryRooms.map((room) => {
+            {[...nurseryRooms, ...customRooms].map((room) => {
+              const isCustom = customRooms.includes(room)
               const saved = storage.getKitchenSafetyState(roomKey(nursery, room))
               const completed = saved?.completedSections || {}
               const completedCount = Object.values(completed).filter(Boolean).length
               const allDone = completedCount === SECTIONS.length
 
               return (
-                <button
-                  key={room}
-                  onClick={() => handleSelectRoom(room)}
-                  className={`
-                    w-full p-4 rounded-xl text-left transition-all duration-200
-                    flex items-center gap-4
-                    ${allDone
-                      ? 'bg-white border-2 border-hop-apple'
-                      : 'bg-white border-2 border-gray-200 hover:border-hop-marmalade hover:shadow-md'
-                    }
-                  `}
-                >
-                  <div className={`
-                    w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
-                    ${allDone ? 'bg-hop-apple' : completedCount > 0 ? 'bg-hop-marmalade' : 'bg-gray-100'}
-                  `}>
-                    {allDone ? (
-                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                    ) : completedCount > 0 ? (
-                      <span className="text-white text-xs font-bold">{completedCount}/{SECTIONS.length}</span>
-                    ) : (
-                      <div className="w-3 h-3 rounded-full bg-gray-300" />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-hop-forest">{room}</p>
-                    {completedCount > 0 && !allDone && (
-                      <p className="text-sm text-hop-marmalade-dark">{completedCount} of {SECTIONS.length} sections done</p>
-                    )}
-                    {allDone && (
-                      <p className="text-sm text-hop-apple">Completed</p>
-                    )}
-                  </div>
-                  <svg className={`w-5 h-5 ${allDone ? 'text-gray-400' : 'text-hop-marmalade'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+                <div key={room} className="relative">
+                  <button
+                    onClick={() => handleSelectRoom(room)}
+                    className={`
+                      w-full p-4 rounded-xl text-left transition-all duration-200
+                      flex items-center gap-4
+                      ${allDone
+                        ? 'bg-white border-2 border-hop-apple'
+                        : 'bg-white border-2 border-gray-200 hover:border-hop-marmalade hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <div className={`
+                      w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                      ${allDone ? 'bg-hop-apple' : completedCount > 0 ? 'bg-hop-marmalade' : 'bg-gray-100'}
+                    `}>
+                      {allDone ? (
+                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : completedCount > 0 ? (
+                        <span className="text-white text-xs font-bold">{completedCount}/{SECTIONS.length}</span>
+                      ) : (
+                        <div className="w-3 h-3 rounded-full bg-gray-300" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-hop-forest">{room}</p>
+                      {completedCount > 0 && !allDone && (
+                        <p className="text-sm text-hop-marmalade-dark">{completedCount} of {SECTIONS.length} sections done</p>
+                      )}
+                      {allDone && (
+                        <p className="text-sm text-hop-apple">Completed</p>
+                      )}
+                    </div>
+                    <svg className={`w-5 h-5 ${allDone ? 'text-gray-400' : 'text-hop-marmalade'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                  {isCustom && (
+                    <button
+                      onClick={() => handleDeleteCustomRoom(room)}
+                      className="absolute top-2 right-10 text-gray-400 hover:text-red-400 text-2xl leading-none p-1"
+                      title="Remove room"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               )
             })}
+
+            {/* Other room option */}
+            {showOtherInput ? (
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-4 space-y-3">
+                <p className="text-sm font-medium text-hop-forest">Specify room name</p>
+                <input
+                  type="text"
+                  value={otherRoomName}
+                  onChange={(e) => setOtherRoomName(e.target.value)}
+                  placeholder="e.g. Art Room"
+                  autoFocus
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowOtherInput(false); setOtherRoomName('') }}
+                    className="flex-1 py-2 rounded-lg text-sm text-gray-500 bg-gray-100 hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => otherRoomName.trim() && handleAddCustomRoom(otherRoomName.trim())}
+                    disabled={!otherRoomName.trim()}
+                    className="flex-1 py-2 rounded-lg text-sm font-medium bg-hop-forest text-white disabled:opacity-40"
+                  >
+                    Start Check
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowOtherInput(true)}
+                className="w-full p-4 rounded-xl text-left bg-white border-2 border-dashed border-gray-300 hover:border-hop-forest flex items-center gap-4 transition-all"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <span className="text-gray-400 text-xl">+</span>
+                </div>
+                <p className="font-medium text-gray-500">Other</p>
+              </button>
+            )}
           </div>
           <div className="mt-6 text-center">
             <button
