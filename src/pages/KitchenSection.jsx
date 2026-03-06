@@ -268,6 +268,7 @@ export function KitchenSection() {
           <Header title="Opening Checks" subtitle="Confirm all items are in place" showBack onBack={goBackToSections} />
           <div className="px-4 py-6 max-w-md mx-auto space-y-4">
             <Card className="space-y-2">
+              <p className="font-medium text-hop-forest pb-1">Confirm all items are in place</p>
               {OPENING_CHECKS.map(item => (
                 <div key={item.id} className="flex items-center gap-3 p-3">
                   <span className="text-hop-marmalade font-bold text-sm flex-shrink-0">•</span>
