@@ -8,6 +8,18 @@ import { Input } from '../components/ui/Input'
 import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
 import { formatTime } from '../lib/utils'
 
+const OPENING_CHECKS = [
+  { id: 1, text: 'Hot water in place' },
+  { id: 2, text: 'Handwash facilities in place' },
+  { id: 3, text: 'Clean cloths in place' },
+  { id: 4, text: 'Sanitiser in place' },
+  { id: 5, text: 'No food left out' },
+  { id: 6, text: 'All foods in date' },
+  { id: 7, text: 'Equipment OK' },
+  { id: 8, text: 'Probe thermometer available and working' },
+  { id: 9, text: 'Staff fit, well and in uniform' },
+]
+
 // Get section config
 const getSectionConfig = (sectionId) => {
   switch (sectionId) {
@@ -189,7 +201,7 @@ export function KitchenSection() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  const { nursery, completedBy, section, sectionData: allSectionData, completedSections } = location.state || {}
+  const { nursery, room, completedBy, section, sectionData: allSectionData, completedSections } = location.state || {}
   const config = getSectionConfig(sectionId)
 
   const savedData = allSectionData?.[sectionId] || {}
@@ -224,7 +236,7 @@ export function KitchenSection() {
 
   const goBackToSections = () => navigate('/kitchen-safety', {
     replace: true,
-    state: { returnedSection: section, skipSetup: true },
+    state: { returnedSection: section, skipSetup: true, room },
   })
 
   const handleComplete = (extraData = {}) => {
@@ -233,6 +245,7 @@ export function KitchenSection() {
       state: {
         completedSection: sectionId,
         returnedSection: section,
+        room,
         sectionData: {
           responses,
           notes,
@@ -246,20 +259,80 @@ export function KitchenSection() {
     })
   }
 
-  // Holiday club opening/closing fridge check — three fridges
-  if (sectionId === 'opening' || sectionId === 'closing') {
-    const isOpening = sectionId === 'opening'
-    const tempLabel = isOpening ? 'Opening temperature' : 'Closing temperature'
-    const fridges = [1, 2, 3]
-    const fridge1Name = temperatures.fridge1?.name || ''
+  // Opening section — checklist first, then fridge temps
+  if (sectionId === 'opening') {
+    const openingResponses = responses.openingChecks || {}
+    const allChecked = OPENING_CHECKS.every(item => openingResponses[item.id])
+
+    if (phase === 'checks') {
+      return (
+        <div className="min-h-screen bg-hop-pebble">
+          <Header title="Opening Checks" subtitle="Tick all items to confirm" showBack onBack={goBackToSections} />
+          <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+            <Card className="space-y-2">
+              {OPENING_CHECKS.map(item => {
+                const checked = !!openingResponses[item.id]
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setResponses(prev => ({
+                      ...prev,
+                      openingChecks: { ...prev.openingChecks, [item.id]: !checked }
+                    }))}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${
+                      checked ? 'border-hop-apple bg-hop-apple/10' : 'border-gray-200 bg-white'
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                      checked ? 'bg-hop-apple border-hop-apple' : 'border-gray-300 bg-white'
+                    }`}>
+                      {checked && (
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm text-hop-forest">{item.text}</span>
+                  </button>
+                )
+              })}
+            </Card>
+
+            <Card>
+              <label className="block text-sm font-medium text-hop-forest mb-2">
+                Your initials <span className="text-hop-marmalade-dark">*</span>
+              </label>
+              <input
+                type="text"
+                value={signedBy}
+                onChange={(e) => setSignedBy(e.target.value)}
+                placeholder="e.g. PF"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+              />
+            </Card>
+
+            <Button
+              color="marmalade"
+              size="large"
+              fullWidth
+              disabled={!allChecked || !signedBy.trim()}
+              onClick={() => setPhase('temps')}
+            >
+              Continue to Fridge Temperatures
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    // phase === 'temps' (or 'summary' if returning) — fridge temp entry
     const fridge1Temp = temperatures.fridge1?.temp || ''
     const isValid = fridge1Temp !== '' && signedBy.trim()
-
     return (
       <div className="min-h-screen bg-hop-pebble">
-        <Header title={isOpening ? 'Opening Fridge Check' : 'Closing Fridge Check'} showBack onBack={goBackToSections} />
+        <Header title="Opening Fridge Check" showBack onBack={() => setPhase('checks')} />
         <div className="px-4 py-6 max-w-md mx-auto space-y-4">
-          {fridges.map((n) => {
+          {[1, 2, 3].map((n) => {
             const key = `fridge${n}`
             const name = temperatures[key]?.name || ''
             const temp = temperatures[key]?.temp || ''
@@ -275,25 +348,87 @@ export function KitchenSection() {
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => setTemperatures(prev => ({
-                      ...prev,
-                      [key]: { ...prev[key], name: e.target.value }
-                    }))}
+                    onChange={(e) => setTemperatures(prev => ({ ...prev, [key]: { ...prev[key], name: e.target.value } }))}
                     placeholder="e.g. Fridge 1"
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-hop-forest mb-2">{tempLabel}</label>
+                  <label className="block text-sm font-medium text-hop-forest mb-2">Opening temperature</label>
                   <div className="relative">
                     <input
                       type="text"
                       inputMode="decimal"
                       value={temp}
-                      onChange={(e) => setTemperatures(prev => ({
-                        ...prev,
-                        [key]: { ...prev[key], temp: e.target.value }
-                      }))}
+                      onChange={(e) => setTemperatures(prev => ({ ...prev, [key]: { ...prev[key], temp: e.target.value } }))}
+                      placeholder="0.0"
+                      className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">°C</span>
+                  </div>
+                </div>
+              </Card>
+            )
+          })}
+
+          <Card>
+            <label className="block text-sm font-medium text-hop-forest mb-2">
+              Your initials <span className="text-hop-marmalade-dark">*</span>
+            </label>
+            <input
+              type="text"
+              value={signedBy}
+              onChange={(e) => setSignedBy(e.target.value)}
+              placeholder="e.g. PF"
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+            />
+          </Card>
+
+          <Button color="marmalade" size="large" fullWidth disabled={!isValid} onClick={() => handleComplete()}>
+            Complete
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // Closing section — fridge temps only
+  if (sectionId === 'closing') {
+    const fridge1Temp = temperatures.fridge1?.temp || ''
+    const isValid = fridge1Temp !== '' && signedBy.trim()
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header title="Closing Fridge Check" showBack onBack={goBackToSections} />
+        <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+          {[1, 2, 3].map((n) => {
+            const key = `fridge${n}`
+            const name = temperatures[key]?.name || ''
+            const temp = temperatures[key]?.temp || ''
+            const required = n === 1
+            return (
+              <Card key={key} className="space-y-4">
+                <p className="font-medium text-hop-forest">
+                  Fridge {n} {required && <span className="text-hop-marmalade-dark text-sm">*</span>}
+                  {!required && <span className="text-gray-400 text-sm font-normal"> (optional)</span>}
+                </p>
+                <div>
+                  <label className="block text-sm font-medium text-hop-forest mb-2">Unit number / name</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setTemperatures(prev => ({ ...prev, [key]: { ...prev[key], name: e.target.value } }))}
+                    placeholder="e.g. Fridge 1"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-hop-forest mb-2">Closing temperature</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={temp}
+                      onChange={(e) => setTemperatures(prev => ({ ...prev, [key]: { ...prev[key], temp: e.target.value } }))}
                       placeholder="0.0"
                       className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest"
                     />
