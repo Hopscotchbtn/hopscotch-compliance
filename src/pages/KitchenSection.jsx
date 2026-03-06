@@ -8,6 +8,7 @@ import { Input } from '../components/ui/Input'
 import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
 import { formatTime } from '../lib/utils'
 import { storage } from '../lib/storage'
+import { saveLittleTumsData, getTodayLittleTumsData } from '../lib/supabase'
 
 const OPENING_CHECKS = [
   { id: 1, text: 'Hot water in place' },
@@ -236,6 +237,16 @@ export function KitchenSection() {
       navigate(-1)
     }
   }, [config, nursery, navigate])
+
+  // Load Little Tums data from Supabase for cross-device sync
+  useEffect(() => {
+    if (!config?.isLittleTums || !nursery) return
+    getTodayLittleTumsData(nursery, room).then(remoteData => {
+      if (remoteData) {
+        setDeliveryData(prev => ({ ...remoteData, ...prev }))
+      }
+    }).catch(() => {})
+  }, [])
 
   if (!config || !nursery) {
     return null
@@ -860,16 +871,19 @@ export function KitchenSection() {
     const lunchDone = !!deliveryData.lunchDone
     const teaDone = !!deliveryData.teaDone
 
-    const saveToStorage = (updatedDeliveryData) => {
+    const saveData = (updatedDeliveryData) => {
       const key = room ? `${nursery}::${room}` : nursery
       const existing = storage.getKitchenSafetyState(key)
       storage.setKitchenSafetyState(key, existing?.completedSections || {}, {
         ...(existing?.sectionData || {}),
         littleTums: { responses, notes, temperatures, deliveryData: updatedDeliveryData },
       })
+      saveLittleTumsData(nursery, room, updatedDeliveryData).catch(console.error)
     }
 
-    const renderTempFields = (items, dataKey) => {
+    const itemName = (item) => deliveryData.itemNames?.[item.id] || item.label
+
+    const renderTempFields = (items, dataKey, editableNames = false) => {
       const threshold = (item) => item.type === 'hot' ? 63 : 8
       const isValidTemp = (item) => {
         const t = parseFloat(deliveryData[dataKey]?.[item.id]?.temp)
@@ -881,8 +895,21 @@ export function KitchenSection() {
         const valid = temp && isValidTemp(item)
         const invalid = temp && !isValidTemp(item)
         return (
-          <div key={item.id}>
-            <label className="block text-sm text-hop-forest mb-1">{item.label}</label>
+          <div key={item.id} className="space-y-1">
+            {editableNames ? (
+              <input
+                type="text"
+                value={itemName(item)}
+                onChange={(e) => setDeliveryData(prev => ({
+                  ...prev,
+                  itemNames: { ...prev.itemNames, [item.id]: e.target.value }
+                }))}
+                placeholder={item.label}
+                className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest"
+              />
+            ) : (
+              <label className="block text-sm text-hop-forest">{itemName(item)}</label>
+            )}
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <input
@@ -927,10 +954,13 @@ export function KitchenSection() {
           <Header title="Lunch — Arrival" subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
           <div className="px-4 py-6 max-w-md mx-auto space-y-4">
             <Card className="space-y-4">
-              <p className="text-xs text-gray-500">Hot ≥63°C · Cold ≤8°C</p>
-              {renderTempFields(lunchItems, 'lunch')}
+              <p className="text-xs text-gray-500">Edit item names if needed · Hot ≥63°C · Cold ≤8°C</p>
+              {renderTempFields(lunchItems, 'lunch', true)}
             </Card>
-            <Button color="marmalade" size="large" fullWidth disabled={!allFilled} onClick={() => setPhase('lunchServing')}>
+            <Button color="marmalade" size="large" fullWidth disabled={!allFilled} onClick={() => {
+              saveData(deliveryData)
+              setPhase('lunchServing')
+            }}>
               Continue to Serving
             </Button>
           </div>
@@ -1002,7 +1032,7 @@ export function KitchenSection() {
                 onClick={() => {
                   const updated = { ...deliveryData, lunchDone: true }
                   setDeliveryData(updated)
-                  saveToStorage(updated)
+                  saveData(updated)
                   setPhase('ltMenu')
                 }}
               >
@@ -1022,10 +1052,13 @@ export function KitchenSection() {
           <Header title="Tea — Arrival" subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
           <div className="px-4 py-6 max-w-md mx-auto space-y-4">
             <Card className="space-y-4">
-              <p className="text-xs text-gray-500">Hot ≥63°C · Cold ≤8°C</p>
-              {renderTempFields(teaItems, 'tea')}
+              <p className="text-xs text-gray-500">Edit item names if needed · Hot ≥63°C · Cold ≤8°C</p>
+              {renderTempFields(teaItems, 'tea', true)}
             </Card>
-            <Button color="marmalade" size="large" fullWidth disabled={!allFilled} onClick={() => setPhase('teaServing')}>
+            <Button color="marmalade" size="large" fullWidth disabled={!allFilled} onClick={() => {
+              saveData(deliveryData)
+              setPhase('teaServing')
+            }}>
               Continue to Serving
             </Button>
           </div>
@@ -1097,7 +1130,7 @@ export function KitchenSection() {
                 onClick={() => {
                   const updated = { ...deliveryData, teaDone: true }
                   setDeliveryData(updated)
-                  saveToStorage(updated)
+                  saveData(updated)
                   setPhase('ltMenu')
                 }}
               >

@@ -300,6 +300,57 @@ export const getTodayKitchenSafetyCheck = async (nursery) => {
   return completed
 }
 
+export const saveLittleTumsData = async (nursery, room, deliveryData) => {
+  if (!supabase) return
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const { data: existing } = await supabase
+    .from('checks')
+    .select('id')
+    .eq('nursery', nursery)
+    .eq('check_type', 'littleTumsData')
+    .eq('room', room || 'Kitchen')
+    .gte('created_at', today.toISOString())
+    .limit(1)
+
+  const record = {
+    nursery,
+    room: room || 'Kitchen',
+    check_type: 'littleTumsData',
+    completed_by: 'system',
+    items: [],
+    has_issues: false,
+    overall_notes: JSON.stringify(deliveryData),
+  }
+
+  if (existing?.length) {
+    await supabase.from('checks').update(record).eq('id', existing[0].id)
+  } else {
+    await supabase.from('checks').insert([record])
+  }
+}
+
+export const getTodayLittleTumsData = async (nursery, room) => {
+  if (!supabase) return null
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const { data } = await supabase
+    .from('checks')
+    .select('overall_notes')
+    .eq('nursery', nursery)
+    .eq('check_type', 'littleTumsData')
+    .eq('room', room || 'Kitchen')
+    .gte('created_at', today.toISOString())
+    .limit(1)
+
+  if (!data?.length || !data[0].overall_notes) return null
+  try { return JSON.parse(data[0].overall_notes) } catch { return null }
+}
+
 export const upsertKitchenSafetyCheck = async (nursery, checkData) => {
   if (!supabase) return null
 
