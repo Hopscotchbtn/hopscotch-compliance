@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
 import { formatTime } from '../lib/utils'
+import { storage } from '../lib/storage'
 
 const OPENING_CHECKS = [
   { id: 1, text: 'Hot water in place' },
@@ -293,7 +294,15 @@ export function KitchenSection() {
               size="large"
               fullWidth
               disabled={!signedBy.trim()}
-              onClick={() => setPhase('temps')}
+              onClick={() => {
+                const key = room ? `${nursery}::${room}` : nursery
+                const existing = storage.getKitchenSafetyState(key)
+                storage.setKitchenSafetyState(key, existing?.completedSections || {}, {
+                  ...(existing?.sectionData || {}),
+                  opening: { responses, notes, temperatures, signedBy },
+                })
+                setPhase('temps')
+              }}
             >
               Continue to Fridge Temperatures
             </Button>
