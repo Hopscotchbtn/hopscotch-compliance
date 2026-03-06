@@ -9,7 +9,7 @@ import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 import { formatDate, formatTime } from '../lib/utils'
-import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms } from '../lib/supabase'
+import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms, submitCheck, getLastCheck } from '../lib/supabase'
 import { generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 
 const KITCHEN_SECTION_LABELS = {
@@ -41,6 +41,24 @@ const WEEKLY_SECTIONS = [
 
 const NURSERY_SECTIONS = DAILY_SECTIONS
 const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
+
+const getMondayOfThisWeek = () => {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  const day = d.getDay()
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
+  return d
+}
+
+const isDoneThisWeek = (dateStr) => {
+  if (!dateStr) return false
+  return new Date(dateStr) >= getMondayOfThisWeek()
+}
+
+const formatLastDone = (dateStr) => {
+  if (!dateStr) return null
+  return new Date(dateStr).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+}
 
 export function KitchenSafety() {
   const navigate = useNavigate()
@@ -84,6 +102,8 @@ export function KitchenSafety() {
   const [showOtherInput, setShowOtherInput] = useState(false)
   const [otherRoomName, setOtherRoomName] = useState('')
 
+  const [weeklyCheckDates, setWeeklyCheckDates] = useState({})
+
   const processedSection = useRef(null)
   const [selectedWeek, setSelectedWeek] = useState('')
   const weekOptions = getWeekOptions(5)
@@ -103,6 +123,18 @@ export function KitchenSafety() {
     }
   }
 
+  // Fetch last completion dates for weekly checks
+  useEffect(() => {
+    if (!nursery) return
+    Promise.all(
+      WEEKLY_SECTIONS.map(s => getLastCheck(nursery, s.id).catch(() => null))
+    ).then(results => {
+      const dates = {}
+      WEEKLY_SECTIONS.forEach((s, i) => { dates[s.id] = results[i] })
+      setWeeklyCheckDates(dates)
+    })
+  }, [nursery])
+
   // Handle returning from a completed section
   useEffect(() => {
     const { completedSection, sectionData: newData, room: returnedRoom } = location.state || {}
@@ -113,6 +145,19 @@ export function KitchenSafety() {
         setSectionData(prevData => {
           const nextData = { ...prevData, [completedSection]: newData }
           storage.setKitchenSafetyState(roomKey(nursery, returnedRoom ?? selectedRoom), next, nextData)
+
+          // Save weekly checks with their own check_type for last-done tracking
+          if (nursery && ['probeCheck', 'supermarketTemp'].includes(completedSection)) {
+            submitCheck({
+              nursery,
+              room: returnedRoom ?? selectedRoom ?? 'Kitchen',
+              checkType: completedSection,
+              completedBy: name,
+              items: [{ id: completedSection, text: KITCHEN_SECTION_LABELS[completedSection], status: 'pass' }],
+            }).then(() => getLastCheck(nursery, completedSection)).then(data => {
+              if (data) setWeeklyCheckDates(prev => ({ ...prev, [completedSection]: data }))
+            }).catch(() => {})
+          }
 
           // Sync to Supabase so it appears in today's checks & history
           if (nursery) {
@@ -484,7 +529,9 @@ export function KitchenSafety() {
           </div>
           <div className="divide-y divide-gray-100">
             {WEEKLY_SECTIONS.map((sectionItem) => {
-              const isComplete = completedSections[sectionItem.id]
+              const lastDone = weeklyCheckDates[sectionItem.id]?.created_at
+              const doneThisWeek = isDoneThisWeek(lastDone)
+              const lastDoneLabel = formatLastDone(lastDone)
 
               return (
                 <button
@@ -494,9 +541,9 @@ export function KitchenSafety() {
                 >
                   <div className={`
                     w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl
-                    ${isComplete ? 'bg-hop-apple' : 'bg-hop-freshair/40'}
+                    ${doneThisWeek ? 'bg-hop-apple' : 'bg-hop-freshair/40'}
                   `}>
-                    {isComplete ? (
+                    {doneThisWeek ? (
                       <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
@@ -507,13 +554,17 @@ export function KitchenSafety() {
                   <div className="flex-1">
                     <p className="font-medium text-hop-forest">{sectionItem.name}</p>
                     <p className="text-sm text-gray-500">{sectionItem.description}</p>
-                    {isComplete && sectionData[sectionItem.id]?.completedAt && (
-                      <p className="text-xs text-hop-apple mt-1">
-                        Completed at {formatTime(new Date(sectionData[sectionItem.id].completedAt))}
-                      </p>
+                    {doneThisWeek && lastDoneLabel && (
+                      <p className="text-xs text-hop-apple mt-1">Done this week · {lastDoneLabel}</p>
+                    )}
+                    {!doneThisWeek && lastDoneLabel && (
+                      <p className="text-xs text-hop-marmalade-dark mt-1">Due this week · last done {lastDoneLabel}</p>
+                    )}
+                    {!doneThisWeek && !lastDoneLabel && (
+                      <p className="text-xs text-hop-marmalade-dark mt-1">Not yet completed</p>
                     )}
                   </div>
-                  <svg className={`w-5 h-5 flex-shrink-0 ${isComplete ? 'text-gray-400' : 'text-hop-forest/40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className={`w-5 h-5 flex-shrink-0 ${doneThisWeek ? 'text-gray-400' : 'text-hop-forest/40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
