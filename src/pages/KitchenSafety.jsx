@@ -20,6 +20,7 @@ const KITCHEN_SECTION_LABELS = {
   signoff: 'Manager Sign-off',
   probeCheck: 'Fridge/Freezer Probe Thermometer Check',
   supermarketTemp: 'Supermarket Food Temperature Checks',
+  probeCalibration: 'Probe Calibration Check',
 }
 
 const holidayClubLocations = ['Holland Road', 'School Road']
@@ -39,6 +40,10 @@ const WEEKLY_SECTIONS = [
   { id: 'supermarketTemp', name: 'Supermarket Food Temperature Checks', icon: '🛒', description: 'Temperature check of supermarket deliveries' },
 ]
 
+const MONTHLY_SECTIONS = [
+  { id: 'probeCalibration', name: 'Probe Calibration Check', icon: '🔬', description: 'Monthly calibration of probe thermometers' },
+]
+
 const NURSERY_SECTIONS = DAILY_SECTIONS
 const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
 
@@ -53,6 +58,13 @@ const getMondayOfThisWeek = () => {
 const isDoneThisWeek = (dateStr) => {
   if (!dateStr) return false
   return new Date(dateStr) >= getMondayOfThisWeek()
+}
+
+const isDoneThisMonth = (dateStr) => {
+  if (!dateStr) return false
+  const d = new Date(dateStr)
+  const now = new Date()
+  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
 }
 
 const formatLastDone = (dateStr) => {
@@ -123,14 +135,15 @@ export function KitchenSafety() {
     }
   }
 
-  // Fetch last completion dates for weekly checks
+  // Fetch last completion dates for weekly + monthly checks
   useEffect(() => {
     if (!nursery) return
+    const allPeriodic = [...WEEKLY_SECTIONS, ...MONTHLY_SECTIONS]
     Promise.all(
-      WEEKLY_SECTIONS.map(s => getLastCheck(nursery, s.id).catch(() => null))
+      allPeriodic.map(s => getLastCheck(nursery, s.id).catch(() => null))
     ).then(results => {
       const dates = {}
-      WEEKLY_SECTIONS.forEach((s, i) => { dates[s.id] = results[i] })
+      allPeriodic.forEach((s, i) => { dates[s.id] = results[i] })
       setWeeklyCheckDates(dates)
     })
   }, [nursery])
@@ -147,7 +160,7 @@ export function KitchenSafety() {
           storage.setKitchenSafetyState(roomKey(nursery, returnedRoom ?? selectedRoom), next, nextData)
 
           // Save weekly checks with their own check_type for last-done tracking
-          if (nursery && ['probeCheck', 'supermarketTemp'].includes(completedSection)) {
+          if (nursery && ['probeCheck', 'supermarketTemp', 'probeCalibration'].includes(completedSection)) {
             submitCheck({
               nursery,
               room: returnedRoom ?? selectedRoom ?? 'Kitchen',
@@ -565,6 +578,57 @@ export function KitchenSafety() {
                     )}
                   </div>
                   <svg className={`w-5 h-5 flex-shrink-0 ${doneThisWeek ? 'text-gray-400' : 'text-hop-forest/40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Monthly Checks */}
+        <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden mt-4">
+          <div className="px-4 py-3 bg-hop-blossom/20 border-b border-gray-200">
+            <p className="text-sm font-semibold text-hop-forest uppercase tracking-wide">Monthly Checks</p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {MONTHLY_SECTIONS.map((sectionItem) => {
+              const lastDone = weeklyCheckDates[sectionItem.id]?.created_at
+              const doneThisMonth = isDoneThisMonth(lastDone)
+              const lastDoneLabel = formatLastDone(lastDone)
+
+              return (
+                <button
+                  key={sectionItem.id}
+                  onClick={() => handleStartSection(sectionItem.id)}
+                  className="w-full p-4 text-left transition-all duration-200 flex items-center gap-4 hover:bg-gray-50"
+                >
+                  <div className={`
+                    w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl
+                    ${doneThisMonth ? 'bg-hop-apple' : 'bg-hop-blossom/30'}
+                  `}>
+                    {doneThisMonth ? (
+                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      sectionItem.icon
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-hop-forest">{sectionItem.name}</p>
+                    <p className="text-sm text-gray-500">{sectionItem.description}</p>
+                    {doneThisMonth && lastDoneLabel && (
+                      <p className="text-xs text-hop-apple mt-1">Done this month · {lastDoneLabel}</p>
+                    )}
+                    {!doneThisMonth && lastDoneLabel && (
+                      <p className="text-xs text-hop-marmalade-dark mt-1">Due this month · last done {lastDoneLabel}</p>
+                    )}
+                    {!doneThisMonth && !lastDoneLabel && (
+                      <p className="text-xs text-hop-marmalade-dark mt-1">Not yet completed</p>
+                    )}
+                  </div>
+                  <svg className={`w-5 h-5 flex-shrink-0 ${doneThisMonth ? 'text-gray-400' : 'text-hop-forest/40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>

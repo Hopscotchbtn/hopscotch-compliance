@@ -75,6 +75,8 @@ const getSectionConfig = (sectionId) => {
       return { title: 'Probe Thermometer Check', subtitle: 'Weekly check', items: [] }
     case 'supermarketTemp':
       return { title: 'Supermarket Food Temperatures', subtitle: 'Weekly check', items: [] }
+    case 'probeCalibration':
+      return { title: 'Probe Calibration Check', subtitle: 'Monthly check', items: [] }
     default:
       return null
   }
@@ -716,6 +718,122 @@ export function KitchenSection() {
               </div>
             </Card>
           ))}
+
+          <Button color="marmalade" size="large" fullWidth disabled={!isValid} onClick={() => handleComplete()}>
+            Complete
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Probe Calibration Check ───────────────────────────────────────────────
+  if (sectionId === 'probeCalibration') {
+    const probes = [1, 2]
+
+    const updateProbe = (n, field, value) => {
+      setDeliveryData(prev => ({
+        ...prev,
+        [`probe${n}`]: { ...(prev[`probe${n}`] || {}), [field]: value },
+      }))
+    }
+
+    const getProbeResult = (n) => {
+      const p = deliveryData[`probe${n}`] || {}
+      const boiling = parseFloat(p.boilingTemp)
+      const iced = parseFloat(p.icedTemp)
+      if (isNaN(boiling) || isNaN(iced)) return null
+      const boilingPass = boiling >= 99 && boiling <= 101
+      const icedPass = iced >= -1 && iced <= 1
+      return boilingPass && icedPass ? 'pass' : 'fail'
+    }
+
+    const isValid = probes.some(n => {
+      const p = deliveryData[`probe${n}`] || {}
+      return p.identity?.trim() && p.boilingTemp !== '' && p.icedTemp !== '' && p.initials?.trim()
+    })
+
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header title="Probe Calibration Check" subtitle="Monthly check" showBack onBack={goBackToSections} />
+        <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+          <div className="bg-hop-blossom/20 border border-hop-blossom rounded-xl px-4 py-3">
+            <p className="text-base text-hop-forest">
+              Probe thermometers must be checked in boiling water and iced water once a month to ensure they are working properly. Boiling water test results must be between 99°C and 101°C. Iced water results between -1°C and +1°C.
+            </p>
+          </div>
+
+          {probes.map((n) => {
+            const p = deliveryData[`probe${n}`] || {}
+            const result = getProbeResult(n)
+            return (
+              <Card key={n} className="space-y-4">
+                <p className="font-medium text-hop-forest">Probe {n}</p>
+                <div>
+                  <label className="block text-sm font-medium text-hop-forest mb-2">Identity of probe</label>
+                  <input
+                    type="text"
+                    value={p.identity || ''}
+                    onChange={(e) => updateProbe(n, 'identity', e.target.value)}
+                    placeholder="e.g. Probe A"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-hop-forest mb-2">Boiling water test result</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={p.boilingTemp || ''}
+                      onChange={(e) => updateProbe(n, 'boilingTemp', e.target.value)}
+                      placeholder="99–101°C"
+                      className={`w-full px-4 py-3 pr-12 border-2 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest ${
+                        p.boilingTemp !== '' && p.boilingTemp !== undefined
+                          ? (parseFloat(p.boilingTemp) >= 99 && parseFloat(p.boilingTemp) <= 101 ? 'border-hop-apple bg-hop-apple/10' : 'border-hop-marmalade-dark bg-hop-marmalade/10')
+                          : 'border-gray-200'
+                      }`}
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">°C</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-hop-forest mb-2">Iced water test result</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={p.icedTemp || ''}
+                      onChange={(e) => updateProbe(n, 'icedTemp', e.target.value)}
+                      placeholder="-1 to +1°C"
+                      className={`w-full px-4 py-3 pr-12 border-2 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest ${
+                        p.icedTemp !== '' && p.icedTemp !== undefined
+                          ? (parseFloat(p.icedTemp) >= -1 && parseFloat(p.icedTemp) <= 1 ? 'border-hop-apple bg-hop-apple/10' : 'border-hop-marmalade-dark bg-hop-marmalade/10')
+                          : 'border-gray-200'
+                      }`}
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">°C</span>
+                  </div>
+                </div>
+                {result && (
+                  <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${result === 'pass' ? 'bg-hop-apple/10 text-hop-apple' : 'bg-hop-marmalade/10 text-hop-marmalade-dark'}`}>
+                    <span className="font-semibold text-sm">{result === 'pass' ? '✓ Pass' : '✗ Fail'}</span>
+                    {result === 'fail' && <span className="text-xs">— one or both readings outside acceptable range</span>}
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-hop-forest mb-2">Initials</label>
+                  <input
+                    type="text"
+                    value={p.initials || ''}
+                    onChange={(e) => updateProbe(n, 'initials', e.target.value)}
+                    placeholder="e.g. PF"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                  />
+                </div>
+              </Card>
+            )
+          })}
 
           <Button color="marmalade" size="large" fullWidth disabled={!isValid} onClick={() => handleComplete()}>
             Complete
