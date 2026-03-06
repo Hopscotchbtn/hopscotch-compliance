@@ -398,13 +398,64 @@ export function KitchenSection() {
     )
   }
 
-  // Closing section — fridge temps only
+  // Closing section — checklist then fridge temps
   if (sectionId === 'closing') {
+    if (phase === 'checks') {
+      return (
+        <div className="min-h-screen bg-hop-pebble">
+          <Header title="Closing Checks" subtitle="Confirm all items are complete" showBack onBack={goBackToSections} />
+          <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+            <Card className="space-y-2">
+              <p className="font-medium text-hop-forest pb-1">Confirm all items are in place</p>
+              {kitchenSafety.closingChecks.map(item => (
+                <div key={item.id} className="flex items-center gap-3 p-3">
+                  <span className="text-hop-marmalade font-bold text-sm flex-shrink-0">•</span>
+                  <span className="text-sm text-hop-forest">{item.text}</span>
+                </div>
+              ))}
+            </Card>
+
+            <Card>
+              <label className="block text-sm font-medium text-hop-forest mb-2">
+                Your initials <span className="text-hop-marmalade-dark">*</span>
+              </label>
+              <input
+                type="text"
+                value={signedBy}
+                onChange={(e) => setSignedBy(e.target.value)}
+                placeholder="e.g. PF"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+              />
+            </Card>
+
+            <Button
+              color="marmalade"
+              size="large"
+              fullWidth
+              disabled={!signedBy.trim()}
+              onClick={() => {
+                const key = room ? `${nursery}::${room}` : nursery
+                const existing = storage.getKitchenSafetyState(key)
+                storage.setKitchenSafetyState(key, existing?.completedSections || {}, {
+                  ...(existing?.sectionData || {}),
+                  closing: { responses, notes, temperatures, signedBy },
+                })
+                setPhase('temps')
+              }}
+            >
+              Continue to Fridge Temperatures
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    // Fridge temp entry
     const fridge1Temp = temperatures.fridge1?.temp || ''
     const isValid = fridge1Temp !== '' && signedBy.trim()
     return (
       <div className="min-h-screen bg-hop-pebble">
-        <Header title="Closing Fridge Check" showBack onBack={goBackToSections} />
+        <Header title="Closing Fridge Check" showBack onBack={() => setPhase('checks')} />
         <div className="px-4 py-6 max-w-md mx-auto space-y-4">
           {[1, 2, 3].map((n) => {
             const key = `fridge${n}`
