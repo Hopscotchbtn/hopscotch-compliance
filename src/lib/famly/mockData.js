@@ -1,3 +1,10 @@
+// Stable mock child IDs — keyed by name so they're consistent across sites
+const CHILD_IDS = {}
+function childId(name) {
+  if (!CHILD_IDS[name]) CHILD_IDS[name] = 'mock-child-' + name.toLowerCase().replace(/\s+/g, '-')
+  return CHILD_IDS[name]
+}
+
 export const MOCK_SITES = [
   { id: 'site-1', name: 'Brighton Central' },
   { id: 'site-2', name: 'Hove' },
@@ -77,6 +84,8 @@ function makeIncident(id, child, month, year, siteId) {
     firstAid: template.firstAid,
     witnesses: [randomFrom(STAFF.filter(s => s !== creator))],
     siteId,
+    siteName: siteId,
+    childId: childId(child),
   }
 }
 
@@ -124,6 +133,8 @@ export function generateMockIncidents(siteId) {
       firstAid: template.firstAid,
       witnesses: [randomFrom(STAFF)],
       siteId,
+      siteName: siteId,
+      childId: childId(child),
     })
   }
 
@@ -132,6 +143,9 @@ export function generateMockIncidents(siteId) {
 
 const _cache = new Map()
 export function getMockIncidents(siteId) {
+  if (siteId === 'all') {
+    return MOCK_SITES.flatMap(s => getMockIncidents(s.id))
+  }
   if (!_cache.has(siteId)) _cache.set(siteId, generateMockIncidents(siteId))
   return _cache.get(siteId)
 }

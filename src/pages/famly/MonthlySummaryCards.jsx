@@ -12,11 +12,11 @@ function DeltaBadge({ current, previous }) {
   )
 }
 
-function SkeletonCard() {
+function SkeletonCard({ large }) {
   return (
-    <div className="bg-white border border-stone-200 rounded-lg p-4 animate-pulse">
+    <div className={`bg-white border border-stone-200 rounded-lg p-4 animate-pulse ${large ? 'sm:col-span-2' : ''}`}>
       <div className="h-3 w-24 bg-stone-100 rounded mb-3" />
-      <div className="h-8 w-16 bg-stone-100 rounded mb-2" />
+      <div className={`${large ? 'h-12 w-20' : 'h-8 w-14'} bg-stone-100 rounded mb-2`} />
       <div className="h-3 w-32 bg-stone-100 rounded" />
     </div>
   )
@@ -37,41 +37,50 @@ export default function MonthlySummaryCards({ incidents, loading }) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-baseline justify-between px-1">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">{monthLabel}</h2>
-      </div>
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">{monthLabel}</h2>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <SkeletonCard /><SkeletonCard /><SkeletonCard />
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <SkeletonCard large /><SkeletonCard /><SkeletonCard />
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="bg-white border border-stone-200 rounded-lg p-4">
-              <p className="text-xs text-slate-500 mb-1">Total this month</p>
-              <p className="text-3xl font-bold text-slate-800">{thisMonth.length}</p>
-              <div className="mt-1"><DeltaBadge current={thisMonth.length} previous={lastYear.length} /></div>
-            </div>
-            <div className="bg-white border border-stone-200 rounded-lg p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Accidents — primary/large */}
+            <div className="bg-white border border-stone-200 rounded-lg p-4 col-span-2">
               <p className="text-xs text-slate-500 mb-1">
-                Accidents
-                <span className="ml-1 text-stone-300 font-normal">· falls, collisions, injuries</span>
+                Accidents this month
+                <span className="ml-1 text-stone-300">· falls, collisions, injuries</span>
               </p>
-              <p className="text-3xl font-bold text-amber-700">{thisAccidents}</p>
-              <div className="mt-1"><DeltaBadge current={thisAccidents} previous={lastAccidents} /></div>
+              <p className="text-5xl font-bold text-amber-700">{thisAccidents}</p>
+              <div className="mt-2">
+                <DeltaBadge current={thisAccidents} previous={lastAccidents} />
+              </div>
             </div>
+
+            {/* Incidents — secondary */}
             <div className="bg-white border border-stone-200 rounded-lg p-4">
               <p className="text-xs text-slate-500 mb-1">
                 Incidents
-                <span className="ml-1 text-stone-300 font-normal">· biting, aggression, near-misses</span>
+                <span className="block text-stone-300">biting, aggression, near-misses</span>
               </p>
               <p className="text-3xl font-bold text-teal-700">{thisIncidents}</p>
-              <div className="mt-1"><DeltaBadge current={thisIncidents} previous={lastIncidents} /></div>
+              <div className="mt-1">
+                <DeltaBadge current={thisIncidents} previous={lastIncidents} />
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="bg-white border border-stone-200 rounded-lg p-4">
+              <p className="text-xs text-slate-500 mb-1">Total</p>
+              <p className="text-3xl font-bold text-slate-700">{thisMonth.length}</p>
+              <div className="mt-1">
+                <DeltaBadge current={thisMonth.length} previous={lastYear.length} />
+              </div>
             </div>
           </div>
-          {/* Contextual note for year-on-year comparison */}
-          {(lastYear.length > 0) && (
+
+          {lastYear.length > 0 && (
             <p className="text-xs text-slate-400 px-1">
               Year-on-year comparison. Increases may reflect higher occupancy or improved reporting rather than increased risk.
             </p>

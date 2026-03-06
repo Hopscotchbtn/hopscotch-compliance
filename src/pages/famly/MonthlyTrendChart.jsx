@@ -14,8 +14,7 @@ function Skeleton() {
 export default function MonthlyTrendChart({ incidents, loading }) {
   const data = buildTrend(incidents)
   return (
-    <div className="bg-white border border-stone-200 rounded-lg p-4">
-      <h2 className="text-sm font-semibold text-slate-700 mb-4">12-month trend</h2>
+    <div className="pt-2">
       {loading ? <Skeleton /> : <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 0, right: 8, left: -16, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f0ed" vertical={false} />

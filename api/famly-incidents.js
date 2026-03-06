@@ -81,6 +81,8 @@ function normalise(r) {
     acknowledgedBy: r.acknowledgedBy?.name?.fullName ?? undefined,
     acknowledgedAt: r.acknowledgedAt ?? undefined,
     siteId: r.site?.siteId ?? '',
+    siteName: r.site?.title ?? '',
+    childId: r.child?.id ?? null,
   }
 }
 
