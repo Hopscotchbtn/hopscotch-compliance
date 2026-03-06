@@ -53,7 +53,7 @@ async function fetchDataURL(url) {
   } catch { return null }
 }
 
-function drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin) {
+function drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin, room) {
   let y = 8
   if (logoDataURL) {
     try {
@@ -62,7 +62,7 @@ function drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin) {
     } catch { y += 8 }
   }
 
-  y += 4 // gap between logo and title
+  y += 4
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(13)
@@ -72,13 +72,117 @@ function drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin) {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(8)
   doc.setTextColor(...MID_GREY)
-  doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y + 6, { align: 'center' })
+  const subtitle = room ? `${nursery}  ·  ${room}  ·  Week: ${weekRange}` : `${nursery}  ·  Week: ${weekRange}`
+  doc.text(subtitle, pageW / 2, y + 6, { align: 'center' })
 
   doc.setDrawColor(...MARMALADE)
   doc.setLineWidth(0.6)
   doc.line(margin, y + 10, pageW - margin, y + 10)
 
   return y + 16
+}
+
+function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
+  if (!sd || Object.keys(completedSections || {}).length === 0) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(...MID_GREY)
+    doc.text('No checks recorded for this day.', margin + 2, y + 6)
+    return
+  }
+
+  // ── Opening Kitchen Checks ────────────────────────────────────────────────
+  if (sd.opening) {
+    y = sectionLabel(doc, 'Opening Kitchen Checks', y, margin)
+    const rows = [1, 2, 3].map(n => {
+      const f = sd.opening.temperatures?.[`fridge${n}`]
+      return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
+    })
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['', 'Unit name', 'Temp']],
+      body: [
+        ...rows,
+        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.opening.completedBy || sd.opening.signedBy || '–', colSpan: 2 }],
+      ],
+      columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 22 } },
+      theme: 'grid',
+      ...TABLE_STYLES,
+    })
+    y = doc.lastAutoTable.finalY + 5
+  }
+
+  // ── Packed Lunches ──────────────────────────────────────────────────────
+  if (sd.packedLunch) {
+    y = sectionLabel(doc, 'Packed Lunches', y, margin)
+    const plRows = Object.entries(PACKED_LUNCH_LABELS).map(([id, label]) => {
+      const val = sd.packedLunch.deliveryData?.packedLunch?.[id]
+      return [label, val ? val.charAt(0).toUpperCase() + val.slice(1) : '–']
+    })
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['Check', 'Result']],
+      body: [
+        ...plRows,
+        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.packedLunch.completedBy || '–'],
+      ],
+      columnStyles: { 1: { cellWidth: 22 } },
+      theme: 'grid',
+      ...TABLE_STYLES,
+    })
+    y = doc.lastAutoTable.finalY + 5
+  }
+
+  // ── Closing Kitchen Check ───────────────────────────────────────────────
+  if (sd.closing) {
+    y = sectionLabel(doc, 'Closing Kitchen Check', y, margin)
+    const rows = [1, 2, 3].map(n => {
+      const f = sd.closing.temperatures?.[`fridge${n}`]
+      return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
+    })
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      head: [['', 'Unit name', 'Temp']],
+      body: [
+        ...rows,
+        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.closing.completedBy || sd.closing.signedBy || '–', colSpan: 2 }],
+      ],
+      columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 22 } },
+      theme: 'grid',
+      ...TABLE_STYLES,
+    })
+    y = doc.lastAutoTable.finalY + 5
+  }
+
+  // ── Manager Sign-off ────────────────────────────────────────────────────
+  if (sd.signoff) {
+    y = sectionLabel(doc, 'Manager Sign-off', y, margin)
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      body: [
+        [{ content: 'Comments', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.signoff.responses?.managerComments || '–'],
+        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.signoff.responses?.managerName || '–'],
+      ],
+      styles: { ...TABLE_STYLES.styles, fillColor: LIGHT_GREY },
+      columnStyles: { 0: { cellWidth: 28 } },
+      theme: 'plain',
+    })
+    y = doc.lastAutoTable.finalY + 3
+
+    if (sd.signoff.managerSignature) {
+      y = sectionLabel(doc, 'Signature', y, margin)
+      try {
+        doc.setDrawColor(210)
+        doc.setFillColor(...WHITE)
+        doc.roundedRect(margin, y, 80, 24, 2, 2, 'FD')
+        doc.addImage(sd.signoff.managerSignature, 'PNG', margin + 1, y + 1, 78, 22)
+      } catch { /* skip */ }
+    }
+  }
 }
 
 function drawDayHeading(doc, dateStr, pageW, margin, headerH) {
@@ -110,6 +214,81 @@ const TABLE_STYLES = {
   headStyles: { fillColor: MARMALADE, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2 },
 }
 
+function addFooters(doc, nursery, margin) {
+  const pageCount = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7)
+    doc.setTextColor(...MID_GREY)
+    doc.text(
+      `${nursery}  ·  Kitchen Food Safety Diary  ·  ${new Date().toLocaleDateString('en-GB')}  ·  Page ${i} of ${pageCount}`,
+      margin, 291
+    )
+  }
+}
+
+export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStart, weekEnd) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  const pageW = doc.internal.pageSize.getWidth()
+  const margin = 14
+
+  const logoDataURL = await fetchDataURL('/hopscotch-holiday-club-logo.png')
+  const weekRange = formatWeekRange(weekStart, weekEnd)
+  const dates = getDatesInRange(weekStart, weekEnd)
+
+  // Group checks by room, then by date
+  const byRoom = {}
+  for (const check of checks) {
+    const room = check.room || 'Kitchen'
+    if (!byRoom[room]) byRoom[room] = {}
+    const dateStr = toDateStr(new Date(check.created_at))
+    let sectionData = null
+    let completedSections = {}
+    try {
+      const parsed = JSON.parse(check.overall_notes || '{}')
+      sectionData = parsed.sectionData
+    } catch {}
+    if (check.items) {
+      check.items.forEach(item => { if (item.status === 'pass') completedSections[item.id] = true })
+    }
+    // Latest record wins if multiple on same day
+    byRoom[room][dateStr] = { sectionData, completedSections }
+  }
+
+  const rooms = Object.keys(byRoom)
+  if (rooms.length === 0) {
+    // No data — single blank page
+    drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    doc.setTextColor(...MID_GREY)
+    doc.text('No checks recorded for this week.', margin, 80)
+    addFooters(doc, nursery, margin)
+    return doc
+  }
+
+  let firstPage = true
+  for (const room of rooms) {
+    const history = byRoom[room]
+    for (let di = 0; di < dates.length; di++) {
+      const dateStr = dates[di]
+      const dayData = history[dateStr]
+
+      if (!firstPage) doc.addPage()
+      firstPage = false
+
+      const headerH = drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin, room)
+      let y = drawDayHeading(doc, dateStr, pageW, margin, headerH)
+      renderDayContent(doc, dayData?.sectionData, dayData?.completedSections, y, margin, pageW)
+    }
+  }
+
+  addFooters(doc, nursery, margin)
+  return doc
+}
+
+// Legacy single-room export (kept for compatibility)
 export async function generateKitchenSafetyPDF(nursery, history, weekStart, weekEnd) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()
@@ -122,129 +301,13 @@ export async function generateKitchenSafetyPDF(nursery, history, weekStart, week
   for (let di = 0; di < dates.length; di++) {
     const dateStr = dates[di]
     const dayData = history[dateStr]
-
     if (di > 0) doc.addPage()
-
     const headerH = drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin)
     let y = drawDayHeading(doc, dateStr, pageW, margin, headerH)
-
-    if (!dayData?.sectionData || Object.keys(dayData.completedSections || {}).length === 0) {
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(9)
-      doc.setTextColor(...MID_GREY)
-      doc.text('No checks recorded for this day.', margin + 2, y + 6)
-      continue
-    }
-
-    const sd = dayData.sectionData
-
-    // ── Opening Kitchen Checks ──────────────────────────────────────────────
-    if (sd.opening) {
-      y = sectionLabel(doc, 'Opening Kitchen Checks', y, margin)
-      const rows = [1, 2, 3].map(n => {
-        const f = sd.opening.temperatures?.[`fridge${n}`]
-        return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
-      })
-      autoTable(doc, {
-        startY: y,
-        margin: { left: margin, right: margin },
-        head: [['', 'Unit name', 'Temp']],
-        body: [
-          ...rows,
-          [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.opening.completedBy || '–', colSpan: 2 }],
-        ],
-        columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 22 } },
-        theme: 'grid',
-        ...TABLE_STYLES,
-      })
-      y = doc.lastAutoTable.finalY + 5
-    }
-
-    // ── Packed Lunches ────────────────────────────────────────────────────
-    if (sd.packedLunch) {
-      y = sectionLabel(doc, 'Packed Lunches', y, margin)
-      const plRows = Object.entries(PACKED_LUNCH_LABELS).map(([id, label]) => {
-        const val = sd.packedLunch.deliveryData?.packedLunch?.[id]
-        return [label, val ? val.charAt(0).toUpperCase() + val.slice(1) : '–']
-      })
-      autoTable(doc, {
-        startY: y,
-        margin: { left: margin, right: margin },
-        head: [['Check', 'Result']],
-        body: [
-          ...plRows,
-          [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.packedLunch.completedBy || '–'],
-        ],
-        columnStyles: { 1: { cellWidth: 22 } },
-        theme: 'grid',
-        ...TABLE_STYLES,
-      })
-      y = doc.lastAutoTable.finalY + 5
-    }
-
-    // ── Closing Kitchen Check ──────────────────────────────────────────────
-    if (sd.closing) {
-      y = sectionLabel(doc, 'Closing Kitchen Check', y, margin)
-      const rows = [1, 2, 3].map(n => {
-        const f = sd.closing.temperatures?.[`fridge${n}`]
-        return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
-      })
-      autoTable(doc, {
-        startY: y,
-        margin: { left: margin, right: margin },
-        head: [['', 'Unit name', 'Temp']],
-        body: [
-          ...rows,
-          [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.closing.completedBy || '–', colSpan: 2 }],
-        ],
-        columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 22 } },
-        theme: 'grid',
-        ...TABLE_STYLES,
-      })
-      y = doc.lastAutoTable.finalY + 5
-    }
-
-    // ── Manager Sign-off ──────────────────────────────────────────────────
-    if (sd.signoff) {
-      y = sectionLabel(doc, 'Manager Sign-off', y, margin)
-      autoTable(doc, {
-        startY: y,
-        margin: { left: margin, right: margin },
-        body: [
-          [{ content: 'Comments', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.signoff.responses?.managerComments || '–'],
-          [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.signoff.responses?.managerName || '–'],
-        ],
-        styles: { ...TABLE_STYLES.styles, fillColor: LIGHT_GREY },
-        columnStyles: { 0: { cellWidth: 28 } },
-        theme: 'plain',
-      })
-      y = doc.lastAutoTable.finalY + 3
-
-      if (sd.signoff.managerSignature) {
-        y = sectionLabel(doc, 'Signature', y, margin)
-        try {
-          doc.setDrawColor(210)
-          doc.setFillColor(...WHITE)
-          doc.roundedRect(margin, y, 80, 24, 2, 2, 'FD')
-          doc.addImage(sd.signoff.managerSignature, 'PNG', margin + 1, y + 1, 78, 22)
-        } catch { /* skip */ }
-      }
-    }
+    renderDayContent(doc, dayData?.sectionData, dayData?.completedSections, y, margin, pageW)
   }
 
-  // ── Footer ────────────────────────────────────────────────────────────────
-  const pageCount = doc.internal.getNumberOfPages()
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i)
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7)
-    doc.setTextColor(...MID_GREY)
-    doc.text(
-      `${nursery}  ·  Kitchen Food Safety Diary  ·  ${new Date().toLocaleDateString('en-GB')}  ·  Page ${i} of ${pageCount}`,
-      margin, 291
-    )
-  }
-
+  addFooters(doc, nursery, margin)
   return doc
 }
 

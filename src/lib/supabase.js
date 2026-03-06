@@ -357,22 +357,25 @@ export const upsertKitchenSafetyCheck = async (nursery, checkData) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
+  const room = checkData.room || 'Kitchen'
+
   const { data: existing } = await supabase
     .from('checks')
     .select('id')
     .eq('nursery', nursery)
     .eq('check_type', 'kitchenSafety')
+    .eq('room', room)
     .gte('created_at', today.toISOString())
     .limit(1)
 
   const record = {
     nursery,
-    room: 'Kitchen',
+    room,
     check_type: 'kitchenSafety',
     completed_by: checkData.completedBy,
     items: checkData.items,
     has_issues: false,
-    overall_notes: checkData.notes || null,
+    overall_notes: JSON.stringify({ notes: checkData.notes || null, sectionData: checkData.sectionData || null }),
     signature_url: null,
   }
 
@@ -381,6 +384,25 @@ export const upsertKitchenSafetyCheck = async (nursery, checkData) => {
   } else {
     await supabase.from('checks').insert([record])
   }
+}
+
+export const getKitchenSafetyChecksForRange = async (nursery, startDate, endDate) => {
+  if (!supabase) return []
+
+  const start = new Date(startDate); start.setHours(0, 0, 0, 0)
+  const end = new Date(endDate); end.setHours(23, 59, 59, 999)
+
+  const { data, error } = await supabase
+    .from('checks')
+    .select('*')
+    .eq('nursery', nursery)
+    .eq('check_type', 'kitchenSafety')
+    .gte('created_at', start.toISOString())
+    .lte('created_at', end.toISOString())
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return data || []
 }
 
 export const getLastCheck = async (nursery, checkType) => {

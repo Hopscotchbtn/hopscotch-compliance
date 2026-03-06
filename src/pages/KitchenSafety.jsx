@@ -9,8 +9,8 @@ import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 import { formatDate, formatTime } from '../lib/utils'
-import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms, submitCheck, getLastCheck } from '../lib/supabase'
-import { generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
+import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms, submitCheck, getLastCheck, getKitchenSafetyChecksForRange } from '../lib/supabase'
+import { generateAllRoomsKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 
 const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Kitchen Checks',
@@ -127,8 +127,12 @@ export function KitchenSafety() {
     if (!week) return
     setDownloading(true)
     try {
-      const history = storage.getKitchenSafetyHistory(nursery)
-      const doc = await generateKitchenSafetyPDF(nursery, history, new Date(week.value + 'T12:00:00'), new Date(week.sunday + 'T12:00:00'))
+      const checks = await getKitchenSafetyChecksForRange(
+        nursery,
+        new Date(week.value + 'T12:00:00'),
+        new Date(week.sunday + 'T12:00:00')
+      )
+      const doc = await generateAllRoomsKitchenSafetyPDF(nursery, checks, new Date(week.value + 'T12:00:00'), new Date(week.sunday + 'T12:00:00'))
       doc.save(`Kitchen-Safety-${nursery.replace(/\s+/g, '-')}-${week.value}.pdf`)
     } finally {
       setDownloading(false)
@@ -185,9 +189,11 @@ export function KitchenSafety() {
               ? `Signed off by ${managerName || 'manager'}`
               : `In progress — ${doneSections.join(', ')} complete`
             upsertKitchenSafetyCheck(nursery, {
+              room: returnedRoom ?? selectedRoom,
               completedBy: managerName || name,
               items,
               notes,
+              sectionData: nextData,
             }).catch(err => console.error('Kitchen safety upsert error:', err))
           }
 
