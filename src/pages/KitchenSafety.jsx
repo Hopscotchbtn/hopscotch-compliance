@@ -8,9 +8,9 @@ import { Input } from '../components/ui/Input'
 import { kitchenSafety, isMonday, isFirstOfMonth, CHECK_ROOMS } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
-
 import { formatDate, formatTime } from '../lib/utils'
 import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck } from '../lib/supabase'
+import { generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 
 const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Fridge Check',
@@ -18,7 +18,6 @@ const KITCHEN_SECTION_LABELS = {
   closing: 'Closing Fridge Check',
   signoff: 'Manager Sign-off',
 }
-import { generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 
 const holidayClubLocations = ['Holland Road', 'School Road']
 
