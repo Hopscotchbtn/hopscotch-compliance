@@ -543,6 +543,11 @@ export function KitchenSection() {
         <div className="min-h-screen bg-hop-pebble">
           <Header title="Probe Thermometer Check" subtitle="Opening check" showBack onBack={goBackToSections} />
           <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+            <div className="bg-hop-freshair/30 border border-hop-freshair rounded-xl px-4 py-3">
+              <p className="text-sm text-hop-forest">
+                Once a week check all units using a clean disinfected probe thermometer — use between the packs or inserted into food item.
+              </p>
+            </div>
             <Card className="space-y-4">
               <p className="font-medium text-hop-forest">Opening Check</p>
               <div>
@@ -649,7 +654,7 @@ export function KitchenSection() {
         <Header title="Supermarket Food Temperatures" subtitle="Weekly check" showBack onBack={goBackToSections} />
         <div className="px-4 py-6 max-w-md mx-auto space-y-4">
           <div className="bg-hop-freshair/30 border border-hop-freshair rounded-xl px-4 py-3">
-            <p className="text-sm text-hop-forest">
+            <p className="text-base text-hop-forest">
               Check the temperatures of cold high risk foods bought in from the supermarket. Use a clean disinfected thermometer to ensure cold foods are 8°C or below.
             </p>
           </div>
