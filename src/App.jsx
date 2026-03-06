@@ -23,6 +23,7 @@ import { RiskAssessmentWizard } from './pages/riskAssessment/RiskAssessmentWizar
 import { RiskValidationScreen } from './pages/riskAssessment/RiskValidationScreen'
 import { RiskConfirmation } from './pages/riskAssessment/RiskConfirmation'
 import { RiskAssessmentDetail } from './pages/riskAssessment/RiskAssessmentDetail'
+import { FamlyDashboard } from './pages/famly/FamlyDashboard'
 import { HolidayClubChecklist } from './pages/HolidayClubChecklist'
 import { NurseryRoomChecklist } from './pages/NurseryRoomChecklist'
 import { FirstAidChecklist } from './pages/FirstAidChecklist'
@@ -59,6 +60,9 @@ function App() {
           <Route path="/incidents/confirmation" element={<IncidentConfirmation />} />
           <Route path="/incidents/list" element={<IncidentList />} />
           <Route path="/incidents/:id" element={<IncidentDetail />} />
+
+          {/* Famly Accident & Incident Dashboard */}
+          <Route path="/famly-dashboard" element={<FamlyDashboard />} />
 
           {/* Risk Assessment */}
           <Route path="/risk-assessment" element={<RiskAssessmentDashboard />} />

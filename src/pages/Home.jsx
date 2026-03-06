@@ -86,6 +86,11 @@ export function Home() {
                 <span className="text-lg">📋 Risk Assessments</span>
               </Button>
             </Link>
+            <Link to="/famly-dashboard">
+              <Button color="freshair" size="large" fullWidth className="border border-black">
+                <span className="text-lg">📊 Accident &amp; Incident Dashboard</span>
+              </Button>
+            </Link>
           </div>
         </div>
         <div className="text-center mt-4">
