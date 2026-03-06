@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
 import { Input } from '../components/ui/Input'
 import { kitchenSafety, isMonday, isFirstOfMonth, CHECK_ROOMS } from '../data/checklists'
+import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 
 import { formatDate, formatTime } from '../lib/utils'
@@ -41,13 +42,13 @@ export function KitchenSafety() {
 
   const section = location.state?.section || location.state?.returnedSection
   const isHolidayClub = section === 'holiday-club'
-  const locationOptions = isHolidayClub ? holidayClubLocations : CHECK_ROOMS.roomSafety
+  const locationOptions = isHolidayClub ? holidayClubLocations : nurseries
   const SECTIONS = isHolidayClub ? HOLIDAY_CLUB_SECTIONS : NURSERY_SECTIONS
 
   const [nursery, setNursery] = useState(() => {
     const last = storage.getLastNursery()
     if (isHolidayClub && !holidayClubLocations.includes(last)) return ''
-    if (!isHolidayClub && !CHECK_ROOMS.roomSafety.includes(last)) return ''
+    if (!isHolidayClub && !nurseries.includes(last)) return ''
     return last
   })
   const [name, setName] = useState('')
@@ -55,16 +56,21 @@ export function KitchenSafety() {
     // Only skip setup when returning from a completed section or explicit skipSetup flag
     return !location.state?.completedSection && !location.state?.skipSetup
   })
+  const [selectedRoom, setSelectedRoom] = useState(() => location.state?.room || null)
+
+  const roomKey = (n, r) => r ? `${n}::${r}` : n
 
   // Section completion state — load from storage for today
   const [completedSections, setCompletedSections] = useState(() => {
     const last = storage.getLastNursery()
-    const saved = last ? storage.getKitchenSafetyState(last) : null
+    const room = location.state?.room || null
+    const saved = last ? storage.getKitchenSafetyState(roomKey(last, room)) : null
     return saved?.completedSections || {}
   })
   const [sectionData, setSectionData] = useState(() => {
     const last = storage.getLastNursery()
-    const saved = last ? storage.getKitchenSafetyState(last) : null
+    const room = location.state?.room || null
+    const saved = last ? storage.getKitchenSafetyState(roomKey(last, room)) : null
     return saved?.sectionData || {}
   })
 
@@ -89,14 +95,14 @@ export function KitchenSafety() {
 
   // Handle returning from a completed section
   useEffect(() => {
-    const { completedSection, sectionData: newData } = location.state || {}
+    const { completedSection, sectionData: newData, room: returnedRoom } = location.state || {}
     if (completedSection && completedSection !== processedSection.current) {
       processedSection.current = completedSection
       setCompletedSections(prev => {
         const next = { ...prev, [completedSection]: true }
         setSectionData(prevData => {
           const nextData = { ...prevData, [completedSection]: newData }
-          storage.setKitchenSafetyState(nursery, next, nextData)
+          storage.setKitchenSafetyState(roomKey(nursery, returnedRoom ?? selectedRoom), next, nextData)
 
           // Sync to Supabase so it appears in today's checks & history
           if (nursery) {
@@ -127,20 +133,24 @@ export function KitchenSafety() {
   const handleSetupComplete = async () => {
     if (!nursery) return
     storage.setLastNursery(nursery)
-    // Load local state
-    const saved = storage.getKitchenSafetyState(nursery)
+    setShowSetup(false)
+  }
+
+  const handleSelectRoom = async (room) => {
+    const key = roomKey(nursery, room)
+    const saved = storage.getKitchenSafetyState(key)
     const localCompleted = saved?.completedSections || {}
     setSectionData(saved?.sectionData || {})
-    // Merge with Supabase state so cross-device completions show up
     const remoteCompleted = await getTodayKitchenSafetyCheck(nursery).catch(() => null)
     setCompletedSections({ ...localCompleted, ...(remoteCompleted || {}) })
-    setShowSetup(false)
+    setSelectedRoom(room)
   }
 
   const handleStartSection = (sectionId) => {
     navigate(`/kitchen-safety/${sectionId}`, {
       state: {
         nursery,
+        room: selectedRoom,
         completedBy: name.trim(),
         sectionData,
         completedSections,
@@ -166,6 +176,8 @@ export function KitchenSafety() {
   // Check for weekly/monthly tasks
   const showWeeklyProbeCheck = isMonday()
   const showMonthlyCalibration = isFirstOfMonth()
+
+  const nurseryRooms = CHECK_ROOMS.roomSafety
 
   // Setup screen
   if (showSetup) {
@@ -209,12 +221,86 @@ export function KitchenSafety() {
     )
   }
 
+  // Room list screen (nursery section only)
+  if (!isHolidayClub && !selectedRoom) {
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header
+          title={kitchenSafety.shortName}
+          subtitle={`${nursery} · ${formatDate()}`}
+          showBack
+        />
+        <div className="px-4 py-6 max-w-md mx-auto">
+          <div className="space-y-3">
+            {nurseryRooms.map((room) => {
+              const saved = storage.getKitchenSafetyState(roomKey(nursery, room))
+              const completed = saved?.completedSections || {}
+              const completedCount = Object.values(completed).filter(Boolean).length
+              const allDone = completedCount === SECTIONS.length
+
+              return (
+                <button
+                  key={room}
+                  onClick={() => handleSelectRoom(room)}
+                  className={`
+                    w-full p-4 rounded-xl text-left transition-all duration-200
+                    flex items-center gap-4
+                    ${allDone
+                      ? 'bg-white border-2 border-hop-apple'
+                      : 'bg-white border-2 border-gray-200 hover:border-hop-marmalade hover:shadow-md'
+                    }
+                  `}
+                >
+                  <div className={`
+                    w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                    ${allDone ? 'bg-hop-apple' : completedCount > 0 ? 'bg-hop-marmalade' : 'bg-gray-100'}
+                  `}>
+                    {allDone ? (
+                      <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : completedCount > 0 ? (
+                      <span className="text-white text-xs font-bold">{completedCount}/{SECTIONS.length}</span>
+                    ) : (
+                      <div className="w-3 h-3 rounded-full bg-gray-300" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-hop-forest">{room}</p>
+                    {completedCount > 0 && !allDone && (
+                      <p className="text-sm text-hop-marmalade-dark">{completedCount} of {SECTIONS.length} sections done</p>
+                    )}
+                    {allDone && (
+                      <p className="text-sm text-hop-apple">Completed</p>
+                    )}
+                  </div>
+                  <svg className={`w-5 h-5 ${allDone ? 'text-gray-400' : 'text-hop-marmalade'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )
+            })}
+          </div>
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setShowSetup(true)}
+              className="text-sm text-gray-500 hover:text-hop-forest underline underline-offset-2"
+            >
+              Change location
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-hop-pebble">
       <Header
         title={kitchenSafety.shortName}
-        subtitle={`${nursery} · ${formatDate()}`}
+        subtitle={`${nursery}${selectedRoom ? ` · ${selectedRoom}` : ''} · ${formatDate()}`}
         showBack
+        onBack={!isHolidayClub ? () => setSelectedRoom(null) : undefined}
       />
 
       <div className="px-4 py-6 max-w-md mx-auto">
@@ -352,6 +438,14 @@ export function KitchenSafety() {
 
         {/* Change settings / clear checks */}
         <div className="mt-4 text-center space-y-2">
+          {!isHolidayClub && (
+            <button
+              onClick={() => setSelectedRoom(null)}
+              className="block w-full text-sm text-gray-500 hover:text-hop-forest underline underline-offset-2"
+            >
+              Change room
+            </button>
+          )}
           <button
             onClick={() => setShowSetup(true)}
             className="block w-full text-sm text-gray-500 hover:text-hop-forest underline underline-offset-2"
@@ -362,7 +456,7 @@ export function KitchenSafety() {
             onClick={() => {
               setCompletedSections({})
               setSectionData({})
-              if (nursery) storage.setKitchenSafetyState(nursery, {}, {})
+              if (nursery) storage.setKitchenSafetyState(roomKey(nursery, selectedRoom), {}, {})
             }}
             className="block w-full text-sm text-red-400 hover:text-red-600 underline underline-offset-2"
           >
