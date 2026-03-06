@@ -44,6 +44,7 @@ export function repeatChildren(incidents, minCount = 2) {
         count: incs.length,
         mostRecentDate: sorted[0].happenedAt,
         mostRecentLocation: sorted[0].location,
+        siteName: sorted[0].siteName ?? '',
       })
     }
   }

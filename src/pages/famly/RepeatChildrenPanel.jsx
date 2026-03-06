@@ -155,6 +155,9 @@ export default function RepeatChildrenPanel({ incidents, loading }) {
                         )}
                       </div>
                       <p className="text-xs text-slate-500 mt-0.5">
+                        {child.siteName && (
+                          <span className="font-medium">{child.siteName} · </span>
+                        )}
                         Last: {child.mostRecentLocation} · {formatDate(child.mostRecentDate)}
                         <span className="text-slate-400 ml-1">— tap to view history</span>
                       </p>
