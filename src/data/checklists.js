@@ -150,7 +150,9 @@ export const kitchenSafety = {
 
   // Packed lunch visual checks
   packedLunchChecks: [
+    { id: 'pl1', text: 'Child name shown on boxes' },
     { id: 'pl2', text: 'Food inside boxes cool' },
+    { id: 'pl3', text: 'Food in good condition' },
     { id: 'pl4', text: 'No nuts' },
   ],
 
