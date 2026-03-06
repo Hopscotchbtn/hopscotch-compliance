@@ -18,13 +18,15 @@ const KITCHEN_SECTION_LABELS = {
   littleTums: 'Little Tums',
   closing: 'Closing Kitchen Check',
   signoff: 'Manager Sign-off',
+  probeCheck: 'Fridge/Freezer Probe Thermometer Check',
+  supermarketTemp: 'Supermarket Food Temperature Checks',
 }
 
 const holidayClubLocations = ['Holland Road', 'School Road']
 
 const BASE_KITCHEN_ROOMS = ['Blue Room', 'Yellow Room', 'Green Room', 'Red Room']
 
-const NURSERY_SECTIONS = [
+const DAILY_SECTIONS = [
   { id: 'opening', name: 'Opening Kitchen Checks', icon: '☀️', description: 'Morning checks & fridge temperatures' },
   { id: 'packedLunch', name: 'Packed Lunches', icon: '🥪', description: 'Visual check of packed lunches' },
   { id: 'littleTums', name: 'Little Tums', icon: '🍱', description: 'Nursery meals & tea' },
@@ -32,13 +34,13 @@ const NURSERY_SECTIONS = [
   { id: 'signoff', name: 'Manager Sign-off', icon: '✓', description: 'Review & approve' },
 ]
 
-const HOLIDAY_CLUB_SECTIONS = [
-  { id: 'opening', name: 'Opening Kitchen Checks', icon: '☀️', description: 'Morning checks & fridge temperatures' },
-  { id: 'packedLunch', name: 'Packed Lunches', icon: '🥪', description: 'Visual check of packed lunches' },
-  { id: 'littleTums', name: 'Little Tums', icon: '🍱', description: 'Nursery meals & tea' },
-  { id: 'closing', name: 'Closing Kitchen Check', icon: '🌙', description: 'End of day fridge temperature' },
-  { id: 'signoff', name: 'Manager Sign-off', icon: '✓', description: 'Review & approve' },
+const WEEKLY_SECTIONS = [
+  { id: 'probeCheck', name: 'Fridge/Freezer Probe Thermometer Check', icon: '🌡️', description: 'Weekly probe thermometer verification' },
+  { id: 'supermarketTemp', name: 'Supermarket Food Temperature Checks', icon: '🛒', description: 'Temperature check of supermarket deliveries' },
 ]
+
+const NURSERY_SECTIONS = DAILY_SECTIONS
+const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
 
 export function KitchenSafety() {
   const navigate = useNavigate()
@@ -418,75 +420,106 @@ export function KitchenSafety() {
         )}
 
         {/* Section list */}
-        <div className="space-y-3">
-          {SECTIONS.map((sectionItem) => {
-            const isComplete = completedSections[sectionItem.id]
-            const isLocked = isSectionLocked(sectionItem.id)
+        {/* Daily Checks */}
+        <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden">
+          <div className="px-4 py-3 bg-hop-marmalade/10 border-b border-gray-200">
+            <p className="text-sm font-semibold text-hop-forest uppercase tracking-wide">Daily Checks</p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {SECTIONS.map((sectionItem) => {
+              const isComplete = completedSections[sectionItem.id]
+              const isLocked = isSectionLocked(sectionItem.id)
 
-            return (
-              <button
-                key={sectionItem.id}
-                onClick={() => !isLocked && handleStartSection(sectionItem.id)}
-                disabled={isLocked}
-                className={`
-                  w-full p-4 rounded-xl text-left transition-all duration-200
-                  flex items-center gap-4
-                  ${isComplete
-                    ? 'bg-white border-2 border-hop-apple'
-                    : isLocked
-                    ? 'bg-gray-100 border-2 border-gray-200 opacity-60'
-                    : 'bg-white border-2 border-gray-200 hover:border-hop-marmalade hover:shadow-md'
-                  }
-                `}
-              >
-                {/* Icon */}
-                <div className={`
-                  w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl
-                  ${isComplete
-                    ? 'bg-hop-apple'
-                    : isLocked
-                    ? 'bg-gray-200'
-                    : 'bg-hop-marmalade/20'
-                  }
-                `}>
-                  {isComplete ? (
-                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              return (
+                <button
+                  key={sectionItem.id}
+                  onClick={() => !isLocked && handleStartSection(sectionItem.id)}
+                  disabled={isLocked}
+                  className={`
+                    w-full p-4 text-left transition-all duration-200
+                    flex items-center gap-4
+                    ${isLocked ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-50'}
+                  `}
+                >
+                  <div className={`
+                    w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl
+                    ${isComplete ? 'bg-hop-apple' : isLocked ? 'bg-gray-200' : 'bg-hop-marmalade/20'}
+                  `}>
+                    {isComplete ? (
+                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : isLocked ? (
+                      <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    ) : (
+                      sectionItem.icon
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-hop-forest">{sectionItem.name}</p>
+                    <p className="text-sm text-gray-500">{sectionItem.description}</p>
+                    {isComplete && sectionData[sectionItem.id]?.completedAt && (
+                      <p className="text-xs text-hop-apple mt-1">
+                        Completed at {formatTime(new Date(sectionData[sectionItem.id].completedAt))}
+                      </p>
+                    )}
+                  </div>
+                  {!isLocked && (
+                    <svg className={`w-5 h-5 flex-shrink-0 ${isComplete ? 'text-gray-400' : 'text-hop-marmalade'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
-                  ) : isLocked ? (
-                    <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  ) : (
-                    sectionItem.icon
                   )}
-                </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
 
-                {/* Info */}
-                <div className="flex-1">
-                  <p className="font-medium text-hop-forest">{sectionItem.name}</p>
-                  <p className="text-sm text-gray-500">{sectionItem.description}</p>
-                  {isComplete && sectionData[sectionItem.id]?.completedAt && (
-                    <p className="text-xs text-hop-apple mt-1">
-                      Completed at {formatTime(new Date(sectionData[sectionItem.id].completedAt))}
-                    </p>
-                  )}
-                </div>
+        {/* Weekly Checks */}
+        <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden mt-4">
+          <div className="px-4 py-3 bg-hop-freshair/30 border-b border-gray-200">
+            <p className="text-sm font-semibold text-hop-forest uppercase tracking-wide">Weekly Checks</p>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {WEEKLY_SECTIONS.map((sectionItem) => {
+              const isComplete = completedSections[sectionItem.id]
 
-                {/* Arrow */}
-                {!isLocked && (
-                  <svg
-                    className={`w-5 h-5 ${isComplete ? 'text-gray-400' : 'text-hop-marmalade'}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
+              return (
+                <button
+                  key={sectionItem.id}
+                  onClick={() => handleStartSection(sectionItem.id)}
+                  className="w-full p-4 text-left transition-all duration-200 flex items-center gap-4 hover:bg-gray-50"
+                >
+                  <div className={`
+                    w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl
+                    ${isComplete ? 'bg-hop-apple' : 'bg-hop-freshair/40'}
+                  `}>
+                    {isComplete ? (
+                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      sectionItem.icon
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-hop-forest">{sectionItem.name}</p>
+                    <p className="text-sm text-gray-500">{sectionItem.description}</p>
+                    {isComplete && sectionData[sectionItem.id]?.completedAt && (
+                      <p className="text-xs text-hop-apple mt-1">
+                        Completed at {formatTime(new Date(sectionData[sectionItem.id].completedAt))}
+                      </p>
+                    )}
+                  </div>
+                  <svg className={`w-5 h-5 flex-shrink-0 ${isComplete ? 'text-gray-400' : 'text-hop-forest/40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
-                )}
-              </button>
-            )
-          })}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Download PDF */}
