@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { kitchenSafety } from '../data/checklists'
 
 const FOREST     = [26, 58, 42]
 const MARMALADE  = [224, 122, 28]
@@ -7,10 +8,6 @@ const LIGHT_GREY = [248, 248, 248]
 const MID_GREY   = [130, 130, 130]
 const WHITE      = [255, 255, 255]
 
-const PACKED_LUNCH_LABELS = {
-  pl2: 'Food inside boxes cool',
-  pl4: 'No nuts',
-}
 
 function toDateStr(date) {
   return date.toISOString().slice(0, 10)
@@ -235,19 +232,31 @@ function formatDayHeader(dateStr) {
   return `${weekday}\n${date}`
 }
 
-function cell(content, styles = {}) {
-  return { content: content ?? '–', styles }
-}
 
 function sectionHeaderRow(label, colCount) {
   return [{ content: label, colSpan: colCount, styles: { fillColor: MARMALADE, textColor: WHITE, fontStyle: 'bold', fontSize: 7.5, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 } } }]
+}
+
+const OPENING_ITEMS = [
+  'Hot water in place',
+  'Handwash facilities in place',
+  'Clean cloths in place',
+  'Sanitiser in place',
+  'No food left out',
+  'All foods in date',
+  'Equipment OK',
+  'Probe thermometer available & working',
+  'Staff fit, well, in uniform',
+]
+
+function tick(sectionData) {
+  return sectionData?.completedBy || sectionData?.signedBy ? '✓' : '–'
 }
 
 function buildRoomTable(dates, history) {
   const colCount = dates.length + 1
   const sd = (d) => history[d]?.sectionData || {}
 
-  // Determine which fridge slots have any data across the week
   const openFridges = [1, 2, 3].filter(n =>
     dates.some(d => sd(d).opening?.temperatures?.[`fridge${n}`]?.temp)
   )
@@ -261,43 +270,56 @@ function buildRoomTable(dates, history) {
 
   // ── Opening Kitchen Checks ─────────────────────────────────────────────
   body.push(sectionHeaderRow('Opening Kitchen Checks', colCount))
-  body.push(['Initials', ...dates.map(d => sd(d).opening?.completedBy || sd(d).opening?.signedBy || '–')])
+  OPENING_ITEMS.forEach(text => {
+    body.push([text, ...dates.map(d => tick(sd(d).opening))])
+  })
   openFridges.forEach(n => {
     body.push([
-      `Fridge ${n}`,
+      `Fridge ${n} temp`,
       ...dates.map(d => {
         const f = sd(d).opening?.temperatures?.[`fridge${n}`]
         if (!f?.temp) return '–'
-        return f.name ? `${f.name}\n${f.temp}°C` : `${f.temp}°C`
+        return f.name ? `${f.name}: ${f.temp}°C` : `${f.temp}°C`
       }),
     ])
   })
+  body.push(['Initials', ...dates.map(d => sd(d).opening?.completedBy || sd(d).opening?.signedBy || '–')])
 
   // ── Packed Lunches ────────────────────────────────────────────────────
   body.push(sectionHeaderRow('Packed Lunches', colCount))
+  kitchenSafety.packedLunchChecks.forEach(item => {
+    body.push([
+      item.text,
+      ...dates.map(d => {
+        const val = sd(d).packedLunch?.deliveryData?.packedLunch?.[item.id]
+        if (!val) return sd(d).packedLunch ? '✓' : '–'
+        return val.charAt(0).toUpperCase() + val.slice(1)
+      }),
+    ])
+  })
   body.push(['Initials', ...dates.map(d => sd(d).packedLunch?.completedBy || '–')])
 
   // ── Closing Kitchen Check ─────────────────────────────────────────────
   body.push(sectionHeaderRow('Closing Kitchen Check', colCount))
-  body.push(['Initials', ...dates.map(d => sd(d).closing?.completedBy || sd(d).closing?.signedBy || '–')])
+  kitchenSafety.closingChecks.forEach(item => {
+    body.push([item.text, ...dates.map(d => tick(sd(d).closing))])
+  })
   closeFridges.forEach(n => {
     body.push([
-      `Fridge ${n}`,
+      `Fridge ${n} temp`,
       ...dates.map(d => {
         const f = sd(d).closing?.temperatures?.[`fridge${n}`]
         if (!f?.temp) return '–'
-        return f.name ? `${f.name}\n${f.temp}°C` : `${f.temp}°C`
+        return f.name ? `${f.name}: ${f.temp}°C` : `${f.temp}°C`
       }),
     ])
   })
+  body.push(['Initials', ...dates.map(d => sd(d).closing?.completedBy || sd(d).closing?.signedBy || '–')])
 
   // ── Manager Sign-off ──────────────────────────────────────────────────
   body.push(sectionHeaderRow('Manager Sign-off', colCount))
   body.push(['Initials', ...dates.map(d => sd(d).signoff?.responses?.managerName || '–')])
-  body.push([
-    'Comments',
-    ...dates.map(d => sd(d).signoff?.responses?.managerComments || '–'),
-  ])
+  body.push(['Comments', ...dates.map(d => sd(d).signoff?.responses?.managerComments || '–')])
 
   return body
 }
@@ -345,37 +367,40 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     return doc
   }
 
-  const labelColW = 32
+  const labelColW = 68
   const dayColW = (pageW - margin * 2 - labelColW) / dates.length
 
   for (let ri = 0; ri < rooms.length; ri++) {
-    if (ri > 0) doc.addPage()
-
     const room = rooms[ri]
     const history = byRoom[room]
 
-    // ── Page header ────────────────────────────────────────────────────────
+    const drawRoomHeader = (doc, y) => {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.setTextColor(...FOREST)
+      doc.text('Kitchen Food Safety Diary', pageW / 2, y, { align: 'center' })
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(...MARMALADE)
+      doc.text(room, pageW / 2, y + 6, { align: 'center' })
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7.5)
+      doc.setTextColor(...MID_GREY)
+      doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y + 12, { align: 'center' })
+      doc.setDrawColor(...MARMALADE)
+      doc.setLineWidth(0.5)
+      doc.line(margin, y + 16, pageW - margin, y + 16)
+      return y + 22
+    }
+
+    // First page of this room
+    if (ri > 0) doc.addPage()
     let y = 8
     if (logoDataURL) {
       try { doc.addImage(logoDataURL, 'PNG', (pageW - 36) / 2, y, 36, 26); y += 30 }
       catch { y += 4 }
     }
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(11)
-    doc.setTextColor(...FOREST)
-    doc.text('Kitchen Food Safety Diary', pageW / 2, y, { align: 'center' })
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(...MARMALADE)
-    doc.text(room, pageW / 2, y + 6, { align: 'center' })
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7.5)
-    doc.setTextColor(...MID_GREY)
-    doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y + 12, { align: 'center' })
-    doc.setDrawColor(...MARMALADE)
-    doc.setLineWidth(0.5)
-    doc.line(margin, y + 16, pageW - margin, y + 16)
-    y += 20
+    y = drawRoomHeader(doc, y)
 
     // ── Table ──────────────────────────────────────────────────────────────
     const head = [['', ...dates.map(d => formatDayHeader(d))]]
@@ -386,24 +411,39 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       margin: { left: margin, right: margin },
       head,
       body,
-      headStyles: { fillColor: FOREST, textColor: WHITE, fontSize: 8, fontStyle: 'bold', halign: 'center', cellPadding: 3 },
-      styles: { fontSize: 8, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, font: 'helvetica', valign: 'middle' },
+      headStyles: { fillColor: FOREST, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
+      styles: { fontSize: 7, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, font: 'helvetica', valign: 'middle' },
       alternateRowStyles: { fillColor: [252, 252, 252] },
       columnStyles: {
-        0: { cellWidth: labelColW, fontStyle: 'bold', textColor: FOREST, fillColor: [245, 247, 245] },
+        0: { cellWidth: labelColW, textColor: FOREST, fillColor: [245, 247, 245] },
         ...Object.fromEntries(dates.map((_, i) => [i + 1, { cellWidth: dayColW, halign: 'center' }])),
       },
-      didParseCell: (data) => {
-        // Section header rows span full width — already styled inline
+      didDrawPage: (data) => {
+        // Repeat room label on overflow pages (no logo)
+        if (data.pageNumber > 1 || ri > 0) {
+          const pageNum = doc.internal.getCurrentPageInfo().pageNumber
+          const firstRoomPage = data.settings.startY > 30
+          if (!firstRoomPage) {
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(8)
+            doc.setTextColor(...MARMALADE)
+            doc.text(`${room} (continued)`, margin, 8)
+          }
+        }
       },
     })
 
-    // ── Footer ─────────────────────────────────────────────────────────────
+  }
+
+  // ── Footers on all pages ──────────────────────────────────────────────────
+  const totalPages = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i)
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(6.5)
     doc.setTextColor(...MID_GREY)
     doc.text(
-      `${nursery}  ·  ${room}  ·  Kitchen Food Safety Diary  ·  ${new Date().toLocaleDateString('en-GB')}  ·  Page ${ri + 1} of ${rooms.length}`,
+      `${nursery}  ·  Kitchen Food Safety Diary  ·  ${new Date().toLocaleDateString('en-GB')}  ·  Page ${i} of ${totalPages}`,
       margin, pageH - 5
     )
   }
