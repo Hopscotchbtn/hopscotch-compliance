@@ -1,12 +1,22 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { buildTrend } from '../../lib/famly/dataHelpers'
 
-export default function MonthlyTrendChart({ incidents }) {
+function Skeleton() {
+  return (
+    <div className="animate-pulse flex items-end gap-1.5 h-[220px] pt-8">
+      {[40, 65, 50, 80, 55, 70, 45, 90, 60, 75, 50, 85].map((h, i) => (
+        <div key={i} className="flex-1 bg-stone-100 rounded-t" style={{ height: `${h}%` }} />
+      ))}
+    </div>
+  )
+}
+
+export default function MonthlyTrendChart({ incidents, loading }) {
   const data = buildTrend(incidents)
   return (
     <div className="bg-white border border-stone-200 rounded-lg p-4">
       <h2 className="text-sm font-semibold text-slate-700 mb-4">12-month trend</h2>
-      <ResponsiveContainer width="100%" height={220}>
+      {loading ? <Skeleton /> : <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data} margin={{ top: 0, right: 8, left: -16, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f0ed" vertical={false} />
           <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -19,7 +29,7 @@ export default function MonthlyTrendChart({ incidents }) {
           <Bar dataKey="accidents" name="Accidents" stackId="a" fill="#b45309" />
           <Bar dataKey="incidents" name="Incidents" stackId="a" fill="#0f766e" radius={[3, 3, 0, 0]} />
         </BarChart>
-      </ResponsiveContainer>
+      </ResponsiveContainer>}
     </div>
   )
 }

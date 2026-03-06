@@ -1,7 +1,20 @@
 import { useState } from 'react'
 import { locationCounts, filterByMonth, rollingWindow, currentYearMonth } from '../../lib/famly/dataHelpers'
 
-export default function LocationFrequency({ incidents }) {
+function Skeleton() {
+  return (
+    <div className="animate-pulse space-y-2 pt-1">
+      {[85, 60, 45, 30, 20].map((w, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <div className="h-3 w-24 bg-stone-100 rounded shrink-0" />
+          <div className="h-5 bg-stone-100 rounded" style={{ width: `${w}%` }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function LocationFrequency({ incidents, loading }) {
   const [view, setView] = useState('month')
 
   const ym = currentYearMonth()
@@ -34,7 +47,7 @@ export default function LocationFrequency({ incidents }) {
         </div>
       </div>
       <p className="text-xs text-slate-400 mb-4">{label}</p>
-      {data.length === 0 ? (
+      {loading ? <Skeleton /> : data.length === 0 ? (
         <p className="text-sm text-slate-400 py-6 text-center">No incidents in this period</p>
       ) : (
         <div className="space-y-2">

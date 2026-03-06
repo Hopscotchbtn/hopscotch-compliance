@@ -9,6 +9,10 @@ import LocationFrequency from './LocationFrequency'
 import RepeatChildrenPanel from './RepeatChildrenPanel'
 import RecentIncidentsList from './RecentIncidentsList'
 
+function formatTime(date) {
+  return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+}
+
 export function FamlyDashboard() {
   const [dataMode, setDataMode] = useState('mock') // 'mock' | 'live'
   const [sites, setSites] = useState(MOCK_SITES)
@@ -16,6 +20,7 @@ export function FamlyDashboard() {
   const [incidents, setIncidents] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [lastUpdated, setLastUpdated] = useState(null)
 
   // When switching to live, fetch real site list
   useEffect(() => {
@@ -56,6 +61,7 @@ export function FamlyDashboard() {
         }
         setIncidents(classifyAll(await res.json()))
       }
+      setLastUpdated(new Date())
     } catch (err) {
       setError(err.message ?? 'Failed to load data')
     } finally {
@@ -71,58 +77,73 @@ export function FamlyDashboard() {
     <div className="min-h-screen bg-stone-50">
       {/* Header */}
       <header className="border-b border-stone-200 bg-white sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Link to="/" className="text-slate-400 hover:text-slate-600 text-sm mr-1">← Back</Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-semibold text-slate-800">Accident &amp; Incident Dashboard</h1>
-            <p className="text-xs text-slate-500">Famly live data</p>
+        <div className="max-w-5xl mx-auto px-4 py-3">
+          {/* Top row: back + title + mode toggle */}
+          <div className="flex items-center gap-3">
+            <Link to="/" className="text-slate-400 hover:text-slate-600 text-sm shrink-0">← Back</Link>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-sm font-semibold text-slate-800 truncate">Accident &amp; Incident Dashboard</h1>
+            </div>
+            {/* Mock / Live toggle */}
+            <button
+              onClick={() => setDataMode(m => m === 'mock' ? 'live' : 'mock')}
+              className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors shrink-0 ${
+                dataMode === 'live'
+                  ? 'bg-teal-50 border-teal-200 text-teal-700'
+                  : 'bg-stone-100 border-stone-200 text-slate-500'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${dataMode === 'live' ? 'bg-teal-500 animate-pulse' : 'bg-stone-400'}`} />
+              {dataMode === 'live' ? 'Live' : 'Demo data'}
+            </button>
           </div>
-          {/* Site selector */}
-          <select
-            value={selectedSiteId}
-            onChange={e => setSelectedSiteId(e.target.value)}
-            className="text-sm border border-stone-200 rounded-md px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
-          >
-            {sites.map(s => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
-          {/* Mock / Live toggle */}
-          <button
-            onClick={() => setDataMode(m => m === 'mock' ? 'live' : 'mock')}
-            className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              dataMode === 'live'
-                ? 'bg-teal-50 border-teal-200 text-teal-700'
-                : 'bg-stone-100 border-stone-200 text-slate-500'
-            }`}
-          >
-            <span className={`w-1.5 h-1.5 rounded-full ${dataMode === 'live' ? 'bg-teal-500 animate-pulse' : 'bg-stone-400'}`} />
-            {dataMode === 'live' ? 'Live' : 'Demo data'}
-          </button>
-          {loading && (
-            <svg className="w-4 h-4 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-          )}
+          {/* Bottom row: site selector (full width on mobile) */}
+          <div className="mt-2 flex items-center gap-2">
+            <label className="text-xs text-slate-500 shrink-0">Site:</label>
+            <select
+              value={selectedSiteId}
+              onChange={e => setSelectedSiteId(e.target.value)}
+              className="flex-1 text-sm border border-stone-200 rounded-md px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              {sites.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+            {loading && (
+              <svg className="w-4 h-4 animate-spin text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            )}
+          </div>
         </div>
       </header>
 
+      {/* Demo mode banner */}
+      {dataMode === 'mock' && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-xs text-amber-800">
+          You are viewing <strong>demo data</strong> — not real incidents. Toggle to &ldquo;Live&rdquo; in the header to view Famly data.
+        </div>
+      )}
+
       <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {/* Page title row */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-slate-800">{siteName}</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {dataMode === 'mock'
-                ? 'Showing demo data — toggle to Live to connect Famly'
-                : 'Live data from Famly'}
-            </p>
+            {lastUpdated && !loading && (
+              <p className="text-xs text-slate-400 mt-0.5">
+                Last updated: {formatTime(lastUpdated)}
+              </p>
+            )}
+            {loading && (
+              <p className="text-xs text-slate-400 mt-0.5">Updating…</p>
+            )}
           </div>
           <button
             onClick={loadData}
             disabled={loading}
-            className="text-xs text-slate-500 hover:text-slate-700 border border-stone-200 rounded px-2.5 py-1 bg-white disabled:opacity-50"
+            className="text-xs text-slate-500 hover:text-slate-700 border border-stone-200 rounded px-2.5 py-1.5 bg-white disabled:opacity-50 shrink-0"
           >
             Refresh
           </button>
@@ -134,17 +155,17 @@ export function FamlyDashboard() {
           </div>
         )}
 
-        <MonthlySummaryCards incidents={incidents} />
-        <MonthlyTrendChart incidents={incidents} />
+        <MonthlySummaryCards incidents={incidents} loading={loading} />
+        <MonthlyTrendChart incidents={incidents} loading={loading} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <InjuryTypeChart incidents={incidents} />
-          <LocationFrequency incidents={incidents} />
+          <InjuryTypeChart incidents={incidents} loading={loading} />
+          <LocationFrequency incidents={incidents} loading={loading} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RepeatChildrenPanel incidents={incidents} />
-          <RecentIncidentsList incidents={incidents} />
+          <RepeatChildrenPanel incidents={incidents} loading={loading} />
+          <RecentIncidentsList incidents={incidents} loading={loading} />
         </div>
 
         <footer className="text-center text-xs text-slate-400 py-4 border-t border-stone-200">

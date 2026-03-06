@@ -6,11 +6,29 @@ const KIND_COLOUR = {
   Incident: 'text-teal-700 bg-teal-50 border-teal-100',
 }
 
-function truncate(text, max = 80) {
-  return text.length <= max ? text : text.slice(0, max).trimEnd() + '…'
+// Increased from 80 to 140 chars — enough to convey what happened without cutting mid-sentence
+function truncate(text, max = 140) {
+  return text.length <= max ? text : text.slice(0, max).trimEnd() + '… [expand for full detail]'
 }
 
-export default function RecentIncidentsList({ incidents }) {
+function Skeleton() {
+  return (
+    <div className="animate-pulse divide-y divide-stone-100">
+      {[1, 2, 3, 4, 5].map(i => (
+        <div key={i} className="py-3 flex gap-2">
+          <div className="h-5 w-14 bg-stone-100 rounded shrink-0" />
+          <div className="flex-1 space-y-1.5">
+            <div className="h-3 w-32 bg-stone-100 rounded" />
+            <div className="h-3 w-48 bg-stone-100 rounded" />
+            <div className="h-3 w-full bg-stone-100 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export default function RecentIncidentsList({ incidents, loading }) {
   const [expanded, setExpanded] = useState(new Set())
 
   const recent = [...incidents]
@@ -28,7 +46,7 @@ export default function RecentIncidentsList({ incidents }) {
   return (
     <div className="bg-white border border-stone-200 rounded-lg p-4">
       <h2 className="text-sm font-semibold text-slate-700 mb-4">Recent incidents</h2>
-      {recent.length === 0 ? (
+      {loading ? <Skeleton /> : recent.length === 0 ? (
         <p className="text-sm text-slate-400 py-6 text-center">No incidents to display</p>
       ) : (
         <div className="divide-y divide-stone-100">
