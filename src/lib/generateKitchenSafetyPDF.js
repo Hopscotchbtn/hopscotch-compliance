@@ -182,9 +182,9 @@ export async function generateKitchenSafetyPDF(nursery, history, weekStart, week
       y = doc.lastAutoTable.finalY + 5
     }
 
-    // ── Closing Fridge Check ──────────────────────────────────────────────
+    // ── Closing Kitchen Check ──────────────────────────────────────────────
     if (sd.closing) {
-      y = sectionLabel(doc, 'Closing Fridge Check', y, margin)
+      y = sectionLabel(doc, 'Closing Kitchen Check', y, margin)
       const rows = [1, 2, 3].map(n => {
         const f = sd.closing.temperatures?.[`fridge${n}`]
         return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
