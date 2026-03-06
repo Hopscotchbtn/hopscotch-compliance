@@ -527,40 +527,68 @@ export function KitchenSection() {
     const closingInitials = responses.closingInitials || ''
     const openingTemp = temperatures.probeOpening || ''
     const closingTemp = temperatures.probeClosing || ''
-    const isValid = openingInitials.trim() && openingTemp !== '' && closingInitials.trim() && closingTemp !== ''
 
-    return (
-      <div className="min-h-screen bg-hop-pebble">
-        <Header title="Probe Thermometer Check" subtitle="Weekly check" showBack onBack={goBackToSections} />
-        <div className="px-4 py-6 max-w-md mx-auto space-y-4">
-          <Card className="space-y-4">
-            <p className="font-medium text-hop-forest">Opening Check</p>
-            <div>
-              <label className="block text-sm font-medium text-hop-forest mb-2">Temperature <span className="text-hop-marmalade-dark">*</span></label>
-              <div className="relative">
+    const saveOpening = () => {
+      const key = room ? `${nursery}::${room}` : nursery
+      const existing = storage.getKitchenSafetyState(key)
+      storage.setKitchenSafetyState(key, existing?.completedSections || {}, {
+        ...(existing?.sectionData || {}),
+        probeCheck: { responses, temperatures },
+      })
+      setPhase('closing')
+    }
+
+    if (phase === 'checks') {
+      return (
+        <div className="min-h-screen bg-hop-pebble">
+          <Header title="Probe Thermometer Check" subtitle="Opening check" showBack onBack={goBackToSections} />
+          <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+            <Card className="space-y-4">
+              <p className="font-medium text-hop-forest">Opening Check</p>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Temperature <span className="text-hop-marmalade-dark">*</span></label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={openingTemp}
+                    onChange={(e) => setTemperatures(prev => ({ ...prev, probeOpening: e.target.value }))}
+                    placeholder="0.0"
+                    className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">°C</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Initials <span className="text-hop-marmalade-dark">*</span></label>
                 <input
                   type="text"
-                  inputMode="decimal"
-                  value={openingTemp}
-                  onChange={(e) => setTemperatures(prev => ({ ...prev, probeOpening: e.target.value }))}
-                  placeholder="0.0"
-                  className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest"
+                  value={openingInitials}
+                  onChange={(e) => setResponses(prev => ({ ...prev, openingInitials: e.target.value }))}
+                  placeholder="e.g. PF"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
                 />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">°C</span>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-hop-forest mb-2">Initials <span className="text-hop-marmalade-dark">*</span></label>
-              <input
-                type="text"
-                value={openingInitials}
-                onChange={(e) => setResponses(prev => ({ ...prev, openingInitials: e.target.value }))}
-                placeholder="e.g. PF"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
-              />
-            </div>
-          </Card>
+            </Card>
+            <Button
+              color="marmalade"
+              size="large"
+              fullWidth
+              disabled={!openingTemp.trim() || !openingInitials.trim()}
+              onClick={saveOpening}
+            >
+              Continue to Closing Check
+            </Button>
+          </div>
+        </div>
+      )
+    }
 
+    // phase === 'closing'
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header title="Probe Thermometer Check" subtitle="Closing check" showBack onBack={() => setPhase('checks')} />
+        <div className="px-4 py-6 max-w-md mx-auto space-y-4">
           <Card className="space-y-4">
             <p className="font-medium text-hop-forest">Closing Check</p>
             <div>
@@ -588,8 +616,13 @@ export function KitchenSection() {
               />
             </div>
           </Card>
-
-          <Button color="marmalade" size="large" fullWidth disabled={!isValid} onClick={() => handleComplete()}>
+          <Button
+            color="marmalade"
+            size="large"
+            fullWidth
+            disabled={!closingTemp.trim() || !closingInitials.trim()}
+            onClick={() => handleComplete()}
+          >
             Complete
           </Button>
         </div>
