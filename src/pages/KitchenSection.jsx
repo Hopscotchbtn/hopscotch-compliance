@@ -1014,44 +1014,96 @@ export function KitchenSection() {
       )
     }
 
-    // Tea — temp check with initials
+    // Tea — step 1: arrival temperatures
     if (phase === 'tea') {
       const allFilled = teaItems.every(i => deliveryData.tea?.[i.id]?.temp || deliveryData.tea?.[i.id]?.skipped)
-      const teaInitials = deliveryData.teaInitials || ''
       return (
         <div className="min-h-screen bg-hop-pebble">
-          <Header title="Tea" subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
+          <Header title="Tea — Arrival" subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
           <div className="px-4 py-6 max-w-md mx-auto space-y-4">
             <Card className="space-y-4">
               <p className="text-xs text-gray-500">Hot ≥63°C · Cold ≤8°C</p>
               {renderTempFields(teaItems, 'tea')}
             </Card>
-            <Card>
-              <label className="block text-sm font-medium text-hop-forest mb-2">
-                Your initials <span className="text-hop-marmalade-dark">*</span>
-              </label>
-              <input
-                type="text"
-                value={teaInitials}
-                onChange={(e) => setDeliveryData(prev => ({ ...prev, teaInitials: e.target.value }))}
-                placeholder="e.g. PF"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
-              />
-            </Card>
-            <Button
-              color="marmalade"
-              size="large"
-              fullWidth
-              disabled={!allFilled || !teaInitials.trim()}
-              onClick={() => {
-                const updated = { ...deliveryData, teaDone: true }
-                setDeliveryData(updated)
-                saveToStorage(updated)
-                setPhase('ltMenu')
-              }}
-            >
-              Done
+            <Button color="marmalade" size="large" fullWidth disabled={!allFilled} onClick={() => setPhase('teaServing')}>
+              Continue to Serving
             </Button>
+          </div>
+        </div>
+      )
+    }
+
+    // Tea — step 2: serving (2-hour check)
+    if (phase === 'teaServing') {
+      const twoHours = deliveryData.teaTwoHours
+      const servingAllFilled = twoHours === 'no'
+        ? teaItems.every(i => deliveryData.teaServing?.[i.id]?.temp || deliveryData.teaServing?.[i.id]?.skipped)
+        : true
+      const teaInitials = deliveryData.teaInitials || ''
+      const canComplete = twoHours && teaInitials.trim() && (twoHours === 'yes' || servingAllFilled)
+
+      return (
+        <div className="min-h-screen bg-hop-pebble">
+          <Header title="Tea — Serving" subtitle="Little Tums" showBack onBack={() => setPhase('tea')} />
+          <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+            <Card className="space-y-4">
+              <p className="font-medium text-hop-forest text-sm">Is it 2 hours or less between time of arrival and distribution?</p>
+              <div className="flex gap-3">
+                {['yes', 'no'].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setDeliveryData(prev => ({ ...prev, teaTwoHours: val }))}
+                    className={`flex-1 py-3 rounded-lg font-medium text-sm border-2 transition-all ${
+                      twoHours === val
+                        ? val === 'yes' ? 'bg-hop-apple border-hop-apple text-white' : 'bg-hop-marmalade border-hop-marmalade text-white'
+                        : 'bg-white border-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {val === 'yes' ? 'Yes' : 'No'}
+                  </button>
+                ))}
+              </div>
+            </Card>
+
+            {twoHours === 'no' && (
+              <Card className="space-y-4">
+                <p className="text-sm text-hop-marmalade-dark font-medium">Temperature check the food again and record the temperature here</p>
+                <p className="text-xs text-gray-500">Hot ≥63°C · Cold ≤8°C</p>
+                {renderTempFields(teaItems, 'teaServing')}
+              </Card>
+            )}
+
+            {twoHours && (
+              <Card>
+                <label className="block text-sm font-medium text-hop-forest mb-2">
+                  Your initials <span className="text-hop-marmalade-dark">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={teaInitials}
+                  onChange={(e) => setDeliveryData(prev => ({ ...prev, teaInitials: e.target.value }))}
+                  placeholder="e.g. PF"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                />
+              </Card>
+            )}
+
+            {twoHours && (
+              <Button
+                color="marmalade"
+                size="large"
+                fullWidth
+                disabled={!canComplete}
+                onClick={() => {
+                  const updated = { ...deliveryData, teaDone: true }
+                  setDeliveryData(updated)
+                  saveToStorage(updated)
+                  setPhase('ltMenu')
+                }}
+              >
+                Done
+              </Button>
+            )}
           </div>
         </div>
       )
