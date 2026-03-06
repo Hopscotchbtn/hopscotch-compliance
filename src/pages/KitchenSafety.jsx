@@ -254,6 +254,7 @@ export function KitchenSafety() {
           title={kitchenSafety.shortName}
           subtitle={`${nursery} · ${formatDate()}`}
           showBack
+          onBack={() => setShowSetup(true)}
         />
         <div className="px-4 py-6 max-w-md mx-auto">
           <div className="space-y-3">
@@ -376,7 +377,7 @@ export function KitchenSafety() {
         title={kitchenSafety.shortName}
         subtitle={`${nursery}${selectedRoom ? ` · ${selectedRoom}` : ''} · ${formatDate()}`}
         showBack
-        onBack={!isHolidayClub ? () => setSelectedRoom(null) : undefined}
+        onBack={!isHolidayClub ? () => setSelectedRoom(null) : () => setShowSetup(true)}
       />
 
       <div className="px-4 py-6 max-w-md mx-auto">
