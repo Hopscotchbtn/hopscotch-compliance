@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { getMockIncidents, MOCK_SITES } from '../../lib/famly/mockData'
 import { classifyAll } from '../../lib/famly/dataHelpers'
+import { fetchSites, fetchIncidents, getStoredToken, storeToken, clearToken } from '../../lib/famly/famlyClient'
 import MonthlySummaryCards from './MonthlySummaryCards'
 import MonthlyTrendChart from './MonthlyTrendChart'
 import InjuryTypeChart from './InjuryTypeChart'
@@ -17,6 +18,8 @@ function formatTime(date) {
 
 export function FamlyDashboard() {
   const [dataMode, setDataMode] = useState('mock')
+  const [token, setToken] = useState(getStoredToken)
+  const [tokenInput, setTokenInput] = useState('')
   const [sites, setSites] = useState(MOCK_SITES)
   const [selectedSiteId, setSelectedSiteId] = useState('all')
   const [incidents, setIncidents] = useState([])
@@ -25,15 +28,16 @@ export function FamlyDashboard() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const [showTrend, setShowTrend] = useState(false)
 
-  // When switching to live, fetch real site list
+  // When switching to live and token is present, fetch real site list
   useEffect(() => {
-    if (dataMode !== 'live') {
-      setSites(MOCK_SITES)
-      setSelectedSiteId('all')
+    if (dataMode !== 'live' || !token) {
+      if (dataMode !== 'live') {
+        setSites(MOCK_SITES)
+        setSelectedSiteId('all')
+      }
       return
     }
-    fetch('/api/famly-sites')
-      .then(r => r.json())
+    fetchSites(token)
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setSites(data)
@@ -41,7 +45,7 @@ export function FamlyDashboard() {
         }
       })
       .catch(() => {})
-  }, [dataMode])
+  }, [dataMode, token])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -50,7 +54,6 @@ export function FamlyDashboard() {
       if (dataMode === 'mock') {
         setIncidents(classifyAll(getMockIncidents(selectedSiteId)))
       } else {
-        // Determine which site IDs to fetch
         const siteIdsToFetch = selectedSiteId === 'all'
           ? sites.filter(s => s.id !== 'all').map(s => s.id)
           : [selectedSiteId]
@@ -60,19 +63,10 @@ export function FamlyDashboard() {
         const fromStr = from.toISOString().slice(0, 10)
         const toStr = new Date().toISOString().slice(0, 10)
 
-        // Fetch all sites in parallel
+        // All requests go directly browser → Famly. Nothing passes through Vercel.
         const results = await Promise.all(
-          siteIdsToFetch.map(async siteId => {
-            const params = new URLSearchParams({ siteId, from: fromStr, to: toStr })
-            const res = await fetch(`/api/famly-incidents?${params}`)
-            if (!res.ok) {
-              const body = await res.json().catch(() => ({}))
-              throw new Error(body.error ?? `API error ${res.status} for site ${siteId}`)
-            }
-            return res.json()
-          })
+          siteIdsToFetch.map(siteId => fetchIncidents(token, siteId, fromStr, toStr))
         )
-
         setIncidents(classifyAll(results.flat()))
       }
       setLastUpdated(new Date())
@@ -81,7 +75,7 @@ export function FamlyDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [dataMode, selectedSiteId, sites])
+  }, [dataMode, selectedSiteId, sites, token])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -99,7 +93,15 @@ export function FamlyDashboard() {
               <h1 className="text-sm font-semibold text-slate-800 truncate">Accident &amp; Incident Dashboard</h1>
             </div>
             <button
-              onClick={() => setDataMode(m => m === 'mock' ? 'live' : 'mock')}
+              onClick={() => {
+                if (dataMode === 'live') {
+                  setDataMode('mock')
+                } else if (token) {
+                  setDataMode('live')
+                } else {
+                  setDataMode('live') // show token gate
+                }
+              }}
               className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors shrink-0 ${
                 dataMode === 'live'
                   ? 'bg-teal-50 border-teal-200 text-teal-700'
@@ -131,13 +133,85 @@ export function FamlyDashboard() {
         </div>
       </header>
 
-      {dataMode === 'mock' && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-xs text-amber-800">
-          You are viewing <strong>demo data</strong> — not real incidents. Toggle to &ldquo;Live&rdquo; in the header to view Famly data.
+      {/* Prototype warning — always visible */}
+      <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5">
+        <p className="text-xs text-amber-900 text-center">
+          <strong>Prototype — internal use only.</strong>{' '}
+          {dataMode === 'mock'
+            ? 'Showing demo data. No real incident records are displayed.'
+            : 'Showing live Famly data. Do not share this screen or URL with anyone outside the management team.'
+          }{' '}
+          Not a formal safeguarding record.
+        </p>
+      </div>
+
+      {/* Token gate — shown in live mode when no session token is stored */}
+      {dataMode === 'live' && !token && (
+        <div className="max-w-5xl mx-auto px-4 pt-8">
+          <div className="bg-white border border-stone-200 rounded-lg p-6 max-w-md mx-auto">
+            <h2 className="text-sm font-semibold text-slate-800 mb-1">Enter your Famly access token</h2>
+            <p className="text-xs text-slate-500 mb-4 leading-relaxed">
+              Your token is used only in this browser tab to call the Famly API directly.
+              It is not sent to or stored by Hopscotch servers.
+              It will be cleared when you close this tab.
+            </p>
+            <form
+              onSubmit={e => {
+                e.preventDefault()
+                const t = tokenInput.trim()
+                if (!t) return
+                storeToken(t)
+                setToken(t)
+                setTokenInput('')
+              }}
+              className="space-y-3"
+            >
+              <input
+                type="password"
+                value={tokenInput}
+                onChange={e => setTokenInput(e.target.value)}
+                placeholder="Paste token here"
+                className="w-full text-sm border border-stone-200 rounded-md px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={!tokenInput.trim()}
+                  className="flex-1 text-sm font-medium bg-amber-600 text-white rounded-md px-4 py-2 hover:bg-amber-700 disabled:opacity-40 transition-colors"
+                >
+                  Connect
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDataMode('mock')}
+                  className="text-sm text-slate-500 border border-stone-200 rounded-md px-4 py-2 hover:bg-stone-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+            <p className="text-xs text-slate-400 mt-3">
+              Find your token in Famly → Settings → Integrations, or ask your Famly administrator.
+            </p>
+          </div>
         </div>
       )}
 
-      <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+      {/* Sign-out button when live and token is active */}
+      {dataMode === 'live' && token && (
+        <div className="bg-teal-50 border-b border-teal-100 px-4 py-1.5 flex items-center justify-between max-w-5xl mx-auto">
+          <p className="text-xs text-teal-700">Connected to Famly — data processed in this browser only</p>
+          <button
+            onClick={() => { clearToken(); setToken(''); setDataMode('mock') }}
+            className="text-xs text-teal-600 underline underline-offset-2 ml-4"
+          >
+            Disconnect
+          </button>
+        </div>
+      )}
+
+      {(dataMode === 'mock' || token) && <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {/* Page title row */}
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -197,7 +271,7 @@ export function FamlyDashboard() {
           Hopscotch Children&apos;s Nurseries · Internal use only ·
           All data handled in accordance with GDPR · No personal data stored outside this session
         </footer>
-      </main>
+      </main>}
     </div>
   )
 }
