@@ -869,84 +869,182 @@ export function KitchenSection() {
       })
     }
 
-    const renderTempItems = (items, dataKey, doneKey, initialsKey) => {
+    const renderTempFields = (items, dataKey) => {
       const threshold = (item) => item.type === 'hot' ? 63 : 8
       const isValidTemp = (item) => {
         const t = parseFloat(deliveryData[dataKey]?.[item.id]?.temp)
         return item.type === 'hot' ? t >= threshold(item) : t <= threshold(item)
       }
-      const allFilled = items.every(i => deliveryData[dataKey]?.[i.id]?.temp || deliveryData[dataKey]?.[i.id]?.skipped)
-      const initials = deliveryData[initialsKey] || ''
+      return items.map(item => {
+        const temp = deliveryData[dataKey]?.[item.id]?.temp || ''
+        const skipped = deliveryData[dataKey]?.[item.id]?.skipped
+        const valid = temp && isValidTemp(item)
+        const invalid = temp && !isValidTemp(item)
+        return (
+          <div key={item.id}>
+            <label className="block text-sm text-hop-forest mb-1">{item.label}</label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={skipped ? '' : temp}
+                  disabled={skipped}
+                  onChange={(e) => setDeliveryData(prev => ({
+                    ...prev,
+                    [dataKey]: { ...prev[dataKey], [item.id]: { temp: e.target.value } }
+                  }))}
+                  placeholder={item.type === 'hot' ? '≥63' : '≤8'}
+                  className={`w-full px-3 py-2 pr-10 rounded-lg border-2 text-sm ${
+                    skipped ? 'bg-gray-100 border-gray-200 text-gray-400' :
+                    valid ? 'border-hop-apple bg-hop-apple/10' :
+                    invalid ? 'border-hop-marmalade-dark bg-hop-marmalade/10' :
+                    'border-gray-200'
+                  }`}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">°C</span>
+              </div>
+              <button
+                onClick={() => setDeliveryData(prev => ({
+                  ...prev,
+                  [dataKey]: { ...prev[dataKey], [item.id]: { skipped: !skipped } }
+                }))}
+                className={`px-3 py-2 border-2 rounded-lg text-sm ${skipped ? 'border-hop-marmalade bg-hop-marmalade/20 text-hop-marmalade-dark font-medium' : 'border-gray-200 text-gray-500'}`}
+              >
+                N/A
+              </button>
+            </div>
+          </div>
+        )
+      })
+    }
+
+    // Lunch — step 1: arrival temperatures
+    if (phase === 'lunch') {
+      const allFilled = lunchItems.every(i => deliveryData.lunch?.[i.id]?.temp || deliveryData.lunch?.[i.id]?.skipped)
       return (
         <div className="min-h-screen bg-hop-pebble">
-          <Header title={dataKey === 'lunch' ? 'Lunch' : 'Tea'} subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
+          <Header title="Lunch — Arrival" subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
           <div className="px-4 py-6 max-w-md mx-auto space-y-4">
             <Card className="space-y-4">
               <p className="text-xs text-gray-500">Hot ≥63°C · Cold ≤8°C</p>
-              {items.map(item => {
-                const temp = deliveryData[dataKey]?.[item.id]?.temp || ''
-                const skipped = deliveryData[dataKey]?.[item.id]?.skipped
-                const valid = temp && isValidTemp(item)
-                const invalid = temp && !isValidTemp(item)
-                return (
-                  <div key={item.id}>
-                    <label className="block text-sm text-hop-forest mb-1">{item.label}</label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          value={skipped ? '' : temp}
-                          disabled={skipped}
-                          onChange={(e) => setDeliveryData(prev => ({
-                            ...prev,
-                            [dataKey]: { ...prev[dataKey], [item.id]: { temp: e.target.value } }
-                          }))}
-                          placeholder={item.type === 'hot' ? '≥63' : '≤8'}
-                          className={`w-full px-3 py-2 pr-10 rounded-lg border-2 text-sm ${
-                            skipped ? 'bg-gray-100 border-gray-200 text-gray-400' :
-                            valid ? 'border-hop-apple bg-hop-apple/10' :
-                            invalid ? 'border-hop-marmalade-dark bg-hop-marmalade/10' :
-                            'border-gray-200'
-                          }`}
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">°C</span>
-                      </div>
-                      <button
-                        onClick={() => setDeliveryData(prev => ({
-                          ...prev,
-                          [dataKey]: { ...prev[dataKey], [item.id]: { skipped: !skipped } }
-                        }))}
-                        className={`px-3 py-2 border-2 rounded-lg text-sm ${skipped ? 'border-hop-marmalade bg-hop-marmalade/20 text-hop-marmalade-dark font-medium' : 'border-gray-200 text-gray-500'}`}
-                      >
-                        N/A
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
+              {renderTempFields(lunchItems, 'lunch')}
+            </Card>
+            <Button color="marmalade" size="large" fullWidth disabled={!allFilled} onClick={() => setPhase('lunchServing')}>
+              Continue to Serving
+            </Button>
+          </div>
+        </div>
+      )
+    }
+
+    // Lunch — step 2: serving (2-hour check)
+    if (phase === 'lunchServing') {
+      const twoHours = deliveryData.lunchTwoHours
+      const servingAllFilled = twoHours === 'no'
+        ? lunchItems.every(i => deliveryData.lunchServing?.[i.id]?.temp || deliveryData.lunchServing?.[i.id]?.skipped)
+        : true
+      const lunchInitials = deliveryData.lunchInitials || ''
+      const canComplete = twoHours && lunchInitials.trim() && (twoHours === 'yes' || servingAllFilled)
+
+      return (
+        <div className="min-h-screen bg-hop-pebble">
+          <Header title="Lunch — Serving" subtitle="Little Tums" showBack onBack={() => setPhase('lunch')} />
+          <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+            <Card className="space-y-4">
+              <p className="font-medium text-hop-forest text-sm">Is it 2 hours or less between time of arrival and distribution?</p>
+              <div className="flex gap-3">
+                {['yes', 'no'].map(val => (
+                  <button
+                    key={val}
+                    onClick={() => setDeliveryData(prev => ({ ...prev, lunchTwoHours: val }))}
+                    className={`flex-1 py-3 rounded-lg font-medium text-sm border-2 transition-all ${
+                      twoHours === val
+                        ? val === 'yes' ? 'bg-hop-apple border-hop-apple text-white' : 'bg-hop-marmalade border-hop-marmalade text-white'
+                        : 'bg-white border-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {val === 'yes' ? 'Yes' : 'No'}
+                  </button>
+                ))}
+              </div>
             </Card>
 
+            {twoHours === 'no' && (
+              <Card className="space-y-4">
+                <p className="text-sm text-hop-marmalade-dark font-medium">Temperature check the food again and record the temperature here</p>
+                <p className="text-xs text-gray-500">Hot ≥63°C · Cold ≤8°C</p>
+                {renderTempFields(lunchItems, 'lunchServing')}
+              </Card>
+            )}
+
+            {twoHours && (
+              <Card>
+                <label className="block text-sm font-medium text-hop-forest mb-2">
+                  Your initials <span className="text-hop-marmalade-dark">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={lunchInitials}
+                  onChange={(e) => setDeliveryData(prev => ({ ...prev, lunchInitials: e.target.value }))}
+                  placeholder="e.g. PF"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                />
+              </Card>
+            )}
+
+            {twoHours && (
+              <Button
+                color="marmalade"
+                size="large"
+                fullWidth
+                disabled={!canComplete}
+                onClick={() => {
+                  const updated = { ...deliveryData, lunchDone: true }
+                  setDeliveryData(updated)
+                  saveToStorage(updated)
+                  setPhase('ltMenu')
+                }}
+              >
+                Done
+              </Button>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    // Tea — temp check with initials
+    if (phase === 'tea') {
+      const allFilled = teaItems.every(i => deliveryData.tea?.[i.id]?.temp || deliveryData.tea?.[i.id]?.skipped)
+      const teaInitials = deliveryData.teaInitials || ''
+      return (
+        <div className="min-h-screen bg-hop-pebble">
+          <Header title="Tea" subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
+          <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+            <Card className="space-y-4">
+              <p className="text-xs text-gray-500">Hot ≥63°C · Cold ≤8°C</p>
+              {renderTempFields(teaItems, 'tea')}
+            </Card>
             <Card>
               <label className="block text-sm font-medium text-hop-forest mb-2">
                 Your initials <span className="text-hop-marmalade-dark">*</span>
               </label>
               <input
                 type="text"
-                value={initials}
-                onChange={(e) => setDeliveryData(prev => ({ ...prev, [initialsKey]: e.target.value }))}
+                value={teaInitials}
+                onChange={(e) => setDeliveryData(prev => ({ ...prev, teaInitials: e.target.value }))}
                 placeholder="e.g. PF"
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
               />
             </Card>
-
             <Button
               color="marmalade"
               size="large"
               fullWidth
-              disabled={!allFilled || !initials.trim()}
+              disabled={!allFilled || !teaInitials.trim()}
               onClick={() => {
-                const updated = { ...deliveryData, [doneKey]: true, [initialsKey]: initials }
+                const updated = { ...deliveryData, teaDone: true }
                 setDeliveryData(updated)
                 saveToStorage(updated)
                 setPhase('ltMenu')
@@ -958,9 +1056,6 @@ export function KitchenSection() {
         </div>
       )
     }
-
-    if (phase === 'lunch') return renderTempItems(lunchItems, 'lunch', 'lunchDone', 'lunchInitials')
-    if (phase === 'tea') return renderTempItems(teaItems, 'tea', 'teaDone', 'teaInitials')
 
     // Menu screen
     return (
