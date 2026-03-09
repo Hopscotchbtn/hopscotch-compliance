@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { classifyAll } from '../../lib/famly/dataHelpers'
-import { fetchSites, fetchIncidents, getStoredToken, storeToken, clearToken } from '../../lib/famly/famlyClient'
 import { generateMonthlyReportPDF } from '../../lib/famly/generateMonthlyReportPDF'
 
 function previousMonthLabel() {
@@ -11,32 +10,34 @@ function previousMonthLabel() {
 }
 
 export function FamlyDashboard() {
-  const existingToken = getStoredToken()
-  const [token, setToken] = useState(existingToken)
-  const [tokenInput, setTokenInput] = useState('')
   const [sites, setSites] = useState([])
   const [selectedSiteId, setSelectedSiteId] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Fetch sites when token is available
+  // Fetch sites on mount
   useEffect(() => {
-    if (!token) return
-    setLoading(true)
-    fetchSites(token)
+    fetch('/api/famly-sites')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load sites')
+        return res.json()
+      })
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setSites(data)
           setSelectedSiteId(data[0].id)
         }
+        setLoading(false)
       })
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false))
-  }, [token])
+      .catch(err => {
+        setError(err.message)
+        setLoading(false)
+      })
+  }, [])
 
   const handleDownload = useCallback(async () => {
-    if (!selectedSiteId || !token) return
+    if (!selectedSiteId) return
     setDownloading(true)
     setError(null)
     try {
@@ -45,7 +46,10 @@ export function FamlyDashboard() {
       const fromStr = from.toISOString().slice(0, 10)
       const toStr = new Date().toISOString().slice(0, 10)
 
-      const incidents = await fetchIncidents(token, selectedSiteId, fromStr, toStr)
+      const res = await fetch(`/api/famly-incidents?siteId=${selectedSiteId}&from=${fromStr}&to=${toStr}`)
+      if (!res.ok) throw new Error('Failed to load incidents')
+      const incidents = await res.json()
+
       const classified = classifyAll(incidents)
       const siteName = sites.find(s => s.id === selectedSiteId)?.name ?? 'Site'
       generateMonthlyReportPDF(classified, siteName)
@@ -54,9 +58,7 @@ export function FamlyDashboard() {
     } finally {
       setDownloading(false)
     }
-  }, [selectedSiteId, token, sites])
-
-  const siteName = sites.find(s => s.id === selectedSiteId)?.name ?? ''
+  }, [selectedSiteId, sites])
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -72,48 +74,15 @@ export function FamlyDashboard() {
       </header>
 
       <main className="max-w-md mx-auto px-4 py-8">
-        {/* Token gate */}
-        {!token ? (
-          <div className="bg-white border border-stone-200 rounded-lg p-6">
-            <h2 className="text-sm font-semibold text-slate-800 mb-1">Connect to Famly</h2>
-            <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-              Enter your Famly access token to pull incident data. Your token stays in this browser only.
-            </p>
-            <form
-              onSubmit={e => {
-                e.preventDefault()
-                const t = tokenInput.trim()
-                if (!t) return
-                storeToken(t)
-                setToken(t)
-                setTokenInput('')
-              }}
-              className="space-y-3"
-            >
-              <input
-                type="password"
-                value={tokenInput}
-                onChange={e => setTokenInput(e.target.value)}
-                placeholder="Paste token here"
-                className="w-full text-sm border border-stone-200 rounded-md px-3 py-2 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                autoFocus
-              />
-              <button
-                type="submit"
-                disabled={!tokenInput.trim()}
-                className="w-full text-sm font-medium bg-amber-600 text-white rounded-md px-4 py-2.5 hover:bg-amber-700 disabled:opacity-40 transition-colors"
-              >
-                Connect
-              </button>
-            </form>
-            <p className="text-xs text-slate-400 mt-3">
-              Find your token in Famly → Settings → Integrations
-            </p>
-          </div>
-        ) : loading ? (
+        {loading ? (
           <div className="text-center py-12">
             <div className="inline-block w-6 h-6 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
             <p className="text-sm text-slate-500 mt-3">Loading sites...</p>
+          </div>
+        ) : error && sites.length === 0 ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-6 text-center">
+            <p className="text-sm text-red-700 font-medium">Unable to connect to Famly</p>
+            <p className="text-xs text-red-600 mt-1">{error}</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -152,7 +121,7 @@ export function FamlyDashboard() {
               )}
             </button>
 
-            {error && (
+            {error && sites.length > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
@@ -170,20 +139,12 @@ export function FamlyDashboard() {
                 <li>Full incident list</li>
               </ul>
             </div>
-
-            {/* Disconnect */}
-            <button
-              onClick={() => { clearToken(); setToken(''); setSites([]); setSelectedSiteId('') }}
-              className="w-full text-sm text-slate-400 hover:text-slate-600 py-2"
-            >
-              Disconnect from Famly
-            </button>
           </div>
         )}
       </main>
 
       <footer className="max-w-md mx-auto px-4 py-6 text-center text-xs text-slate-400">
-        Internal use only · Data processed in browser only
+        Internal use only · Data from Famly
       </footer>
     </div>
   )
