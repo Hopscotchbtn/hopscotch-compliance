@@ -94,14 +94,19 @@ export function generateMonthlyReportPDF(incidents, siteName) {
     addPageIfNeeded(30)
     doc.setFillColor(254, 242, 242)
     doc.setDrawColor(252, 165, 165)
-    doc.roundedRect(14, y, pageWidth - 28, 8 + needsReview.length * 6, 2, 2, 'FD')
+    doc.roundedRect(14, y, pageWidth - 28, 14 + needsReview.length * 5, 2, 2, 'FD')
     y += 6
     doc.setFont(undefined, 'bold')
     doc.setTextColor(153, 27, 27)
     doc.text(`${needsReview.length} incident(s) flagged for formal review`, 20, y)
-    y += 6
+    y += 5
     doc.setFont(undefined, 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(120, 40, 40)
+    doc.text('Based on keywords: hospital, A&E, fracture, head injury, stitches, bite that broke skin, etc.', 20, y)
+    y += 5
     doc.setFontSize(9)
+    doc.setTextColor(153, 27, 27)
     needsReview.forEach(inc => {
       doc.text(`• ${childDisplayName(inc.childName)} — ${formatDate(inc.happenedAt)} — ${inc.injuryCategory}`, 22, y)
       y += 5
@@ -142,51 +147,6 @@ export function generateMonthlyReportPDF(incidents, siteName) {
     })
     doc.setFontSize(10)
     y += 8
-  }
-
-  // Divider
-  doc.setDrawColor(200)
-  doc.line(14, y, pageWidth - 14, y)
-  y += 8
-
-  // Incident list
-  doc.setFont(undefined, 'bold')
-  doc.text('All incidents this month', 14, y)
-  y += 8
-
-  if (monthIncs.length === 0) {
-    doc.setFont(undefined, 'normal')
-    doc.text('No incidents recorded.', 14, y)
-    y += 8
-  } else {
-    const sorted = [...monthIncs].sort((a, b) => new Date(a.happenedAt) - new Date(b.happenedAt))
-
-    // Table header
-    doc.setFillColor(245, 245, 244)
-    doc.rect(14, y - 1, pageWidth - 28, 7, 'F')
-    doc.setFontSize(8)
-    doc.setFont(undefined, 'bold')
-    doc.text('Date', 16, y + 4)
-    doc.text('Child', 42, y + 4)
-    doc.text('Type', 75, y + 4)
-    doc.text('Location', 95, y + 4)
-    doc.text('Description', 125, y + 4)
-    y += 9
-
-    doc.setFont(undefined, 'normal')
-    sorted.forEach(inc => {
-      addPageIfNeeded(12)
-      const date = formatDate(inc.happenedAt)
-      const child = childDisplayName(inc.childName)
-      const nature = inc.nature.length > 35 ? inc.nature.slice(0, 35) + '...' : inc.nature
-
-      doc.text(date, 16, y)
-      doc.text(child, 42, y)
-      doc.text(inc.kind, 75, y)
-      doc.text(inc.location.slice(0, 18), 95, y)
-      doc.text(nature, 125, y)
-      y += 6
-    })
   }
 
   // Footer

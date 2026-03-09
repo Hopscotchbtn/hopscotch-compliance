@@ -133,10 +133,9 @@ export function FamlyDashboard() {
               <ul className="list-disc list-inside space-y-0.5">
                 <li>Total accidents and incidents for {previousMonthLabel()}</li>
                 <li>Comparison with same month last year</li>
-                <li>Incidents flagged for formal review</li>
-                <li>Children with repeat incidents</li>
+                <li>Incidents flagged for formal review (based on severity keywords)</li>
+                <li>Children with repeat incidents (rolling 3 months)</li>
                 <li>Location breakdown</li>
-                <li>Full incident list</li>
               </ul>
             </div>
           </div>
