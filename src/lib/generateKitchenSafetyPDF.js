@@ -55,7 +55,7 @@ function drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin, roo
   if (logoDataURL) {
     try {
       doc.addImage(logoDataURL, 'PNG', (pageW - 50) / 2, y, 50, 36)
-      y += 42
+      y += 38
     } catch { y += 8 }
   }
 
@@ -76,7 +76,7 @@ function drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin, roo
   doc.setLineWidth(0.6)
   doc.line(margin, y + 10, pageW - margin, y + 10)
 
-  return y + 16
+  return y + 10
 }
 
 function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
@@ -184,7 +184,7 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
 }
 
 function drawDayHeading(doc, dateStr, pageW, margin, headerH) {
-  let y = headerH + 4
+  let y = headerH
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
