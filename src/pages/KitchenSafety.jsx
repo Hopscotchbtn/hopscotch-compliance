@@ -141,7 +141,8 @@ export function KitchenSafety() {
         // Holiday club: portrait, one page per day
         const history = {}
         for (const check of checks) {
-          const dateStr = new Date(check.created_at).toISOString().slice(0, 10)
+          const d = new Date(check.created_at)
+          const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
           let sectionData = null
           let completedSections = {}
           try { const parsed = JSON.parse(check.overall_notes || '{}'); sectionData = parsed.sectionData } catch {}

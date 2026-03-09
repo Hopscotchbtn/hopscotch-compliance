@@ -10,7 +10,7 @@ const WHITE      = [255, 255, 255]
 
 
 function toDateStr(date) {
-  return date.toISOString().slice(0, 10)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 function getDatesInRange(start, end) {
@@ -80,7 +80,8 @@ function drawPageHeader(doc, nursery, weekRange, logoDataURL, pageW, margin, roo
 }
 
 function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
-  if (!sd || Object.keys(completedSections || {}).length === 0) {
+  const hasData = sd && (sd.opening || sd.closing || sd.packedLunch || sd.signoff)
+  if (!hasData) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
     doc.setTextColor(...MID_GREY)

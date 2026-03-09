@@ -15,7 +15,8 @@ const checkLabels = {
   },
 }
 
-export function SummaryEntry({ check, section }) {
+export function SummaryEntry({ check, section = '' }) {
+  const isHolidayClub = section === 'holiday-club'
   const checkType = checkTypes[check.check_type]
   const hasIssues = check.has_issues
   const labels = checkLabels[section] || checkLabels.nursery
