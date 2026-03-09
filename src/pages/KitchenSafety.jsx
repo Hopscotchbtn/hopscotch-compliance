@@ -672,6 +672,32 @@ export function KitchenSafety() {
           </>
         )}
 
+        {/* Download PDF — holiday club only (nursery has this on the room list screen) */}
+        {isHolidayClub && (
+          <div className="mt-6 p-4 bg-white rounded-xl border-2 border-gray-200">
+            <p className="text-sm font-medium text-hop-forest mb-3">Download Weekly PDF</p>
+            <select
+              value={selectedWeek}
+              onChange={(e) => setSelectedWeek(e.target.value)}
+              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest mb-3"
+            >
+              <option value="">Select a week…</option>
+              {weekOptions.map(w => (
+                <option key={w.value} value={w.value}>{w.label}</option>
+              ))}
+            </select>
+            <Button
+              color="marmalade"
+              size="large"
+              fullWidth
+              disabled={!selectedWeek || !nursery || downloading}
+              onClick={handleDownloadPDF}
+            >
+              {downloading ? 'Generating…' : 'Download PDF'}
+            </Button>
+          </div>
+        )}
+
         {/* Change settings / clear checks */}
         <div className="mt-4 text-center space-y-2">
           {!isHolidayClub && (
