@@ -1,88 +1,55 @@
 const FAMLY_API = 'https://famlyapi.famly.co/v1/graphql'
 
-// NOTE: Field names are inferred from the Famly GraphQL schema.
-// If fields come back empty, use https://famlyapi.famly.co/v1/graphiql to inspect
-// the exact schema with your access token.
 const QUERY = `
-  query AccidentReports($siteIds: [ID!]!, $from: Date, $to: Date, $nextToken: String) {
+  query AccidentReports($siteIds: [SiteId!]!) {
     accidentReports {
-      listBySiteIds(siteIds: $siteIds, from: $from, to: $to, nextToken: $nextToken) {
+      listBySiteIds(siteIds: $siteIds) {
         result {
-          reportId
-          kind
-          happenedAt
-          createdAt
-          status
-          location
-          nature
-          firstAid
+          reportId kind date time createdAt status location description note firstAid
+          parentsNotified lado ofsted riddor onArrival
           site { siteId title }
-          child {
-            id
-            name { firstName lastName fullName }
-          }
+          child { id name { fullName } }
           createdBy { name { fullName } }
-          witnesses { name { fullName } }
-          approvedBy { name { fullName } }
-          approvedAt
+          witness { name { fullName } }
+          staffPresent { name { fullName } }
           acknowledgedBy { name { fullName } }
-          acknowledgedAt
+          acknowledgedAt sentAt
         }
-        nextToken
+        next
       }
     }
   }
 `
 
-async function fetchPage(token, siteId, from, to, cursor) {
-  const response = await fetch(FAMLY_API, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Famly-Accesstoken': token,
-    },
-    body: JSON.stringify({
-      query: QUERY,
-      variables: {
-        siteIds: [siteId],
-        from,
-        to,
-        ...(cursor ? { nextToken: cursor } : {}),
-      },
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error(`Famly API HTTP error: ${response.status}`)
-  }
-
-  const json = await response.json()
-  if (json.errors) {
-    throw new Error(json.errors[0]?.message ?? 'GraphQL error')
-  }
-
-  return json.data?.accidentReports?.listBySiteIds ?? { result: [], nextToken: null }
-}
-
 function normalise(r) {
   return {
     id: r.reportId ?? r.id,
     childName: r.child?.name?.fullName ?? 'Unknown',
+    childId: r.child?.id ?? null,
     kind: r.kind === 'incident' ? 'Incident' : 'Accident',
-    happenedAt: r.happenedAt ?? r.createdAt,
+    happenedAt: r.date ?? r.createdAt,
+    time: r.time ?? '',
     createdBy: r.createdBy?.name?.fullName ?? '',
     location: r.location ?? '',
     status: r.status === 'draft' ? 'Draft' : 'Sent',
-    nature: r.nature ?? '',
+    nature: r.description || r.note || '',
     firstAid: r.firstAid ?? '',
-    witnesses: (r.witnesses ?? []).map(w => w.name?.fullName ?? ''),
-    approvedBy: r.approvedBy?.name?.fullName ?? undefined,
-    approvedAt: r.approvedAt ?? undefined,
+    witnesses: Array.isArray(r.witness)
+      ? r.witness.map(w => w.name?.fullName).filter(Boolean)
+      : r.witness?.name?.fullName ? [r.witness.name.fullName] : [],
+    staffPresent: Array.isArray(r.staffPresent)
+      ? r.staffPresent.map(s => s.name?.fullName).filter(Boolean)
+      : [],
     acknowledgedBy: r.acknowledgedBy?.name?.fullName ?? undefined,
     acknowledgedAt: r.acknowledgedAt ?? undefined,
+    parentsNotified: r.parentsNotified ?? '',
+    lado: r.lado ?? false,
+    ofsted: r.ofsted ?? false,
+    riddor: r.riddor ?? false,
+    onArrival: r.onArrival ?? false,
+    sentAt: r.sentAt ?? undefined,
     siteId: r.site?.siteId ?? '',
     siteName: r.site?.title ?? '',
-    childId: r.child?.id ?? null,
   }
 }
 
@@ -103,16 +70,41 @@ export default async function handler(req, res) {
   }
 
   try {
-    const allRecords = []
-    let cursor = null
+    const response = await fetch(FAMLY_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Famly-Accesstoken': token,
+      },
+      body: JSON.stringify({
+        query: QUERY,
+        variables: { siteIds: [siteId] },
+      }),
+    })
 
-    do {
-      const page = await fetchPage(token, siteId, from ?? '', to ?? '', cursor)
-      allRecords.push(...(page.result ?? []))
-      cursor = page.nextToken ?? null
-    } while (cursor)
+    if (!response.ok) {
+      return res.status(response.status).json({ error: `Famly API HTTP error: ${response.status}` })
+    }
 
-    return res.status(200).json(allRecords.map(normalise))
+    const json = await response.json()
+    if (json.errors) {
+      return res.status(400).json({ error: json.errors[0]?.message ?? 'GraphQL error' })
+    }
+
+    const records = json.data?.accidentReports?.listBySiteIds?.result ?? []
+
+    // Filter by date range client-side
+    const fromDate = from ? new Date(from) : null
+    const toDate = to ? new Date(to) : null
+
+    const filtered = records.filter(r => {
+      const d = new Date(r.date ?? r.createdAt)
+      if (fromDate && d < fromDate) return false
+      if (toDate && d > toDate) return false
+      return true
+    })
+
+    return res.status(200).json(filtered.map(normalise))
   } catch (err) {
     console.error('[famly-incidents] error:', err)
     return res.status(502).json({ error: err.message ?? 'Unknown error' })
