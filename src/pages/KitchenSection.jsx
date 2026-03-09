@@ -260,6 +260,12 @@ export function KitchenSection() {
 
   const isHolidayClub = section === 'holiday-club'
 
+  // Holiday club does not have weekly/monthly probe checks
+  if (isHolidayClub) {
+    config.includeWeeklyProbe = false
+    config.includeMonthlyCalibration = false
+  }
+
   const goBackToSections = () => navigate('/kitchen-safety', {
     replace: true,
     state: { returnedSection: section, skipSetup: true, room },

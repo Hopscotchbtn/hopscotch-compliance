@@ -45,7 +45,7 @@ const MONTHLY_SECTIONS = [
 ]
 
 const NURSERY_SECTIONS = DAILY_SECTIONS
-const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
+const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS.filter(s => s.id !== 'littleTums')
 
 const getMondayOfThisWeek = () => {
   const d = new Date()
@@ -488,7 +488,7 @@ export function KitchenSafety() {
         </div>
 
         {/* Weekly/Monthly alerts */}
-        {(showWeeklyProbeCheck || showMonthlyCalibration) && (
+        {!isHolidayClub && (showWeeklyProbeCheck || showMonthlyCalibration) && (
           <Card className="mb-6 bg-hop-sunshine/20 border border-hop-sunshine">
             <div className="flex items-start gap-3">
               <span className="text-xl">📋</span>
@@ -566,106 +566,111 @@ export function KitchenSafety() {
         </div>
 
         {/* Weekly Checks */}
-        <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden mt-4">
-          <div className="px-4 py-3 bg-hop-freshair/30 border-b border-gray-200">
-            <p className="text-sm font-semibold text-hop-forest uppercase tracking-wide">Weekly Checks</p>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {WEEKLY_SECTIONS.map((sectionItem) => {
-              const lastDone = weeklyCheckDates[sectionItem.id]?.created_at
-              const doneThisWeek = isDoneThisWeek(lastDone)
-              const lastDoneLabel = formatLastDone(lastDone)
+        {!isHolidayClub && (
+          <>
+            {/* Weekly Checks */}
+            <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden mt-4">
+              <div className="px-4 py-3 bg-hop-freshair/30 border-b border-gray-200">
+                <p className="text-sm font-semibold text-hop-forest uppercase tracking-wide">Weekly Checks</p>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {WEEKLY_SECTIONS.map((sectionItem) => {
+                  const lastDone = weeklyCheckDates[sectionItem.id]?.created_at
+                  const doneThisWeek = isDoneThisWeek(lastDone)
+                  const lastDoneLabel = formatLastDone(lastDone)
 
-              return (
-                <button
-                  key={sectionItem.id}
-                  onClick={() => handleStartSection(sectionItem.id)}
-                  className="w-full p-4 text-left transition-all duration-200 flex items-center gap-4 hover:bg-gray-50"
-                >
-                  <div className={`
-                    w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl
-                    ${doneThisWeek ? 'bg-hop-apple' : 'bg-hop-freshair/40'}
-                  `}>
-                    {doneThisWeek ? (
-                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  return (
+                    <button
+                      key={sectionItem.id}
+                      onClick={() => handleStartSection(sectionItem.id)}
+                      className="w-full p-4 text-left transition-all duration-200 flex items-center gap-4 hover:bg-gray-50"
+                    >
+                      <div className={`
+                        w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl
+                        ${doneThisWeek ? 'bg-hop-apple' : 'bg-hop-freshair/40'}
+                      `}>
+                        {doneThisWeek ? (
+                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          sectionItem.icon
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-hop-forest">{sectionItem.name}</p>
+                        <p className="text-sm text-gray-500">{sectionItem.description}</p>
+                        {doneThisWeek && lastDoneLabel && (
+                          <p className="text-xs text-hop-apple mt-1">Done this week · {lastDoneLabel}</p>
+                        )}
+                        {!doneThisWeek && lastDoneLabel && (
+                          <p className="text-xs text-hop-marmalade-dark mt-1">Due this week · last done {lastDoneLabel}</p>
+                        )}
+                        {!doneThisWeek && !lastDoneLabel && (
+                          <p className="text-xs text-hop-marmalade-dark mt-1">Not yet completed</p>
+                        )}
+                      </div>
+                      <svg className={`w-5 h-5 flex-shrink-0 ${doneThisWeek ? 'text-gray-400' : 'text-hop-forest/40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                    ) : (
-                      sectionItem.icon
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-hop-forest">{sectionItem.name}</p>
-                    <p className="text-sm text-gray-500">{sectionItem.description}</p>
-                    {doneThisWeek && lastDoneLabel && (
-                      <p className="text-xs text-hop-apple mt-1">Done this week · {lastDoneLabel}</p>
-                    )}
-                    {!doneThisWeek && lastDoneLabel && (
-                      <p className="text-xs text-hop-marmalade-dark mt-1">Due this week · last done {lastDoneLabel}</p>
-                    )}
-                    {!doneThisWeek && !lastDoneLabel && (
-                      <p className="text-xs text-hop-marmalade-dark mt-1">Not yet completed</p>
-                    )}
-                  </div>
-                  <svg className={`w-5 h-5 flex-shrink-0 ${doneThisWeek ? 'text-gray-400' : 'text-hop-forest/40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              )
-            })}
-          </div>
-        </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
 
-        {/* Monthly Checks */}
-        <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden mt-4">
-          <div className="px-4 py-3 bg-hop-blossom/20 border-b border-gray-200">
-            <p className="text-sm font-semibold text-hop-forest uppercase tracking-wide">Monthly Checks</p>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {MONTHLY_SECTIONS.map((sectionItem) => {
-              const lastDone = weeklyCheckDates[sectionItem.id]?.created_at
-              const doneThisMonth = isDoneThisMonth(lastDone)
-              const lastDoneLabel = formatLastDone(lastDone)
+            {/* Monthly Checks */}
+            <div className="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden mt-4">
+              <div className="px-4 py-3 bg-hop-blossom/20 border-b border-gray-200">
+                <p className="text-sm font-semibold text-hop-forest uppercase tracking-wide">Monthly Checks</p>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {MONTHLY_SECTIONS.map((sectionItem) => {
+                  const lastDone = weeklyCheckDates[sectionItem.id]?.created_at
+                  const doneThisMonth = isDoneThisMonth(lastDone)
+                  const lastDoneLabel = formatLastDone(lastDone)
 
-              return (
-                <button
-                  key={sectionItem.id}
-                  onClick={() => handleStartSection(sectionItem.id)}
-                  className="w-full p-4 text-left transition-all duration-200 flex items-center gap-4 hover:bg-gray-50"
-                >
-                  <div className={`
-                    w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl
-                    ${doneThisMonth ? 'bg-hop-apple' : 'bg-hop-blossom/30'}
-                  `}>
-                    {doneThisMonth ? (
-                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  return (
+                    <button
+                      key={sectionItem.id}
+                      onClick={() => handleStartSection(sectionItem.id)}
+                      className="w-full p-4 text-left transition-all duration-200 flex items-center gap-4 hover:bg-gray-50"
+                    >
+                      <div className={`
+                        w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl
+                        ${doneThisMonth ? 'bg-hop-apple' : 'bg-hop-blossom/30'}
+                      `}>
+                        {doneThisMonth ? (
+                          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          sectionItem.icon
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-hop-forest">{sectionItem.name}</p>
+                        <p className="text-sm text-gray-500">{sectionItem.description}</p>
+                        {doneThisMonth && lastDoneLabel && (
+                          <p className="text-xs text-hop-apple mt-1">Done this month · {lastDoneLabel}</p>
+                        )}
+                        {!doneThisMonth && lastDoneLabel && (
+                          <p className="text-xs text-hop-marmalade-dark mt-1">Due this month · last done {lastDoneLabel}</p>
+                        )}
+                        {!doneThisMonth && !lastDoneLabel && (
+                          <p className="text-xs text-hop-marmalade-dark mt-1">Not yet completed</p>
+                        )}
+                      </div>
+                      <svg className={`w-5 h-5 flex-shrink-0 ${doneThisMonth ? 'text-gray-400' : 'text-hop-forest/40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                    ) : (
-                      sectionItem.icon
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-hop-forest">{sectionItem.name}</p>
-                    <p className="text-sm text-gray-500">{sectionItem.description}</p>
-                    {doneThisMonth && lastDoneLabel && (
-                      <p className="text-xs text-hop-apple mt-1">Done this month · {lastDoneLabel}</p>
-                    )}
-                    {!doneThisMonth && lastDoneLabel && (
-                      <p className="text-xs text-hop-marmalade-dark mt-1">Due this month · last done {lastDoneLabel}</p>
-                    )}
-                    {!doneThisMonth && !lastDoneLabel && (
-                      <p className="text-xs text-hop-marmalade-dark mt-1">Not yet completed</p>
-                    )}
-                  </div>
-                  <svg className={`w-5 h-5 flex-shrink-0 ${doneThisMonth ? 'text-gray-400' : 'text-hop-forest/40'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              )
-            })}
-          </div>
-        </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Change settings / clear checks */}
         <div className="mt-4 text-center space-y-2">
