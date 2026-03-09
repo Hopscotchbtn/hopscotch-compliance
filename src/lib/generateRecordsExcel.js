@@ -339,3 +339,64 @@ export async function generateFirstAidExcel(nursery, checks, startDate, endDate,
   const start = new Date(startDate).toISOString().slice(0, 10)
   downloadBuffer(buffer, `First-Aid-Box-Checks-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
 }
+
+export async function generateKitchenSafetyExcel(nursery, checks, startDate, endDate) {
+  const columns = [
+    { header: 'Date', width: 14 },
+    { header: 'Opening Fridge 1', width: 16 },
+    { header: 'Opening Fridge 2', width: 16 },
+    { header: 'Opening Fridge 3', width: 16 },
+    { header: 'Opening Initials', width: 14 },
+    { header: 'Closing Fridge 1', width: 16 },
+    { header: 'Closing Fridge 2', width: 16 },
+    { header: 'Closing Fridge 3', width: 16 },
+    { header: 'Closing Initials', width: 14 },
+    { header: 'Packed Lunches', width: 14 },
+    { header: 'Manager Sign-off', width: 16 },
+  ]
+
+  // Index checks by local date
+  const byDate = {}
+  checks.forEach(c => {
+    const d = new Date(c.created_at)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    let sd = null
+    try { sd = JSON.parse(c.overall_notes || '{}').sectionData } catch {}
+    if (!byDate[key] || sd) byDate[key] = sd
+  })
+
+  const fridgeTemp = (sd, section, n) => {
+    const f = sd?.[section]?.temperatures?.[`fridge${n}`]
+    if (!f?.temp) return '–'
+    return f.name ? `${f.name}: ${f.temp}°C` : `${f.temp}°C`
+  }
+
+  const rows = []
+  const cursor = new Date(startDate)
+  cursor.setHours(0, 0, 0, 0)
+  const end = new Date(endDate)
+  end.setHours(23, 59, 59, 999)
+  while (cursor <= end) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`
+    const sd = byDate[key]
+    rows.push([
+      formatDate(key),
+      fridgeTemp(sd, 'opening', 1),
+      fridgeTemp(sd, 'opening', 2),
+      fridgeTemp(sd, 'opening', 3),
+      sd?.opening?.completedBy || sd?.opening?.signedBy || '–',
+      fridgeTemp(sd, 'closing', 1),
+      fridgeTemp(sd, 'closing', 2),
+      fridgeTemp(sd, 'closing', 3),
+      sd?.closing?.completedBy || sd?.closing?.signedBy || '–',
+      sd?.packedLunch ? 'Done' : '–',
+      sd?.signoff?.responses?.managerName || '–',
+    ])
+    cursor.setDate(cursor.getDate() + 1)
+  }
+
+  const wb = await buildWorkbook('Kitchen Food Safety', nursery, startDate, endDate, columns, rows, { orgLabel: 'Holiday Club', logoPath: '/hopscotch-holiday-club-logo.png' })
+  const buffer = await wb.xlsx.writeBuffer()
+  const start = new Date(startDate).toISOString().slice(0, 10)
+  downloadBuffer(buffer, `Kitchen-Safety-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
+}

@@ -11,6 +11,7 @@ import { storage } from '../lib/storage'
 import { formatDate, formatTime } from '../lib/utils'
 import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms, submitCheck, getLastCheck, getKitchenSafetyChecksForRange } from '../lib/supabase'
 import { generateAllRoomsKitchenSafetyPDF, generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
+import { generateKitchenSafetyExcel } from '../lib/generateRecordsExcel'
 
 const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Kitchen Checks',
@@ -127,6 +128,7 @@ export function KitchenSafety() {
   const weekOptions = getWeekOptions(5)
 
   const [downloading, setDownloading] = useState(false)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
 
   const handleDownloadPDF = async () => {
     const week = weekOptions.find(w => w.value === selectedWeek)
@@ -158,6 +160,18 @@ export function KitchenSafety() {
       }
     } finally {
       setDownloading(false)
+    }
+  }
+
+  const handleDownloadExcel = async () => {
+    const week = weekOptions.find(w => w.value === selectedWeek)
+    if (!week) return
+    setDownloadingExcel(true)
+    try {
+      const checks = await getKitchenSafetyChecksForRange(nursery, new Date(week.value + 'T12:00:00'), new Date(week.sunday + 'T12:00:00'))
+      await generateKitchenSafetyExcel(nursery, checks, new Date(week.value + 'T12:00:00'), new Date(week.sunday + 'T12:00:00'))
+    } finally {
+      setDownloadingExcel(false)
     }
   }
 
@@ -694,10 +708,10 @@ export function KitchenSafety() {
           </>
         )}
 
-        {/* Download PDF — holiday club only (nursery has this on the room list screen) */}
+        {/* Downloads — holiday club only (nursery has PDF on the room list screen) */}
         {isHolidayClub && (
           <div className="mt-6 p-4 bg-white rounded-xl border-2 border-gray-200">
-            <p className="text-sm font-medium text-hop-forest mb-3">Download Weekly PDF</p>
+            <p className="text-sm font-medium text-hop-forest mb-3">Download Weekly Records</p>
             <select
               value={selectedWeek}
               onChange={(e) => setSelectedWeek(e.target.value)}
@@ -708,15 +722,26 @@ export function KitchenSafety() {
                 <option key={w.value} value={w.value}>{w.label}</option>
               ))}
             </select>
-            <Button
-              color="marmalade"
-              size="large"
-              fullWidth
-              disabled={!selectedWeek || !nursery || downloading}
-              onClick={handleDownloadPDF}
-            >
-              {downloading ? 'Generating…' : 'Download PDF'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                color="marmalade"
+                size="large"
+                fullWidth
+                disabled={!selectedWeek || !nursery || downloading}
+                onClick={handleDownloadPDF}
+              >
+                {downloading ? 'Generating…' : 'PDF'}
+              </Button>
+              <Button
+                color="marmalade"
+                size="large"
+                fullWidth
+                disabled={!selectedWeek || !nursery || downloadingExcel}
+                onClick={handleDownloadExcel}
+              >
+                {downloadingExcel ? 'Generating…' : 'Excel'}
+              </Button>
+            </div>
           </div>
         )}
 
