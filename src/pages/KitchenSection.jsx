@@ -219,6 +219,8 @@ export function KitchenSection() {
   const { nursery, room, completedBy, section, sectionData: allSectionData, completedSections } = location.state || {}
   const config = getSectionConfig(sectionId)
 
+  const isHolidayClub = section === 'holiday-club'
+
   const savedData = allSectionData?.[sectionId] || {}
   const isAlreadyCompleted = !!completedSections?.[sectionId]
 
@@ -227,6 +229,7 @@ export function KitchenSection() {
       return 'summary'
     }
     if (config?.isLittleTums) return 'ltMenu'
+    if (isHolidayClub && (sectionId === 'opening' || sectionId === 'closing')) return 'temps'
     return 'checks'
   })
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -257,8 +260,6 @@ export function KitchenSection() {
   if (!config || !nursery) {
     return null
   }
-
-  const isHolidayClub = section === 'holiday-club'
 
   // Holiday club does not have weekly/monthly probe checks
   if (isHolidayClub) {
@@ -348,7 +349,7 @@ export function KitchenSection() {
     const isValid = fridge1Temp !== '' && signedBy.trim()
     return (
       <div className="min-h-screen bg-hop-pebble">
-        <Header title="Opening Kitchen Checks" showBack onBack={() => setPhase('checks')} />
+        <Header title="Opening Kitchen Checks" showBack onBack={() => isHolidayClub ? goBackToSections() : setPhase('checks')} />
         <div className="px-4 py-6 max-w-md mx-auto space-y-4">
           {[1, 2, 3].map((n) => {
             const key = `fridge${n}`
@@ -467,7 +468,7 @@ export function KitchenSection() {
     const isValid = fridge1Temp !== '' && signedBy.trim()
     return (
       <div className="min-h-screen bg-hop-pebble">
-        <Header title="Closing Kitchen Check" showBack onBack={() => setPhase('checks')} />
+        <Header title="Closing Kitchen Check" showBack onBack={() => isHolidayClub ? goBackToSections() : setPhase('checks')} />
         <div className="px-4 py-6 max-w-md mx-auto space-y-4">
           {[1, 2, 3].map((n) => {
             const key = `fridge${n}`
