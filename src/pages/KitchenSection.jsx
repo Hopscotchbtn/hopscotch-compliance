@@ -349,7 +349,7 @@ export function KitchenSection() {
     const isValid = fridge1Temp !== '' && signedBy.trim()
     return (
       <div className="min-h-screen bg-hop-pebble">
-        <Header title="Opening Kitchen Checks" showBack onBack={() => isHolidayClub ? goBackToSections() : setPhase('checks')} />
+        <Header title={isHolidayClub ? 'Opening Fridge Checks' : 'Opening Kitchen Checks'} showBack onBack={() => isHolidayClub ? goBackToSections() : setPhase('checks')} />
         <div className="px-4 py-6 max-w-md mx-auto space-y-4">
           {[1, 2, 3].map((n) => {
             const key = `fridge${n}`
@@ -468,7 +468,7 @@ export function KitchenSection() {
     const isValid = fridge1Temp !== '' && signedBy.trim()
     return (
       <div className="min-h-screen bg-hop-pebble">
-        <Header title="Closing Kitchen Check" showBack onBack={() => isHolidayClub ? goBackToSections() : setPhase('checks')} />
+        <Header title={isHolidayClub ? 'Closing Fridge Checks' : 'Closing Kitchen Check'} showBack onBack={() => isHolidayClub ? goBackToSections() : setPhase('checks')} />
         <div className="px-4 py-6 max-w-md mx-auto space-y-4">
           {[1, 2, 3].map((n) => {
             const key = `fridge${n}`

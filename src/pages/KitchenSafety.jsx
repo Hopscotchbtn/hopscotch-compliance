@@ -45,7 +45,13 @@ const MONTHLY_SECTIONS = [
 ]
 
 const NURSERY_SECTIONS = DAILY_SECTIONS
-const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS.filter(s => s.id !== 'littleTums')
+const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
+  .filter(s => s.id !== 'littleTums')
+  .map(s => {
+    if (s.id === 'opening') return { ...s, name: 'Opening Fridge Checks', description: 'Opening fridge temperatures' }
+    if (s.id === 'closing') return { ...s, name: 'Closing Fridge Checks', description: 'Closing fridge temperatures' }
+    return s
+  })
 
 const getMondayOfThisWeek = () => {
   const d = new Date()
