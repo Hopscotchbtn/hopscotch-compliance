@@ -17,11 +17,13 @@ function formatTime(date) {
 }
 
 export function FamlyDashboard() {
-  const [dataMode, setDataMode] = useState('mock')
-  const [token, setToken] = useState(getStoredToken)
+  const existingToken = getStoredToken()
+  const [dataMode, setDataMode] = useState(existingToken ? 'live' : 'mock')
+  const [token, setToken] = useState(existingToken)
   const [tokenInput, setTokenInput] = useState('')
-  const [sites, setSites] = useState(MOCK_SITES)
-  const [selectedSiteId, setSelectedSiteId] = useState('all')
+  const [sites, setSites] = useState(existingToken ? [] : MOCK_SITES)
+  const [selectedSiteId, setSelectedSiteId] = useState(existingToken ? '' : 'all')
+  const [sitesReady, setSitesReady] = useState(!existingToken) // false if we need to fetch live sites
   const [incidents, setIncidents] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -34,20 +36,31 @@ export function FamlyDashboard() {
       if (dataMode !== 'live') {
         setSites(MOCK_SITES)
         setSelectedSiteId('all')
+        setSitesReady(true)
       }
       return
     }
+    // Clear mock sites and wait for real ones
+    setSites([])
+    setSelectedSiteId('')
+    setSitesReady(false)
     fetchSites(token)
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setSites(data)
-          setSelectedSiteId('all')
+          setSelectedSiteId(data[0].id) // default to first site, not all
         }
+        setSitesReady(true)
       })
-      .catch(() => {})
+      .catch(err => {
+        console.error('[FamlyDashboard] fetchSites error:', err)
+        setSitesReady(true)
+      })
   }, [dataMode, token])
 
   const loadData = useCallback(async () => {
+    if (!sitesReady) return // wait for live sites to load
+    if (dataMode === 'live' && !selectedSiteId) return // no site selected yet
     setLoading(true)
     setError(null)
     try {
@@ -75,7 +88,7 @@ export function FamlyDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [dataMode, selectedSiteId, sites, token])
+  }, [dataMode, selectedSiteId, sites, token, sitesReady])
 
   useEffect(() => { loadData() }, [loadData])
 

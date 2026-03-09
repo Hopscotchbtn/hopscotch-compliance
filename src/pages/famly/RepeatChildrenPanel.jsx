@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import { repeatChildren, rollingWindow, formatDate, formatTime } from '../../lib/famly/dataHelpers'
 
-// Best-guess Famly profile URL — adjust if the actual URL pattern differs
+// TODO: Determine correct Famly profile URL pattern
 function famlyProfileUrl(childId) {
-  if (!childId || childId.startsWith('mock-')) return null
-  return `https://app.famly.co/children/${childId}`
+  return null // Disabled until correct URL format confirmed
 }
 
 function ChildHistoryModal({ child, allIncidents, onClose }) {
