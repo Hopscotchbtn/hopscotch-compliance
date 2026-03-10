@@ -89,9 +89,9 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
     return
   }
 
-  // ── Opening Kitchen Checks ────────────────────────────────────────────────
+  // ── Opening Fridge Checks ─────────────────────────────────────────────────
   if (sd.opening) {
-    y = sectionLabel(doc, 'Opening Kitchen Checks', y, margin)
+    y = sectionLabel(doc, 'Opening Fridge Checks', y, margin)
     const rows = [1, 2, 3].map(n => {
       const f = sd.opening.temperatures?.[`fridge${n}`]
       return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
@@ -133,9 +133,9 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
     y = doc.lastAutoTable.finalY + 5
   }
 
-  // ── Closing Kitchen Check ───────────────────────────────────────────────
+  // ── Closing Fridge Checks ────────────────────────────────────────────────
   if (sd.closing) {
-    y = sectionLabel(doc, 'Closing Kitchen Check', y, margin)
+    y = sectionLabel(doc, 'Closing Fridge Checks', y, margin)
     const rows = [1, 2, 3].map(n => {
       const f = sd.closing.temperatures?.[`fridge${n}`]
       return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
