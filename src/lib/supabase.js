@@ -381,9 +381,10 @@ export const upsertKitchenSafetyCheck = async (nursery, checkData) => {
   }
 
   if (existing?.length) {
-    const { error: updateError } = await supabase.from('checks').update(record).eq('id', existing[0].id)
-    if (updateError) {
-      // UPDATE failed (e.g. RLS restriction) — insert a new record instead
+    const { data: updated, error: updateError } = await supabase
+      .from('checks').update(record).eq('id', existing[0].id).select('id')
+    if (updateError || !updated?.length) {
+      // UPDATE failed or was silently blocked by RLS — insert a new record instead
       await supabase.from('checks').insert([record])
     }
   } else {
