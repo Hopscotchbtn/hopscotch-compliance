@@ -223,12 +223,13 @@ export function KitchenSafety() {
         .filter(([id]) => newCompleted[id])
         .map(([, label]) => label)
       const managerName = newSectionData.signoff?.responses?.managerName
+      const sectionCompletedBy = Object.values(newSectionData).filter(Boolean).map(s => s.completedBy).find(Boolean) || ''
       const notes = newCompleted.signoff
         ? `Signed off by ${managerName || 'manager'}`
         : `In progress — ${doneSections.join(', ')} complete`
       upsertKitchenSafetyCheck(nursery, {
         room: returnedRoom ?? selectedRoom,
-        completedBy: managerName || name,
+        completedBy: managerName || sectionCompletedBy || name,
         items,
         notes,
         sectionData: newSectionData,

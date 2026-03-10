@@ -4,6 +4,7 @@ import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
 import { formatDate } from '../lib/utils'
 import { getLastCheck } from '../lib/supabase'
+import { storage } from '../lib/storage'
 
 const HOLIDAY_CLUB_LOCATIONS = ['Holland Road', 'School Road']
 
@@ -11,17 +12,17 @@ export function ChecksMenu() {
   const { section } = useParams()
   const title = section === 'holiday-club' ? 'Holiday Club' : 'Nursery'
   const isHolidayClub = section === 'holiday-club'
-  const [lastFirstAidDate, setLastFirstAidDate] = useState(undefined)
+  // firstAidDates: { [location]: { created_at } | null }
+  const [firstAidDates, setFirstAidDates] = useState({})
 
   useEffect(() => {
     if (!isHolidayClub) return
     Promise.all(
       HOLIDAY_CLUB_LOCATIONS.map(loc => getLastCheck(loc, 'firstAidBox'))
     ).then(results => {
-      const latest = results
-        .filter(Boolean)
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null
-      setLastFirstAidDate(latest)
+      const dates = {}
+      HOLIDAY_CLUB_LOCATIONS.forEach((loc, i) => { dates[loc] = results[i] || null })
+      setFirstAidDates(dates)
     })
   }, [isHolidayClub])
 
@@ -68,10 +69,17 @@ export function ChecksMenu() {
                 <span className="text-lg">🩹 {isHolidayClub ? 'First Aid Box Checklist' : 'Weekly First Aid Box Check'}</span>
               </Button>
             </Link>
-            {isHolidayClub && lastFirstAidDate && (
-              <p className="text-xs text-center text-gray-500 mt-1">
-                Last completed: <span className="font-medium">{new Date(lastFirstAidDate.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-              </p>
+            {isHolidayClub && Object.keys(firstAidDates).length > 0 && (
+              <div className="mt-1 space-y-0.5">
+                {HOLIDAY_CLUB_LOCATIONS.map(loc => {
+                  const d = firstAidDates[loc]
+                  return (
+                    <p key={loc} className="text-xs text-center text-gray-500">
+                      {loc}: <span className="font-medium">{d ? new Date(d.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not yet completed'}</span>
+                    </p>
+                  )
+                })}
+              </div>
             )}
           </div>
         </div>
