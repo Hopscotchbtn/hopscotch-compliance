@@ -184,19 +184,18 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
 }
 
 function drawDayHeading(doc, dateStr, pageW, margin, headerH) {
-  let y = headerH
+  let y = headerH + 8
 
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(14)
+  doc.setFontSize(13)
   doc.setTextColor(...FOREST)
-  doc.text(formatDayName(dateStr), margin, y)
+  doc.text(`${formatDayName(dateStr)}, ${formatDayDate(dateStr)}`, margin, y)
 
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(...MID_GREY)
-  doc.text(formatDayDate(dateStr), margin, y + 6)
+  doc.setDrawColor(...MARMALADE)
+  doc.setLineWidth(0.5)
+  doc.line(margin, y + 4, pageW - margin, y + 4)
 
-  return y + 12
+  return y + 10
 }
 
 function sectionLabel(doc, text, y, margin) {
