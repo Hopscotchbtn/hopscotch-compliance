@@ -263,12 +263,21 @@ const isToday = (date) => date?.toDateString() === today.toDateString()
                             otherChecks.push(check)
                           }
                         })
+                        // Deduplicate kitchenSafety: keep only the most recent per room
+                        const seenKS = new Set()
+                        const dedupedOther = otherChecks.filter(c => {
+                          if (c.check_type !== 'kitchenSafety') return true
+                          const key = `${c.nursery}|${c.room || ''}`
+                          if (seenKS.has(key)) return false
+                          seenKS.add(key)
+                          return true
+                        })
                         return (
                           <>
                             {Object.entries(roomSafetyByNursery).map(([nurseryName, roomChecks]) => (
                               <RoomSafetyGroupEntry key={`rs-${nurseryName}`} nursery={nurseryName} checks={roomChecks} />
                             ))}
-                            {otherChecks.map(check => (
+                            {dedupedOther.map(check => (
                               check.check_type === 'kitchenSafety'
                                 ? <KitchenSafetySummaryEntry key={check.id} check={check} section={section} />
                                 : <SummaryEntry key={check.id} check={check} section={section} />

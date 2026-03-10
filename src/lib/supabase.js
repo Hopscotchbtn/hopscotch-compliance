@@ -366,6 +366,7 @@ export const upsertKitchenSafetyCheck = async (nursery, checkData) => {
     .eq('check_type', 'kitchenSafety')
     .eq('room', room)
     .gte('created_at', today.toISOString())
+    .order('created_at', { ascending: false })
     .limit(1)
 
   const record = {
@@ -380,7 +381,11 @@ export const upsertKitchenSafetyCheck = async (nursery, checkData) => {
   }
 
   if (existing?.length) {
-    await supabase.from('checks').update(record).eq('id', existing[0].id)
+    const { error: updateError } = await supabase.from('checks').update(record).eq('id', existing[0].id)
+    if (updateError) {
+      // UPDATE failed (e.g. RLS restriction) — insert a new record instead
+      await supabase.from('checks').insert([record])
+    }
   } else {
     await supabase.from('checks').insert([record])
   }

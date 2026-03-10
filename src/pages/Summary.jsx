@@ -111,12 +111,21 @@ export function Summary() {
                   {(() => {
                     const roomSafetyChecks = section !== 'holiday-club' ? nurseryChecks.filter(c => c.check_type === 'roomSafety') : []
                     const otherChecks = section !== 'holiday-club' ? nurseryChecks.filter(c => c.check_type !== 'roomSafety') : nurseryChecks
+                    // Deduplicate kitchenSafety: keep only the most recent per room (getTodayChecks is DESC so first wins)
+                    const seenKS = new Set()
+                    const deduped = otherChecks.filter(c => {
+                      if (c.check_type !== 'kitchenSafety') return true
+                      const key = c.room || ''
+                      if (seenKS.has(key)) return false
+                      seenKS.add(key)
+                      return true
+                    })
                     return (
                       <>
                         {roomSafetyChecks.length > 0 && (
                           <RoomSafetyGroupEntry key="rs-group" nursery={nurseryName} checks={roomSafetyChecks} />
                         )}
-                        {otherChecks.map(check => (
+                        {deduped.map(check => (
                           check.check_type === 'kitchenSafety'
                             ? <KitchenSafetySummaryEntry key={check.id} check={check} section={section} />
                             : <SummaryEntry key={check.id} check={check} section={section} />
