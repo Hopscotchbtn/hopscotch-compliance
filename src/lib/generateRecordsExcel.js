@@ -214,6 +214,8 @@ async function addRoomSheet(wb, logo, nursery, room, checks, startDate, endDate)
     ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: targetWidth, height: targetHeight } })
   }
   for (let i = 0; i < LOGO_ROWS; i++) ws.addRow([])
+  ws.addRow([])
+  ws.addRow([])
 
   const titleRow = ws.addRow([`Hopscotch ${nursery} – ${room}`])
   ws.mergeCells(titleRow.number, 1, titleRow.number, colCount)
@@ -259,7 +261,7 @@ async function addRoomSheet(wb, logo, nursery, room, checks, startDate, endDate)
 
   columns.forEach((col, i) => { ws.getColumn(i + 1).width = col.width })
 
-  const dataStart = LOGO_ROWS + 4
+  const dataStart = LOGO_ROWS + 6
   const dataEnd = ws.rowCount
   for (let r = dataStart; r <= dataEnd; r++) {
     for (let c = 1; c <= colCount; c++) {
