@@ -191,52 +191,48 @@ export function KitchenSafety() {
   // Handle returning from a completed section
   useEffect(() => {
     const { completedSection, sectionData: newData, room: returnedRoom } = location.state || {}
-    if (completedSection && completedSection !== processedSection.current) {
-      processedSection.current = completedSection
-      setCompletedSections(prev => {
-        const next = { ...prev, [completedSection]: true }
-        setSectionData(prevData => {
-          const nextData = { ...prevData, [completedSection]: newData }
-          storage.setKitchenSafetyState(roomKey(nursery, returnedRoom ?? selectedRoom), next, nextData)
+    if (!completedSection || completedSection === processedSection.current) return
+    processedSection.current = completedSection
 
-          // Save weekly checks with their own check_type for last-done tracking
-          if (nursery && ['probeCheck', 'supermarketTemp', 'probeCalibration'].includes(completedSection)) {
-            submitCheck({
-              nursery,
-              room: returnedRoom ?? selectedRoom ?? 'Kitchen',
-              checkType: completedSection,
-              completedBy: name,
-              items: [{ id: completedSection, text: KITCHEN_SECTION_LABELS[completedSection], status: 'pass' }],
-            }).then(() => getLastCheck(nursery, completedSection)).then(data => {
-              if (data) setWeeklyCheckDates(prev => ({ ...prev, [completedSection]: data }))
-            }).catch(() => {})
-          }
+    const newCompleted = { ...completedSections, [completedSection]: true }
+    const newSectionData = { ...sectionData, [completedSection]: newData }
 
-          // Sync to Supabase so it appears in today's checks & history
-          if (nursery) {
-            const items = Object.entries(KITCHEN_SECTION_LABELS).map(([id, text]) => ({
-              id, text, status: next[id] ? 'pass' : 'na',
-            }))
-            const doneSections = Object.entries(KITCHEN_SECTION_LABELS)
-              .filter(([id]) => next[id])
-              .map(([, label]) => label)
-            const managerName = nextData.signoff?.responses?.managerName
-            const notes = next.signoff
-              ? `Signed off by ${managerName || 'manager'}`
-              : `In progress — ${doneSections.join(', ')} complete`
-            upsertKitchenSafetyCheck(nursery, {
-              room: returnedRoom ?? selectedRoom,
-              completedBy: managerName || name,
-              items,
-              notes,
-              sectionData: nextData,
-            }).catch(err => console.error('Kitchen safety upsert error:', err))
-          }
+    setCompletedSections(newCompleted)
+    setSectionData(newSectionData)
+    storage.setKitchenSafetyState(roomKey(nursery, returnedRoom ?? selectedRoom), newCompleted, newSectionData)
 
-          return nextData
-        })
-        return next
-      })
+    // Save weekly checks with their own check_type for last-done tracking
+    if (nursery && ['probeCheck', 'supermarketTemp', 'probeCalibration'].includes(completedSection)) {
+      submitCheck({
+        nursery,
+        room: returnedRoom ?? selectedRoom ?? 'Kitchen',
+        checkType: completedSection,
+        completedBy: name,
+        items: [{ id: completedSection, text: KITCHEN_SECTION_LABELS[completedSection], status: 'pass' }],
+      }).then(() => getLastCheck(nursery, completedSection)).then(data => {
+        if (data) setWeeklyCheckDates(prev => ({ ...prev, [completedSection]: data }))
+      }).catch(() => {})
+    }
+
+    // Sync to Supabase so it appears in today's checks & history
+    if (nursery) {
+      const items = Object.entries(KITCHEN_SECTION_LABELS).map(([id, text]) => ({
+        id, text, status: newCompleted[id] ? 'pass' : 'na',
+      }))
+      const doneSections = Object.entries(KITCHEN_SECTION_LABELS)
+        .filter(([id]) => newCompleted[id])
+        .map(([, label]) => label)
+      const managerName = newSectionData.signoff?.responses?.managerName
+      const notes = newCompleted.signoff
+        ? `Signed off by ${managerName || 'manager'}`
+        : `In progress — ${doneSections.join(', ')} complete`
+      upsertKitchenSafetyCheck(nursery, {
+        room: returnedRoom ?? selectedRoom,
+        completedBy: managerName || name,
+        items,
+        notes,
+        sectionData: newSectionData,
+      }).catch(err => console.error('Kitchen safety upsert error:', err))
     }
   }, [location.state])
 
