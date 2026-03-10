@@ -6,6 +6,7 @@ import { SummaryEntry, RoomSafetyGroupEntry, KitchenSafetySummaryEntry } from '.
 import { getTodayChecks } from '../lib/supabase'
 import { nurseries } from '../data/nurseries'
 import { formatDate } from '../lib/utils'
+import { storage } from '../lib/storage'
 
 const holidayClubLocations = ['Holland Road', 'School Road']
 
@@ -16,7 +17,13 @@ export function Summary() {
 
   const [checks, setChecks] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState(() => {
+    const last = storage.getLastNursery()
+    if (section === 'holiday-club') {
+      return holidayClubLocations.includes(last) ? last : 'all'
+    }
+    return last && nurseries.includes(last) ? last : 'all'
+  })
 
   useEffect(() => {
     loadChecks()
