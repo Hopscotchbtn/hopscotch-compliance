@@ -274,6 +274,7 @@ export function KitchenSafety() {
 
   const handleStartSection = (sectionId) => {
     navigate(`/kitchen-safety/${sectionId}`, {
+      replace: true,
       state: {
         nursery,
         room: selectedRoom,
@@ -504,7 +505,7 @@ export function KitchenSafety() {
         title={kitchenSafety.shortName}
         subtitle={`${nursery}${selectedRoom ? ` · ${selectedRoom}` : ''} · ${formatDate()}`}
         showBack
-        onBack={!isHolidayClub ? () => setSelectedRoom(null) : () => setShowSetup(true)}
+        onBack={!isHolidayClub ? () => setSelectedRoom(null) : undefined}
       />
 
       <div className="px-4 py-6 max-w-md mx-auto">
