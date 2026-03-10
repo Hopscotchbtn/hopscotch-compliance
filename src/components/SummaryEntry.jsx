@@ -104,7 +104,7 @@ export function KitchenSafetySummaryEntry({ check, section = '' }) {
 
   const anyDone = dailySectionIds.some(id => completedSections[id])
   const allDone = !!completedSections.signoff
-  const dotStatus = allDone ? 'pass' : anyDone ? 'partial' : 'pass'
+  const dotStatus = allDone ? 'pass' : anyDone ? 'partial' : 'pending'
 
   return (
     <Card>

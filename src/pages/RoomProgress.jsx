@@ -325,7 +325,7 @@ export function RoomProgress() {
               onClick={() => {
                 setHolidayMessageAcknowledged(true)
                 navigate(`/check/${checkTypeId}/holiday-club`, {
-                  state: { nursery, completedBy: name.trim() },
+                  state: { nursery, completedBy: name.trim(), section: location.state?.section },
                 })
               }}
             >
