@@ -6,7 +6,7 @@ import { Card } from '../components/ui/Card'
 import { getChecksHistory } from '../lib/supabase'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
-import { SummaryEntry, RoomSafetyGroupEntry } from '../components/SummaryEntry'
+import { SummaryEntry, RoomSafetyGroupEntry, KitchenSafetySummaryEntry } from '../components/SummaryEntry'
 
 const holidayClubLocations = ['Holland Road', 'School Road']
 
@@ -269,7 +269,9 @@ const isToday = (date) => date?.toDateString() === today.toDateString()
                               <RoomSafetyGroupEntry key={`rs-${nurseryName}`} nursery={nurseryName} checks={roomChecks} />
                             ))}
                             {otherChecks.map(check => (
-                              <SummaryEntry key={check.id} check={check} section={section} />
+                              check.check_type === 'kitchenSafety'
+                                ? <KitchenSafetySummaryEntry key={check.id} check={check} section={section} />
+                                : <SummaryEntry key={check.id} check={check} section={section} />
                             ))}
                           </>
                         )

@@ -63,6 +63,70 @@ export function SummaryEntry({ check, section = '' }) {
   )
 }
 
+const KITCHEN_SECTION_LABELS = {
+  opening: { holiday: 'Opening Fridge Checks', nursery: 'Opening Kitchen Checks' },
+  packedLunch: { holiday: 'Packed Lunches', nursery: 'Packed Lunches' },
+  littleTums: { holiday: null, nursery: 'Little Tums' },
+  closing: { holiday: 'Closing Fridge Checks', nursery: 'Closing Kitchen Check' },
+  signoff: { holiday: 'Manager Sign-off', nursery: 'Manager Sign-off' },
+}
+
+export function KitchenSafetySummaryEntry({ check, section = '' }) {
+  const isHolidayClub = section === 'holiday-club'
+  const labels = checkLabels[section] || checkLabels.nursery
+  const title = labels[check.check_type] || 'Daily Kitchen Safety'
+  const time = new Date(check.created_at).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  const completedSections = {}
+  if (check.items) {
+    check.items.forEach(item => {
+      if (item.status === 'pass') completedSections[item.id] = true
+    })
+  }
+
+  const dailySectionIds = Object.entries(KITCHEN_SECTION_LABELS)
+    .filter(([, v]) => isHolidayClub ? v.holiday !== null : true)
+    .map(([id]) => id)
+
+  const anyDone = dailySectionIds.some(id => completedSections[id])
+  const allDone = !!completedSections.signoff
+  const dotStatus = allDone ? 'pass' : anyDone ? 'partial' : 'pass'
+
+  return (
+    <Card>
+      <div className="flex items-start gap-3">
+        <StatusDot status={dotStatus} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-hop-forest">{title}</span>
+          </div>
+          <p className="text-sm text-gray-500 truncate">
+            {isHolidayClub && check.nursery && <>{check.nursery} · </>}{time} • {check.completed_by}
+          </p>
+          {check.overall_notes && (() => {
+            try { const p = JSON.parse(check.overall_notes); return p.notes ? <p className="text-xs text-gray-400 truncate">{p.notes}</p> : null } catch { return null }
+          })()}
+          <div className="mt-2 space-y-1">
+            {dailySectionIds.map(id => {
+              const label = isHolidayClub ? KITCHEN_SECTION_LABELS[id].holiday : KITCHEN_SECTION_LABELS[id].nursery
+              const done = !!completedSections[id]
+              return (
+                <div key={id} className="flex items-center gap-2 text-xs">
+                  <span className={done ? 'text-hop-apple' : 'text-gray-300'}>{done ? '✓' : '○'}</span>
+                  <span className={done ? 'text-hop-forest' : 'text-gray-400'}>{label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 export function RoomSafetyGroupEntry({ nursery, checks }) {
   const completedRooms = new Set(checks.map(c => c.room))
 

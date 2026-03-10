@@ -34,6 +34,7 @@ export function StatusDot({ status }) {
     pass: 'bg-hop-apple',
     fail: 'bg-hop-marmalade-dark',
     pending: 'bg-hop-sunshine',
+    partial: 'bg-gray-400',
   }
 
   return (

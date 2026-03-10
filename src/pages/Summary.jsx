@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Select } from '../components/ui/Select'
-import { SummaryEntry, RoomSafetyGroupEntry } from '../components/SummaryEntry'
+import { SummaryEntry, RoomSafetyGroupEntry, KitchenSafetySummaryEntry } from '../components/SummaryEntry'
 import { getTodayChecks } from '../lib/supabase'
 import { nurseries } from '../data/nurseries'
 import { formatDate } from '../lib/utils'
@@ -110,7 +110,9 @@ export function Summary() {
                           <RoomSafetyGroupEntry key="rs-group" nursery={nurseryName} checks={roomSafetyChecks} />
                         )}
                         {otherChecks.map(check => (
-                          <SummaryEntry key={check.id} check={check} section={section} />
+                          check.check_type === 'kitchenSafety'
+                            ? <KitchenSafetySummaryEntry key={check.id} check={check} section={section} />
+                            : <SummaryEntry key={check.id} check={check} section={section} />
                         ))}
                       </>
                     )
