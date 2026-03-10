@@ -135,6 +135,7 @@ export function KitchenSafety() {
     if (!week) return
     setDownloading(true)
     try {
+
       const weekStartDate = new Date(week.value + 'T12:00:00')
       const weekEndDate = new Date(week.sunday + 'T12:00:00')
       const checks = await getKitchenSafetyChecksForRange(nursery, weekStartDate, weekEndDate)
@@ -158,6 +159,8 @@ export function KitchenSafety() {
         const doc = await generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStartDate, weekEndDate)
         doc.save(`Kitchen-Safety-${nursery.replace(/\s+/g, '-')}-${week.value}.pdf`)
       }
+    } catch (err) {
+      console.error('PDF generation error:', err)
     } finally {
       setDownloading(false)
     }
@@ -724,26 +727,15 @@ export function KitchenSafety() {
                 <option key={w.value} value={w.value}>{w.label}</option>
               ))}
             </select>
-            <div className="flex gap-2">
-              <Button
-                color="marmalade"
-                size="large"
-                fullWidth
-                disabled={!selectedWeek || !nursery || downloading}
-                onClick={handleDownloadPDF}
-              >
-                {downloading ? 'Generating…' : 'PDF'}
-              </Button>
-              <Button
-                color="marmalade"
-                size="large"
-                fullWidth
-                disabled={!selectedWeek || !nursery || downloadingExcel}
-                onClick={handleDownloadExcel}
-              >
-                {downloadingExcel ? 'Generating…' : 'Excel'}
-              </Button>
-            </div>
+            <Button
+              color="marmalade"
+              size="large"
+              fullWidth
+              disabled={!selectedWeek || !nursery || downloading}
+              onClick={handleDownloadPDF}
+            >
+              {downloading ? 'Generating…' : 'Download PDF'}
+            </Button>
           </div>
         )}
 

@@ -114,9 +114,9 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
   // ── Packed Lunches ──────────────────────────────────────────────────────
   if (sd.packedLunch) {
     y = sectionLabel(doc, 'Packed Lunches', y, margin)
-    const plRows = Object.entries(PACKED_LUNCH_LABELS).map(([id, label]) => {
-      const val = sd.packedLunch.deliveryData?.packedLunch?.[id]
-      return [label, val ? val.charAt(0).toUpperCase() + val.slice(1) : '–']
+    const plRows = kitchenSafety.packedLunchChecks.map(item => {
+      const val = sd.packedLunch.deliveryData?.packedLunch?.[item.id]
+      return [item.text, val ? val.charAt(0).toUpperCase() + val.slice(1) : '–']
     })
     autoTable(doc, {
       startY: y,
