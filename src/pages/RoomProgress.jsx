@@ -128,6 +128,9 @@ export function RoomProgress() {
   useEffect(() => {
     if (nursery && checkType && !checkType.autoRoom) {
       loadTodayProgress()
+      const onVisible = () => { if (document.visibilityState === 'visible') loadTodayProgress() }
+      document.addEventListener('visibilitychange', onVisible)
+      return () => document.removeEventListener('visibilitychange', onVisible)
     }
   }, [nursery, checkTypeId, checkType])
 
@@ -159,8 +162,10 @@ export function RoomProgress() {
     return null
   }
 
+  const isNurseryRoomSafety = isNursery && checkTypeId === 'roomSafety'
+
   const handleSetupComplete = async () => {
-    if (!nursery || !name.trim()) return
+    if (!nursery || (!isNurseryRoomSafety && !name.trim())) return
     storage.setLastNursery(nursery)
     const rooms = await getCustomRooms(nursery, checkTypeId).catch(() => [])
     setCustomRooms(rooms)
@@ -222,7 +227,9 @@ export function RoomProgress() {
 
           <Card className="space-y-5">
             <p className="text-gray-600 text-sm">
-              Select your nursery and enter your initials to begin. These will be remembered for future checks.
+              {isNurseryRoomSafety
+                ? 'Select your nursery to begin. You\'ll enter your initials on each room check.'
+                : 'Select your nursery and enter your initials to begin. These will be remembered for future checks.'}
             </p>
 
             {!isHolidayClub && !isNursery && (
@@ -249,20 +256,22 @@ export function RoomProgress() {
               disabled={!isHolidayClub && !isNursery && !locationType}
             />
 
-            <Input
-              label="Your initials"
-              value={name}
-              onChange={setName}
-              placeholder="e.g. PF"
-              required
-            />
+            {!isNurseryRoomSafety && (
+              <Input
+                label="Your initials"
+                value={name}
+                onChange={setName}
+                placeholder="e.g. PF"
+                required
+              />
+            )}
 
             <div className="pt-2">
               <Button
                 color="forest"
                 size="large"
                 fullWidth
-                disabled={!nursery || !name.trim()}
+                disabled={!nursery || (!isNurseryRoomSafety && !name.trim())}
                 onClick={handleSetupComplete}
               >
                 Continue

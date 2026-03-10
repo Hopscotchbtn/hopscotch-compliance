@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button'
 import { SignatureCanvas } from '../components/SignatureCanvas'
 import { checkTypes } from '../data/checklists'
 import { submitCheck, uploadSignature } from '../lib/supabase'
+import { Input } from '../components/ui/Input'
 
 export function NurseryRoomChecklist() {
   const { roomName } = useParams()
@@ -18,6 +19,7 @@ export function NurseryRoomChecklist() {
 
   const [phase, setPhase] = useState('notice') // 'notice' | 'checklist'
   const [comment, setComment] = useState('')
+  const [initials, setInitials] = useState(completedBy || '')
   const [signature, setSignature] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
@@ -26,7 +28,7 @@ export function NurseryRoomChecklist() {
     if (!nursery) navigate('/')
   }, [nursery, navigate])
 
-  const isValid = signature
+  const isValid = signature && initials.trim()
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
@@ -43,14 +45,14 @@ export function NurseryRoomChecklist() {
         nursery,
         room,
         checkType: 'roomSafety',
-        completedBy,
+        completedBy: initials.trim(),
         items: submitItems,
         notes: comment.trim() || null,
         signatureUrl,
       })
 
       navigate(`/check/roomSafety`, {
-        state: { section, skipSetup: true, completedBy },
+        state: { section, skipSetup: true, completedBy: initials.trim() },
         replace: true,
       })
     } catch (err) {
@@ -113,6 +115,17 @@ export function NurseryRoomChecklist() {
           />
         </div>
 
+        {/* Initials */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+          <Input
+            label="Your initials"
+            value={initials}
+            onChange={setInitials}
+            placeholder="e.g. PF"
+            required
+          />
+        </div>
+
         {/* Signature */}
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <SignatureCanvas onSignature={setSignature} />
@@ -131,7 +144,7 @@ export function NurseryRoomChecklist() {
           disabled={isSubmitting || !isValid}
           onClick={handleSubmit}
         >
-          {isSubmitting ? 'Submitting...' : !signature ? 'Sign to Submit' : 'Submit Check'}
+          {isSubmitting ? 'Submitting...' : !initials.trim() ? 'Enter initials to submit' : !signature ? 'Sign to Submit' : 'Submit Check'}
         </Button>
       </div>
     </div>
