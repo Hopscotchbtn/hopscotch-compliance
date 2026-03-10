@@ -239,6 +239,10 @@ export function KitchenSafety() {
   const handleSetupComplete = async () => {
     if (!nursery) return
     storage.setLastNursery(nursery)
+    // Load this location's own saved state (not the previously cached location's)
+    const saved = storage.getKitchenSafetyState(roomKey(nursery, selectedRoom))
+    setCompletedSections(saved?.completedSections || {})
+    setSectionData(saved?.sectionData || {})
     const rooms = await getCustomRooms(nursery, 'kitchenSafety').catch(() => [])
     setCustomRooms(rooms)
     setShowSetup(false)
