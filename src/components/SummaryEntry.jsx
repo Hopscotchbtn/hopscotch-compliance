@@ -80,12 +80,23 @@ export function KitchenSafetySummaryEntry({ check, section = '' }) {
     minute: '2-digit',
   })
 
+  // Primary: derive completion from items array (section-level ids)
   const completedSections = {}
   if (check.items) {
     check.items.forEach(item => {
       if (item.status === 'pass') completedSections[item.id] = true
     })
   }
+
+  // Fallback: use sectionData keys from overall_notes (populated when each section is saved)
+  let parsedNotes = null
+  if (check.overall_notes) {
+    try { parsedNotes = JSON.parse(check.overall_notes) } catch {}
+  }
+  const sectionData = parsedNotes?.sectionData || {}
+  Object.keys(sectionData).forEach(id => {
+    if (sectionData[id] && !completedSections[id]) completedSections[id] = true
+  })
 
   const dailySectionIds = Object.entries(KITCHEN_SECTION_LABELS)
     .filter(([, v]) => isHolidayClub ? v.holiday !== null : true)
@@ -106,9 +117,9 @@ export function KitchenSafetySummaryEntry({ check, section = '' }) {
           <p className="text-sm text-gray-500 truncate">
             {isHolidayClub && check.nursery && <>{check.nursery} · </>}{time} • {check.completed_by}
           </p>
-          {check.overall_notes && (() => {
-            try { const p = JSON.parse(check.overall_notes); return p.notes ? <p className="text-xs text-gray-400 truncate">{p.notes}</p> : null } catch { return null }
-          })()}
+          {parsedNotes?.notes && (
+            <p className="text-xs text-gray-400 truncate">{parsedNotes.notes}</p>
+          )}
           <div className="mt-2 space-y-1">
             {dailySectionIds.map(id => {
               const label = isHolidayClub ? KITCHEN_SECTION_LABELS[id].holiday : KITCHEN_SECTION_LABELS[id].nursery
