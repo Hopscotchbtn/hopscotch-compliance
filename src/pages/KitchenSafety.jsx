@@ -9,7 +9,7 @@ import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 import { formatDate, formatTime } from '../lib/utils'
-import { upsertKitchenSafetyCheck, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms, submitCheck, getLastCheck, getKitchenSafetyChecksForRange } from '../lib/supabase'
+import { upsertKitchenSafetyCheck, deleteTodayKitchenSafetyChecks, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms, submitCheck, getLastCheck, getKitchenSafetyChecksForRange } from '../lib/supabase'
 import { generateAllRoomsKitchenSafetyPDF, generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 import { generateKitchenSafetyExcel } from '../lib/generateRecordsExcel'
 
@@ -766,7 +766,10 @@ export function KitchenSafety() {
             onClick={() => {
               setCompletedSections({})
               setSectionData({})
-              if (nursery) storage.setKitchenSafetyState(roomKey(nursery, selectedRoom), {}, {})
+              if (nursery) {
+                storage.setKitchenSafetyState(roomKey(nursery, selectedRoom), {}, {})
+                deleteTodayKitchenSafetyChecks(nursery, selectedRoom).catch(console.error)
+              }
             }}
             className="block w-full text-sm text-red-400 hover:text-red-600 underline underline-offset-2"
           >

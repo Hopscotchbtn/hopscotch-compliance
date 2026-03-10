@@ -392,6 +392,21 @@ export const upsertKitchenSafetyCheck = async (nursery, checkData) => {
   }
 }
 
+export const deleteTodayKitchenSafetyChecks = async (nursery, room) => {
+  if (!supabase) return
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  await supabase
+    .from('checks')
+    .delete()
+    .eq('nursery', nursery)
+    .eq('check_type', 'kitchenSafety')
+    .eq('room', room || 'Kitchen')
+    .gte('created_at', today.toISOString())
+}
+
 export const getKitchenSafetyChecksForRange = async (nursery, startDate, endDate) => {
   if (!supabase) return []
 
