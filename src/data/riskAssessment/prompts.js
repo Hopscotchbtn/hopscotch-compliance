@@ -17,7 +17,7 @@ Output: Provide a structured, detailed list of hazards grouped under the above c
 
 Guidelines:
 - Identify 5-7 specific, actionable hazards relevant to the activity
-- Consider the assessment type, location, and age group (nurseries: 0-5 years; Holiday Club: 4-11 years)
+- Consider the assessment type, location, and age group (nurseries: 0-5 years; Holiday Club: 4-11 years, spanning 4-5, 5-7, and 7-11 age bands)
 - Focus on realistic risks in the specific childcare setting (nursery or holiday club)
 - Each hazard should be a clear, concise statement (one sentence)
 - Prioritize hazards from most to least critical

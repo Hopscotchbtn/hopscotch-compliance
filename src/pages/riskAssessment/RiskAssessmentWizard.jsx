@@ -278,8 +278,10 @@ export function RiskAssessmentWizard() {
             const val = e.target.value
             setFormData(prev => {
               const updates = { ...prev, nursery: val }
-              if (val === 'Holiday Club' && !prev.peopleAtRisk.includes('Children (4-11 years)')) {
-                updates.peopleAtRisk = [...prev.peopleAtRisk, 'Children (4-11 years)']
+              if (val === 'Holiday Club') {
+                const holidayClubAges = ['Children (4-5 years)', 'Children (5-7 years)', 'Children (7-11 years)']
+                const existing = prev.peopleAtRisk.filter(r => !r.startsWith('Children'))
+                updates.peopleAtRisk = [...existing, ...holidayClubAges]
               }
               return updates
             })
