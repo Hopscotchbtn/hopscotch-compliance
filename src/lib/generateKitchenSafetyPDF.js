@@ -455,70 +455,88 @@ function drawChecklistReference(doc, y, margin, pageW) {
   return Math.max(panelBottomY, doc.lastAutoTable.finalY) + 3
 }
 
-function drawPeriodicChecks(doc, y, room, periodicChecks, margin, pageW) {
-  const { weekly = [], calibration = null } = periodicChecks || {}
+function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
+  const { calibration = null } = periodicChecks || {}
+  const { probeCheck: probeData, supermarketTemp: smData, probeCalibration: calDetailData } = weekData || {}
+  const W = pageW - margin * 2
 
-  const probeCheck       = weekly.find(c => c.check_type === 'probeCheck')
-  const supermarketCheck = weekly.find(c => c.check_type === 'supermarketTemp')
-
-  const fmtDate = (iso) => iso
-    ? new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-    : '-'
-
-  const totalW = pageW - margin * 2
-  const labelW = totalW * 0.55
-  const dateW  = totalW * 0.28
-  const byW    = totalW - labelW - dateW
+  // ── Weekly: Fridge/Freezer Probe Thermometer Check ──────────────────────
+  const probeBody = probeData
+    ? [
+        ['Opening temperature', probeData.temperatures?.probeOpening ? `${probeData.temperatures.probeOpening}°C` : '-', probeData.responses?.openingInitials || probeData.completedBy || '-'],
+        ['Closing temperature',  probeData.temperatures?.probeClosing  ? `${probeData.temperatures.probeClosing}°C`  : '-', probeData.responses?.closingInitials  || '-'],
+      ]
+    : [[{ content: 'Not completed this week', colSpan: 3, styles: { textColor: [180, 60, 60] } }]]
 
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
-    head: [['Weekly Checks', 'Date completed', 'By']],
-    body: [
-      [
-        'Fridge/Freezer Probe Thermometer Check',
-        probeCheck ? fmtDate(probeCheck.created_at) : 'Not done this week',
-        probeCheck?.completed_by || '-',
-      ],
-      [
-        'Supermarket Food Temperature Checks',
-        supermarketCheck ? fmtDate(supermarketCheck.created_at) : 'Not done this week',
-        supermarketCheck?.completed_by || '-',
-      ],
-    ],
-    headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
-    styles: { fontSize: 7.5, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, font: 'helvetica' },
-    columnStyles: { 0: { cellWidth: labelW }, 1: { cellWidth: dateW }, 2: { cellWidth: byW } },
+    head: [['Fridge/Freezer Probe Thermometer Check (Weekly)', 'Temperature', 'Initials']],
+    body: probeBody,
+    headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2 },
+    styles: { fontSize: 7.5, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, font: 'helvetica' },
+    columnStyles: { 0: { cellWidth: W * 0.55 }, 1: { cellWidth: W * 0.25 }, 2: { cellWidth: W * 0.20 } },
     theme: 'grid',
     alternateRowStyles: { fillColor: N_CREAM },
-    didParseCell: (data) => {
-      if (data.section === 'body' && data.column.index === 1) {
-        const notDone = data.cell.text[0] === 'Not done this week'
-        if (notDone) data.cell.styles.textColor = [180, 60, 60]
-      }
-    },
   })
   y = doc.lastAutoTable.finalY + 3
 
+  // ── Weekly: Supermarket Food Temperatures ───────────────────────────────
+  const entries = (smData?.deliveryData?.supermarketEntries || []).filter(e => e.food || e.temp)
+  const smBody = entries.length
+    ? entries.map(e => [e.food || '-', e.time || '-', e.temp ? `${e.temp}°C` : '-', e.initials || '-'])
+    : [[{ content: 'Not completed this week', colSpan: 4, styles: { textColor: [180, 60, 60] } }]]
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Supermarket Food Temperatures (Weekly)', 'Time', 'Temp', 'Initials']],
+    body: smBody,
+    headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2 },
+    styles: { fontSize: 7.5, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, font: 'helvetica' },
+    columnStyles: { 0: { cellWidth: W * 0.45 }, 1: { cellWidth: W * 0.15 }, 2: { cellWidth: W * 0.15 }, 3: { cellWidth: W * 0.25 } },
+    theme: 'grid',
+    alternateRowStyles: { fillColor: N_CREAM },
+  })
+  y = doc.lastAutoTable.finalY + 3
+
+  // ── Monthly: Probe Calibration ──────────────────────────────────────────
   const now = new Date()
   const isOverdue = !calibration || (now - new Date(calibration.created_at)) > 31 * 24 * 60 * 60 * 1000
   const calDate = calibration
     ? new Date(calibration.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
     : 'Never recorded'
 
+  const calBody = []
+  if (calDetailData?.deliveryData) {
+    ;[1, 2].forEach(n => {
+      const p = calDetailData.deliveryData[`probe${n}`]
+      if (!p?.identity) return
+      const boilingOk = parseFloat(p.boilingTemp) >= 99 && parseFloat(p.boilingTemp) <= 101
+      const icedOk    = parseFloat(p.icedTemp)    >= -1 && parseFloat(p.icedTemp)    <= 1
+      const result = (p.boilingTemp !== '' && p.icedTemp !== '') ? (boilingOk && icedOk ? 'Pass' : 'Fail') : '-'
+      calBody.push([p.identity, p.boilingTemp ? `${p.boilingTemp}°C` : '-', p.icedTemp ? `${p.icedTemp}°C` : '-', result, p.initials || '-'])
+    })
+  }
+  if (!calBody.length) {
+    calBody.push([`Last done: ${calDate}`, '', '', isOverdue ? 'OVERDUE' : 'Up to date', calibration?.completed_by || '-'])
+  }
+
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
-    head: [['Monthly Check', 'Last completed', 'Status']],
-    body: [['Probe Calibration Check', calDate, isOverdue ? 'OVERDUE' : 'Up to date']],
-    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
-    styles: { fontSize: 7.5, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, font: 'helvetica' },
-    columnStyles: { 0: { cellWidth: labelW }, 1: { cellWidth: dateW }, 2: { cellWidth: byW } },
+    head: [['Probe Calibration (Monthly) - Probe ID', 'Boiling', 'Iced', 'Result', 'Initials']],
+    body: calBody,
+    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2 },
+    styles: { fontSize: 7.5, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, font: 'helvetica' },
+    columnStyles: { 0: { cellWidth: W * 0.35 }, 1: { cellWidth: W * 0.15 }, 2: { cellWidth: W * 0.15 }, 3: { cellWidth: W * 0.18 }, 4: { cellWidth: W * 0.17 } },
     theme: 'grid',
+    alternateRowStyles: { fillColor: N_CREAM },
     didParseCell: (data) => {
-      if (data.section === 'body' && data.column.index === 2) {
-        data.cell.styles.textColor = isOverdue ? [180, 60, 60] : [60, 140, 60]
-        data.cell.styles.fontStyle = 'bold'
+      if (data.section === 'body' && data.column.index === 3) {
+        const t = data.cell.text[0]
+        if (t === 'OVERDUE' || t === 'Fail') { data.cell.styles.textColor = [180, 60, 60]; data.cell.styles.fontStyle = 'bold' }
+        else if (t === 'Up to date' || t === 'Pass') { data.cell.styles.textColor = [60, 140, 60]; data.cell.styles.fontStyle = 'bold' }
       }
     },
   })
@@ -536,8 +554,9 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
   const weekRange = formatWeekRange(weekStart, weekEnd)
   const dates = getDatesInRange(weekStart, weekEnd)
 
-  // Group checks by room, then by date
+  // Group checks by room, then by date; also extract periodic check data from sectionData
   const byRoom = {}
+  const weekData = { probeCheck: null, supermarketTemp: null, probeCalibration: null }
   for (const check of checks) {
     const room = check.room || 'Kitchen'
     if (!byRoom[room]) byRoom[room] = {}
@@ -552,6 +571,10 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       check.items.forEach(item => { if (item.status === 'pass') completedSections[item.id] = true })
     }
     byRoom[room][dateStr] = { sectionData, completedSections }
+    // Extract periodic check data (last one found wins — checks are ordered ascending)
+    if (sectionData?.probeCheck)      weekData.probeCheck      = sectionData.probeCheck
+    if (sectionData?.supermarketTemp) weekData.supermarketTemp = sectionData.supermarketTemp
+    if (sectionData?.probeCalibration) weekData.probeCalibration = sectionData.probeCalibration
   }
 
   // Ensure all expected rooms appear, even with no data
@@ -652,7 +675,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       ...tableStyles,
     })
 
-    drawPeriodicChecks(doc, doc.lastAutoTable.finalY + 4, room, periodicChecks, margin, pageW)
+    drawPeriodicChecks(doc, doc.lastAutoTable.finalY + 4, weekData, periodicChecks, margin, pageW)
 
   }
 
