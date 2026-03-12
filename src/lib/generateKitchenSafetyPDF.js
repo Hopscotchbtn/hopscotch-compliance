@@ -26,7 +26,7 @@ function getDatesInRange(start, end) {
   const endD = new Date(end);  endD.setHours(23, 59, 59, 999)
   while (cur <= endD) {
     const day = cur.getDay()
-    if (day >= 1 && day <= 5) dates.push(toDateStr(cur)) // Mon–Fri only
+    if (day >= 1 && day <= 5) dates.push(toDateStr(cur)) // Mon-Fri only
     cur.setDate(cur.getDate() + 1)
   }
   return dates
@@ -34,7 +34,7 @@ function getDatesInRange(start, end) {
 
 function formatWeekRange(start, end) {
   const fmt = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-  return `${fmt(start)} – ${fmt(end)}`
+  return `${fmt(start)} - ${fmt(end)}`
 }
 
 function formatDayName(dateStr) {
@@ -101,7 +101,7 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
     y = sectionLabel(doc, 'Opening Fridge Checks', y, margin)
     const rows = [1, 2, 3].map(n => {
       const f = sd.opening.temperatures?.[`fridge${n}`]
-      return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
+      return [`Fridge ${n}`, f?.name || '-', f?.temp ? `${f.temp}°C` : '-']
     })
     autoTable(doc, {
       startY: y,
@@ -109,7 +109,7 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
       head: [['', 'Unit name', 'Temp']],
       body: [
         ...rows,
-        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.opening.completedBy || sd.opening.signedBy || '–', colSpan: 2 }],
+        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.opening.completedBy || sd.opening.signedBy || '-', colSpan: 2 }],
       ],
       columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 22 } },
       theme: 'grid',
@@ -123,7 +123,7 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
     y = sectionLabel(doc, 'Packed Lunches', y, margin)
     const plRows = kitchenSafety.packedLunchChecks.map(item => {
       const val = sd.packedLunch.deliveryData?.packedLunch?.[item.id]
-      return [item.text, val ? val.charAt(0).toUpperCase() + val.slice(1) : '–']
+      return [item.text, val ? val.charAt(0).toUpperCase() + val.slice(1) : '-']
     })
     autoTable(doc, {
       startY: y,
@@ -131,7 +131,7 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
       head: [['Check', 'Result']],
       body: [
         ...plRows,
-        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.packedLunch.completedBy || '–'],
+        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.packedLunch.completedBy || '-'],
       ],
       columnStyles: { 1: { cellWidth: 22 } },
       theme: 'grid',
@@ -145,7 +145,7 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
     y = sectionLabel(doc, 'Closing Fridge Checks', y, margin)
     const rows = [1, 2, 3].map(n => {
       const f = sd.closing.temperatures?.[`fridge${n}`]
-      return [`Fridge ${n}`, f?.name || '–', f?.temp ? `${f.temp}°C` : '–']
+      return [`Fridge ${n}`, f?.name || '-', f?.temp ? `${f.temp}°C` : '-']
     })
     autoTable(doc, {
       startY: y,
@@ -153,7 +153,7 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
       head: [['', 'Unit name', 'Temp']],
       body: [
         ...rows,
-        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.closing.completedBy || sd.closing.signedBy || '–', colSpan: 2 }],
+        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.closing.completedBy || sd.closing.signedBy || '-', colSpan: 2 }],
       ],
       columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 22 } },
       theme: 'grid',
@@ -169,8 +169,8 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
       startY: y,
       margin: { left: margin, right: margin },
       body: [
-        [{ content: 'Comments', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.signoff.responses?.managerComments || '–'],
-        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.signoff.responses?.managerName || '–'],
+        [{ content: 'Comments', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.signoff.responses?.managerComments || '-'],
+        [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, sd.signoff.responses?.managerName || '-'],
       ],
       styles: { ...TABLE_STYLES.styles, fillColor: LIGHT_GREY },
       columnStyles: { 0: { cellWidth: 28 } },
@@ -276,14 +276,14 @@ const LT_LUNCH_IDS = ['lt1', 'lt2', 'lt3', 'lt4']
 const LT_TEA_IDS   = ['lt5', 'lt6']
 
 function tick(sectionData) {
-  return sectionData?.completedBy || sectionData?.signedBy ? '✓' : '–'
+  return sectionData?.completedBy || sectionData?.signedBy ? 'Y' : '-'
 }
 
 function ltTemp(ltData, mealKey, itemId) {
   const entry = ltData?.[mealKey]?.[itemId]
-  if (!entry) return '–'
+  if (!entry) return '-'
   if (entry.skipped) return 'N/A'
-  return entry.temp ? `${entry.temp}°C` : '–'
+  return entry.temp ? `${entry.temp}°C` : '-'
 }
 
 // Returns { body1: opening + packed lunches, body2: little tums + closing + sign-off }
@@ -314,12 +314,12 @@ function buildRoomTable(dates, history) {
       `Fridge ${n} temperature`,
       ...dates.map(d => {
         const f = sd(d).opening?.temperatures?.[`fridge${n}`]
-        if (!f?.temp) return '–'
+        if (!f?.temp) return '-'
         return f.name ? `${f.name}: ${f.temp}°C` : `${f.temp}°C`
       }),
     ])
   })
-  body1.push(['Initials', ...dates.map(d => sd(d).opening?.completedBy || sd(d).opening?.signedBy || '–')])
+  body1.push(['Initials', ...dates.map(d => sd(d).opening?.completedBy || sd(d).opening?.signedBy || '-')])
 
   // ── Packed Lunches ────────────────────────────────────────────────────
   body1.push(sectionHeaderRow('Packed Lunches', colCount))
@@ -328,12 +328,12 @@ function buildRoomTable(dates, history) {
       item.text,
       ...dates.map(d => {
         const val = sd(d).packedLunch?.deliveryData?.packedLunch?.[item.id]
-        if (!val) return sd(d).packedLunch ? '✓' : '–'
+        if (!val) return sd(d).packedLunch ? 'Y' : '-'
         return val.charAt(0).toUpperCase() + val.slice(1)
       }),
     ])
   })
-  body1.push(['Initials', ...dates.map(d => sd(d).packedLunch?.completedBy || '–')])
+  body1.push(['Initials', ...dates.map(d => sd(d).packedLunch?.completedBy || '-')])
 
   const body2 = []
 
@@ -346,13 +346,13 @@ function buildRoomTable(dates, history) {
         const ltData = sd(d).littleTums?.deliveryData
         const customName = ltData?.itemNames?.[item.id]
         const display = ltTemp(ltData, 'lunch', item.id)
-        return customName && display !== '–' && display !== 'N/A' ? `${customName}: ${display}` : display
+        return customName && display !== '-' && display !== 'N/A' ? `${customName}: ${display}` : display
       }),
     ])
   })
   body2.push(['Initials', ...dates.map(d => {
     const lt = sd(d).littleTums
-    return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.lunchDone ? '✓' : '–')
+    return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.lunchDone ? 'Y' : '-')
   })])
 
   // ── Little Tums — Tea ─────────────────────────────────────────────────
@@ -364,13 +364,13 @@ function buildRoomTable(dates, history) {
         const ltData = sd(d).littleTums?.deliveryData
         const customName = ltData?.itemNames?.[item.id]
         const display = ltTemp(ltData, 'tea', item.id)
-        return customName && display !== '–' && display !== 'N/A' ? `${customName}: ${display}` : display
+        return customName && display !== '-' && display !== 'N/A' ? `${customName}: ${display}` : display
       }),
     ])
   })
   body2.push(['Initials', ...dates.map(d => {
     const lt = sd(d).littleTums
-    return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.teaDone ? '✓' : '–')
+    return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.teaDone ? 'Y' : '-')
   })])
 
   // ── Closing Kitchen Check ─────────────────────────────────────────────
@@ -381,17 +381,17 @@ function buildRoomTable(dates, history) {
       `Fridge ${n} temperature`,
       ...dates.map(d => {
         const f = sd(d).closing?.temperatures?.[`fridge${n}`]
-        if (!f?.temp) return '–'
+        if (!f?.temp) return '-'
         return f.name ? `${f.name}: ${f.temp}°C` : `${f.temp}°C`
       }),
     ])
   })
-  body2.push(['Initials', ...dates.map(d => sd(d).closing?.completedBy || sd(d).closing?.signedBy || '–')])
+  body2.push(['Initials', ...dates.map(d => sd(d).closing?.completedBy || sd(d).closing?.signedBy || '-')])
 
   // ── Manager/Room Lead Sign-off ────────────────────────────────────────
   body2.push(sectionHeaderRow('Manager/Room Lead Sign-off', colCount))
-  body2.push(['Initials', ...dates.map(d => sd(d).signoff?.responses?.managerName || '–')])
-  body2.push(['Comments', ...dates.map(d => sd(d).signoff?.responses?.managerComments || '–')])
+  body2.push(['Initials', ...dates.map(d => sd(d).signoff?.responses?.managerName || '-')])
+  body2.push(['Comments', ...dates.map(d => sd(d).signoff?.responses?.managerComments || '-')])
 
   return { body1, body2 }
 }
@@ -463,7 +463,7 @@ function drawPeriodicChecks(doc, y, room, periodicChecks, margin, pageW) {
 
   const fmtDate = (iso) => iso
     ? new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-    : '–'
+    : '-'
 
   const totalW = pageW - margin * 2
   const labelW = totalW * 0.55
@@ -478,12 +478,12 @@ function drawPeriodicChecks(doc, y, room, periodicChecks, margin, pageW) {
       [
         'Fridge/Freezer Probe Thermometer Check',
         probeCheck ? fmtDate(probeCheck.created_at) : 'Not done this week',
-        probeCheck?.completed_by || '–',
+        probeCheck?.completed_by || '-',
       ],
       [
         'Supermarket Food Temperature Checks',
         supermarketCheck ? fmtDate(supermarketCheck.created_at) : 'Not done this week',
-        supermarketCheck?.completed_by || '–',
+        supermarketCheck?.completed_by || '-',
       ],
     ],
     headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
@@ -711,9 +711,9 @@ export function getWeekOptions(count = 5) {
     sunday.setDate(sunday.getDate() + 6)
     const short = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
     const long  = d => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-    const label = i === 0 ? `This week (${short(monday)} – ${long(sunday)})`
-                : i === 1 ? `Last week (${short(monday)} – ${long(sunday)})`
-                : `${short(monday)} – ${long(sunday)}`
+    const label = i === 0 ? `This week (${short(monday)} - ${long(sunday)})`
+                : i === 1 ? `Last week (${short(monday)} - ${long(sunday)})`
+                : `${short(monday)} - ${long(sunday)}`
     options.push({ value: monday.toISOString().slice(0, 10), label, sunday: sunday.toISOString().slice(0, 10) })
     monday = new Date(monday)
     monday.setDate(monday.getDate() - 7)
