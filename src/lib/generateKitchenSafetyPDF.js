@@ -457,10 +457,9 @@ function drawChecklistReference(doc, y, margin, pageW) {
 
 function drawPeriodicChecks(doc, y, room, periodicChecks, margin, pageW) {
   const { weekly = [], calibration = null } = periodicChecks || {}
-  const roomWeekly = weekly.filter(c => (c.room || 'Kitchen') === room)
 
-  const probeCheck      = roomWeekly.find(c => c.check_type === 'probeCheck')
-  const supermarketCheck = roomWeekly.find(c => c.check_type === 'supermarketTemp')
+  const probeCheck       = weekly.find(c => c.check_type === 'probeCheck')
+  const supermarketCheck = weekly.find(c => c.check_type === 'supermarketTemp')
 
   const fmtDate = (iso) => iso
     ? new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
