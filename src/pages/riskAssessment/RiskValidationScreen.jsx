@@ -77,14 +77,14 @@ export function RiskValidationScreen() {
 
       await generateDocx(docxData, fileName)
 
-      // Save to database as completed
-      await saveRiskAssessment({
+      // Save to database as completed — non-blocking so a DB error doesn't prevent navigation
+      saveRiskAssessment({
         ...formData,
         ...draft,
         status: 'completed'
-      })
+      }).catch(err => console.error('Failed to save completed assessment:', err))
 
-      await trackAssessmentEvent('completed', formData)
+      trackAssessmentEvent('completed', formData).catch(() => {})
 
       // Navigate to confirmation
       navigate('/risk-assessment/confirmation', {
