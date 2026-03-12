@@ -45,7 +45,9 @@ const MONTHLY_SECTIONS = [
   { id: 'probeCalibration', name: 'Probe Calibration Check', icon: '🔬', description: 'Monthly calibration of probe thermometers' },
 ]
 
-const NURSERY_SECTIONS = DAILY_SECTIONS
+const NURSERY_SECTIONS = DAILY_SECTIONS.map(s =>
+  s.id === 'signoff' ? { ...s, name: 'Manager/Room Lead Sign-off' } : s
+)
 const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
   .filter(s => s.id !== 'littleTums')
   .map(s => {

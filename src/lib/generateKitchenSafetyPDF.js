@@ -388,8 +388,8 @@ function buildRoomTable(dates, history) {
   })
   body2.push(['Initials', ...dates.map(d => sd(d).closing?.completedBy || sd(d).closing?.signedBy || '–')])
 
-  // ── Manager Sign-off ──────────────────────────────────────────────────
-  body2.push(sectionHeaderRow('Manager Sign-off', colCount))
+  // ── Manager/Room Lead Sign-off ────────────────────────────────────────
+  body2.push(sectionHeaderRow('Manager/Room Lead Sign-off', colCount))
   body2.push(['Initials', ...dates.map(d => sd(d).signoff?.responses?.managerName || '–')])
   body2.push(['Comments', ...dates.map(d => sd(d).signoff?.responses?.managerComments || '–')])
 

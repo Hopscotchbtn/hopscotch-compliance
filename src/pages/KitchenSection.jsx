@@ -270,6 +270,10 @@ export function KitchenSection() {
     config.includeMonthlyCalibration = false
   }
 
+  if (!isHolidayClub && sectionId === 'signoff') {
+    config.title = 'Manager/Room Lead Sign-off'
+  }
+
   const goBackToSections = () => navigate('/kitchen-safety', {
     replace: true,
     state: { returnedSection: section, skipSetup: true, room },

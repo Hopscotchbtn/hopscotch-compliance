@@ -68,7 +68,7 @@ const KITCHEN_SECTION_LABELS = {
   packedLunch: { holiday: 'Packed Lunches', nursery: 'Packed Lunches' },
   littleTums: { holiday: null, nursery: 'Little Tums' },
   closing: { holiday: 'Closing Fridge Checks', nursery: 'Closing Kitchen Check' },
-  signoff: { holiday: 'Manager Sign-off', nursery: 'Manager Sign-off' },
+  signoff: { holiday: 'Manager Sign-off', nursery: 'Manager/Room Lead Sign-off' },
 }
 
 export function KitchenSafetySummaryEntry({ check, section = '' }) {
