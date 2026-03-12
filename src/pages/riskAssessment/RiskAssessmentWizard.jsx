@@ -29,7 +29,6 @@ const STEPS = [
 
 export function RiskAssessmentWizard() {
   const navigate = useNavigate()
-  const [showNotice, setShowNotice] = useState(true)
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('')
@@ -428,40 +427,18 @@ export function RiskAssessmentWizard() {
     </div>
   )
 
-  if (showNotice) {
-    return (
-      <div className="min-h-screen bg-hop-pebble">
-        <Header title="New Risk Assessment" showBack />
-        <div className="max-w-lg mx-auto p-4">
-          <Card padding="default">
-            <div className="flex flex-col items-center text-center py-4 space-y-4">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-8 h-8 text-blue-500" />
-              </div>
-              <h2 className="text-lg font-semibold text-hop-forest">Before you begin</h2>
-              <p className="text-gray-700">
-                <strong>Do not enter any personal data</strong> into this form.
-              </p>
-              <p className="text-gray-600 text-sm">
-                If this risk assessment relates to a specific child or group of children, please add any personal details directly to the Word document after downloading it.
-              </p>
-            </div>
-          </Card>
-          <div className="mt-6">
-            <Button color="forest" fullWidth size="large" onClick={() => setShowNotice(false)}>
-              Continue
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-hop-pebble">
       <Header title="New Risk Assessment" showBack />
 
       <div className="max-w-lg mx-auto p-4">
+        <div className="rounded-xl p-4 mb-4 flex items-start gap-3" style={{ backgroundColor: '#fbee57' }}>
+          <AlertTriangle className="w-5 h-5 text-gray-700 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-gray-800">
+            <strong>Do not enter personal data</strong> into this form. If this assessment relates to a specific child or group of children, add any personal details directly to the downloaded Word document.
+          </p>
+        </div>
+
         <StepProgress
           currentStep={currentStep}
           totalSteps={STEPS.length}
