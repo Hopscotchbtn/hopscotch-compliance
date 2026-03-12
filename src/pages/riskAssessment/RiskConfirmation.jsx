@@ -7,7 +7,7 @@ import { CheckCircle, FileText, Plus, Home } from 'lucide-react'
 export function RiskConfirmation() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { assessmentType, activityName, reference } = location.state || {}
+  const { assessmentType, activityName, reference, saveError } = location.state || {}
 
   return (
     <div className="min-h-screen bg-hop-pebble">
@@ -15,7 +15,14 @@ export function RiskConfirmation() {
 
       <div className="max-w-lg mx-auto p-4">
         <Card padding="default" className="text-center">
-          <div className="py-6">
+          {saveError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4 text-left">
+            <p className="text-red-700 text-sm font-medium">Document downloaded but not saved to dashboard</p>
+            <p className="text-red-600 text-xs mt-1 break-all">{saveError}</p>
+          </div>
+        )}
+
+        <div className="py-6">
             <div className="w-20 h-20 bg-hop-apple/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-12 h-12 text-hop-apple" />
             </div>
