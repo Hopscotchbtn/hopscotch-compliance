@@ -20,6 +20,7 @@ Guidelines:
 - Consider the assessment type, location, and age group (nurseries: 0-5 years; Holiday Club: 4-11 years, spanning 4-5, 5-7, and 7-11 age bands)
 - Focus on realistic risks in the specific childcare setting (nursery or holiday club)
 - Each hazard should be a clear, concise statement (one sentence)
+- Use plain, professional language — describe the hazard itself without escalating to worst-case outcomes (e.g. "children becoming separated from the group" not "children becoming separated, leading to abduction or serious injury")
 - Prioritize hazards from most to least critical
 - Consider these categories: physical safety, supervision needs, equipment hazards, environmental risks, health concerns, security issues, emergency scenarios
 
@@ -73,6 +74,7 @@ Finally provide:
 Format the response as raw JSON only. The JSON should have all the placeholder names as keys (without the curly braces).
 
 Important guidelines:
+- Use plain, professional language throughout — describe hazards and risks matter-of-factly without alarming or worst-case phrasing (avoid words like "abduction", "death", "fatal", "serious injury" — instead describe the hazard plainly, e.g. "unsupervised access to water" rather than "risk of drowning and death")
 - Control measures should be detailed and specific to nursery settings
 - Reference EYFS requirements and Ofsted expectations where relevant
 - Consider the age group and developmental stage of children (nurseries: 0-5 years; Holiday Club: 4-11 years)
