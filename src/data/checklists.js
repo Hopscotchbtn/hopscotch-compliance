@@ -148,9 +148,17 @@ export const kitchenSafety = {
     { id: 'c8', text: 'Diary completed' },
   ],
 
-  // Packed lunch visual checks
+  // Packed lunch visual checks (holiday club — 2 items)
   packedLunchChecks: [
     { id: 'pl2', text: 'Food inside cool boxes' },
+    { id: 'pl4', text: 'No nuts' },
+  ],
+
+  // Packed lunch visual checks (nursery — 4 items)
+  nurseryPackedLunchChecks: [
+    { id: 'pl1', text: 'Child name shown on boxes' },
+    { id: 'pl2', text: 'Food inside cool boxes' },
+    { id: 'pl3', text: 'Food in good condition' },
     { id: 'pl4', text: 'No nuts' },
   ],
 

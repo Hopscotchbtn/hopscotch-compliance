@@ -2,6 +2,13 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { kitchenSafety } from '../data/checklists'
 
+const nurseryPackedLunchChecks = [
+  { id: 'pl1', text: 'Child name shown on boxes' },
+  { id: 'pl2', text: 'Food inside cool boxes' },
+  { id: 'pl3', text: 'Food in good condition' },
+  { id: 'pl4', text: 'No nuts' },
+]
+
 const FOREST     = [26, 58, 42]
 const MARMALADE  = [224, 122, 28]
 const LIGHT_GREY = [248, 248, 248]
@@ -315,7 +322,7 @@ function buildRoomTable(dates, history) {
 
   // ── Packed Lunches ────────────────────────────────────────────────────
   body.push(sectionHeaderRow('Packed Lunches', colCount))
-  kitchenSafety.packedLunchChecks.forEach(item => {
+  nurseryPackedLunchChecks.forEach(item => {
     body.push([
       item.text,
       ...dates.map(d => {

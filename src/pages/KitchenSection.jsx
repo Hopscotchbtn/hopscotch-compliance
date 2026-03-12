@@ -6,6 +6,9 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
+
+const getPackedLunchChecks = (isHolidayClub) =>
+  isHolidayClub ? kitchenSafety.packedLunchChecks : kitchenSafety.nurseryPackedLunchChecks
 import { formatTime } from '../lib/utils'
 import { storage } from '../lib/storage'
 import { saveLittleTumsData, getTodayLittleTumsData } from '../lib/supabase'
@@ -1587,7 +1590,7 @@ export function KitchenSection() {
           <Card className="mb-4">
             <h3 className="font-medium text-hop-forest mb-3">Packed Lunch Visual Checks</h3>
             <div className="space-y-2">
-              {kitchenSafety.packedLunchChecks.map((check) => {
+              {getPackedLunchChecks(isHolidayClub).map((check) => {
                 const value = deliveryData.packedLunch?.[check.id]
                 return (
                   <div key={check.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
@@ -1659,7 +1662,7 @@ export function KitchenSection() {
             <Card>
               <h3 className="font-medium text-hop-forest mb-3">Packed Lunch Visual Checks</h3>
               <div className="space-y-2">
-                {kitchenSafety.packedLunchChecks.map((check) => {
+                {getPackedLunchChecks(isHolidayClub).map((check) => {
                   const value = deliveryData.packedLunch?.[check.id]
                   return (
                     <div key={check.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
