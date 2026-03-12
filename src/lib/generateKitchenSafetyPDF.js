@@ -393,22 +393,64 @@ function buildRoomTable(dates, history) {
   return body
 }
 
-function drawChecklistReference(doc, y, margin, pageW) {
-  const openingText = OPENING_ITEMS.map((t, i) => `${i + 1}. ${t}`).join('\n')
-  const closingText = CLOSING_ITEMS.map((t, i) => `${i + 1}. ${t}`).join('\n')
-  const colW = (pageW - margin * 2) / 2
+function twoColumnText(items) {
+  // Split items into two side-by-side columns: left half then right half
+  const half = Math.ceil(items.length / 2)
+  const left  = items.slice(0, half)
+  const right = items.slice(half)
+  const rows = left.map((t, i) => {
+    const leftCell  = `${i + 1}. ${t}`
+    const rightCell = right[i] ? `${half + i + 1}. ${right[i]}` : ''
+    return [leftCell, rightCell]
+  })
+  return rows
+}
 
+function drawChecklistReference(doc, y, margin, pageW) {
+  const totalW = pageW - margin * 2
+  const panelW = totalW / 2 - 2
+  const itemColW = panelW / 2
+
+  const openingRows = twoColumnText(OPENING_ITEMS)
+  const closingRows = twoColumnText(CLOSING_ITEMS)
+
+  // Opening checks panel (left half of page)
   autoTable(doc, {
     startY: y,
-    margin: { left: margin, right: margin },
-    head: [['Opening Kitchen Checks', 'Closing Kitchen Check']],
-    body: [[openingText, closingText]],
-    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 7, fontStyle: 'bold', cellPadding: 2.5, halign: 'left' },
-    styles: { fontSize: 6.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, font: 'helvetica', lineColor: [220, 220, 220], fillColor: N_CREAM },
-    columnStyles: { 0: { cellWidth: colW }, 1: { cellWidth: colW } },
+    margin: { left: margin, right: pageW / 2 + 1 },
+    head: [['Opening Kitchen Checks', '']],
+    body: openingRows,
+    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 8, fontStyle: 'bold', cellPadding: 2.5, halign: 'left' },
+    styles: { fontSize: 8, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, font: 'helvetica', lineColor: [220, 220, 220], fillColor: N_CREAM },
+    columnStyles: { 0: { cellWidth: itemColW }, 1: { cellWidth: itemColW } },
     theme: 'grid',
+    didParseCell: (data) => {
+      // Merge header across both columns visually
+      if (data.row.index === -1 && data.column.index === 1) {
+        data.cell.styles.fillColor = N_PINK
+      }
+    },
   })
-  return doc.lastAutoTable.finalY + 5
+  const panelBottomY = doc.lastAutoTable.finalY
+
+  // Closing checks panel (right half of page)
+  autoTable(doc, {
+    startY: y,
+    margin: { left: pageW / 2 + 1, right: margin },
+    head: [['Closing Kitchen Check', '']],
+    body: closingRows,
+    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 8, fontStyle: 'bold', cellPadding: 2.5, halign: 'left' },
+    styles: { fontSize: 8, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, font: 'helvetica', lineColor: [220, 220, 220], fillColor: N_CREAM },
+    columnStyles: { 0: { cellWidth: itemColW }, 1: { cellWidth: itemColW } },
+    theme: 'grid',
+    didParseCell: (data) => {
+      if (data.row.index === -1 && data.column.index === 1) {
+        data.cell.styles.fillColor = N_PINK
+      }
+    },
+  })
+
+  return Math.max(panelBottomY, doc.lastAutoTable.finalY) + 5
 }
 
 export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStart, weekEnd, allRooms = null) {
@@ -417,7 +459,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
   const pageH = doc.internal.pageSize.getHeight() // 210mm
   const margin = 12
 
-  const logoDataURL = await fetchDataURL('/hopscotch-holiday-club-logo.png')
+  const logoDataURL = await fetchDataURL('/hopscotch-logo.png')
   const weekRange = formatWeekRange(weekStart, weekEnd)
   const dates = getDatesInRange(weekStart, weekEnd)
 
@@ -493,7 +535,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     if (ri > 0) doc.addPage()
     let y = 8
     if (logoDataURL) {
-      try { doc.addImage(logoDataURL, 'PNG', (pageW - 36) / 2, y, 36, 26); y += 30 }
+      try { doc.addImage(logoDataURL, 'PNG', (pageW - 44) / 2, y, 44, 20); y += 24 }
       catch { y += 4 }
     }
     y = drawRoomHeader(doc, y)
