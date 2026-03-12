@@ -233,8 +233,13 @@ function formatDayHeader(dateStr) {
 }
 
 
+const N_BLUE  = [177, 200, 246]  // #b1c8f6 — section header fill
+const N_GREEN = [109, 159, 107]  // #6d9f6b — column header fill
+const N_CREAM = [242, 238, 237]  // #f2eeed — alternating rows
+const N_PINK  = [250, 225, 233]  // #fae1e9 — reference panel header
+
 function sectionHeaderRow(label, colCount) {
-  return [{ content: label, colSpan: colCount, styles: { fillColor: MARMALADE, textColor: WHITE, fontStyle: 'bold', fontSize: 7.5, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 } } }]
+  return [{ content: label, colSpan: colCount, styles: { fillColor: N_BLUE, textColor: FOREST, fontStyle: 'bold', fontSize: 7.5, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 } } }]
 }
 
 const OPENING_ITEMS = [
@@ -391,15 +396,15 @@ function drawChecklistReference(doc, y, margin, pageW) {
     margin: { left: margin, right: margin },
     head: [['Opening Kitchen Checks', 'Closing Kitchen Check']],
     body: [[openingText, closingText]],
-    headStyles: { fillColor: FOREST, textColor: WHITE, fontSize: 7, fontStyle: 'bold', cellPadding: 2.5, halign: 'left' },
-    styles: { fontSize: 6.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, font: 'helvetica', lineColor: [220, 220, 220] },
+    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 7, fontStyle: 'bold', cellPadding: 2.5, halign: 'left' },
+    styles: { fontSize: 6.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, font: 'helvetica', lineColor: [220, 220, 220], fillColor: N_CREAM },
     columnStyles: { 0: { cellWidth: colW }, 1: { cellWidth: colW } },
     theme: 'grid',
   })
   return doc.lastAutoTable.finalY + 5
 }
 
-export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStart, weekEnd) {
+export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStart, weekEnd, allRooms = null) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()  // 297mm
   const pageH = doc.internal.pageSize.getHeight() // 210mm
@@ -427,7 +432,16 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     byRoom[room][dateStr] = { sectionData, completedSections }
   }
 
-  const rooms = Object.keys(byRoom)
+  // Ensure all expected rooms appear, even with no data
+  if (allRooms) {
+    for (const room of allRooms) {
+      if (!byRoom[room]) byRoom[room] = {}
+    }
+  }
+
+  const rooms = allRooms
+    ? allRooms.filter(r => byRoom[r] !== undefined)
+    : Object.keys(byRoom)
 
   if (rooms.length === 0) {
     doc.setFont('helvetica', 'bold')
@@ -456,13 +470,13 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       doc.text('Kitchen Food Safety Diary', pageW / 2, y, { align: 'center' })
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(9)
-      doc.setTextColor(...MARMALADE)
+      doc.setTextColor(...N_GREEN)
       doc.text(room, pageW / 2, y + 6, { align: 'center' })
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(7.5)
       doc.setTextColor(...MID_GREY)
       doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y + 12, { align: 'center' })
-      doc.setDrawColor(...MARMALADE)
+      doc.setDrawColor(...N_GREEN)
       doc.setLineWidth(0.5)
       doc.line(margin, y + 16, pageW - margin, y + 16)
       return y + 22
@@ -489,9 +503,9 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       margin: { left: margin, right: margin },
       head,
       body,
-      headStyles: { fillColor: FOREST, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
+      headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
       styles: { fontSize: 7, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, font: 'helvetica', valign: 'middle' },
-      alternateRowStyles: { fillColor: [252, 252, 252] },
+      alternateRowStyles: { fillColor: N_CREAM },
       columnStyles: {
         0: { cellWidth: labelColW, textColor: FOREST, fillColor: [245, 247, 245] },
         ...Object.fromEntries(dates.map((_, i) => [i + 1, { cellWidth: dayColW, halign: 'center' }])),
@@ -504,7 +518,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
           if (!firstRoomPage) {
             doc.setFont('helvetica', 'bold')
             doc.setFontSize(8)
-            doc.setTextColor(...MARMALADE)
+            doc.setTextColor(...N_GREEN)
             doc.text(`${room} (continued)`, margin, 8)
           }
         }

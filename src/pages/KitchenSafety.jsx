@@ -129,6 +129,7 @@ export function KitchenSafety() {
 
   const [downloading, setDownloading] = useState(false)
   const [downloadingExcel, setDownloadingExcel] = useState(false)
+  const [selectedDownloadRoom, setSelectedDownloadRoom] = useState('all')
 
   const handleDownloadPDF = async () => {
     const week = weekOptions.find(w => w.value === selectedWeek)
@@ -156,8 +157,15 @@ export function KitchenSafety() {
         doc.save(`Kitchen-Safety-${nursery.replace(/\s+/g, '-')}-${week.value}.pdf`)
       } else {
         // Nursery: landscape, one page per room
-        const doc = await generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStartDate, weekEndDate)
-        doc.save(`Kitchen-Safety-${nursery.replace(/\s+/g, '-')}-${week.value}.pdf`)
+        const filteredChecks = selectedDownloadRoom === 'all'
+          ? checks
+          : checks.filter(c => c.room === selectedDownloadRoom)
+        const allRoomsList = selectedDownloadRoom === 'all'
+          ? [...nurseryRooms, ...customRooms]
+          : null
+        const doc = await generateAllRoomsKitchenSafetyPDF(nursery, filteredChecks, weekStartDate, weekEndDate, allRoomsList)
+        const roomSuffix = selectedDownloadRoom === 'all' ? '' : `-${selectedDownloadRoom.replace(/\s+/g, '-')}`
+        doc.save(`Kitchen-Safety-${nursery.replace(/\s+/g, '-')}${roomSuffix}-${week.value}.pdf`)
       }
     } catch (err) {
       console.error('PDF generation error:', err)
@@ -468,16 +476,28 @@ export function KitchenSafety() {
           {/* Download PDF */}
           <div className="mt-6 p-4 bg-white rounded-xl border-2 border-gray-200">
             <p className="text-sm font-medium text-hop-forest mb-3">Download Weekly PDF</p>
-            <select
-              value={selectedWeek}
-              onChange={(e) => setSelectedWeek(e.target.value)}
-              className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest mb-3"
-            >
-              <option value="">Select a week…</option>
-              {weekOptions.map(w => (
-                <option key={w.value} value={w.value}>{w.label}</option>
-              ))}
-            </select>
+            <div className="flex gap-2 mb-3">
+              <select
+                value={selectedWeek}
+                onChange={(e) => setSelectedWeek(e.target.value)}
+                className="flex-1 min-w-0 px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest"
+              >
+                <option value="">Select a week…</option>
+                {weekOptions.map(w => (
+                  <option key={w.value} value={w.value}>{w.label}</option>
+                ))}
+              </select>
+              <select
+                value={selectedDownloadRoom}
+                onChange={(e) => setSelectedDownloadRoom(e.target.value)}
+                className="flex-1 min-w-0 px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest"
+              >
+                <option value="all">All rooms</option>
+                {[...nurseryRooms, ...customRooms].map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
             <Button
               color="marmalade"
               size="large"
