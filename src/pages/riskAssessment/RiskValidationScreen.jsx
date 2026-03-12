@@ -19,10 +19,7 @@ const RISK_RATINGS = [
 export function RiskValidationScreen() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { draft: initialDraft, formData } = location.state || {}
-
-
-  const { draftId: incomingDraftId } = location.state || {}
+  const { draft: initialDraft, formData, draftId: incomingDraftId } = location.state || {}
   const [draftId, setDraftId] = useState(incomingDraftId || null)
   const [draft, setDraft] = useState(initialDraft || {})
   const [loading, setLoading] = useState(false)

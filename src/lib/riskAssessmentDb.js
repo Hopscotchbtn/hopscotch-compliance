@@ -37,7 +37,7 @@ export const saveRiskAssessment = async (assessmentData, existingId = null) => {
       if (typeof val === 'string') return val.split(',').map(s => s.trim()).filter(Boolean)
       return []
     })(),
-    policies_selected: assessmentData.policiesSelected || [],
+    policies_selected: assessmentData.policiesSelected || assessmentData.policies_selected || [],
     hazards: hazardsWithDetails.length > 0 ? hazardsWithDetails : (assessmentData.hazards || []),
     safe_system_of_work: assessmentData.safe_system_of_work || assessmentData.safeSystemOfWork,
     review_date: assessmentData.review_date || assessmentData.reviewDate,
