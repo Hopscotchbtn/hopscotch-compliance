@@ -456,7 +456,79 @@ function drawChecklistReference(doc, y, margin, pageW) {
   return Math.max(panelBottomY, doc.lastAutoTable.finalY) + 5
 }
 
-export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStart, weekEnd, allRooms = null) {
+function drawPeriodicChecks(doc, y, room, periodicChecks, margin, pageW) {
+  const { weekly = [], calibration = null } = periodicChecks || {}
+  const roomWeekly = weekly.filter(c => (c.room || 'Kitchen') === room)
+
+  const probeCheck      = roomWeekly.find(c => c.check_type === 'probeCheck')
+  const supermarketCheck = roomWeekly.find(c => c.check_type === 'supermarketTemp')
+
+  const fmtDate = (iso) => iso
+    ? new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+    : '–'
+
+  const totalW = pageW - margin * 2
+  const labelW = totalW * 0.55
+  const dateW  = totalW * 0.28
+  const byW    = totalW - labelW - dateW
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Weekly Checks', 'Date completed', 'By']],
+    body: [
+      [
+        'Fridge/Freezer Probe Thermometer Check',
+        probeCheck ? fmtDate(probeCheck.created_at) : 'Not done this week',
+        probeCheck?.completed_by || '–',
+      ],
+      [
+        'Supermarket Food Temperature Checks',
+        supermarketCheck ? fmtDate(supermarketCheck.created_at) : 'Not done this week',
+        supermarketCheck?.completed_by || '–',
+      ],
+    ],
+    headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
+    styles: { fontSize: 7.5, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, font: 'helvetica' },
+    columnStyles: { 0: { cellWidth: labelW }, 1: { cellWidth: dateW }, 2: { cellWidth: byW } },
+    theme: 'grid',
+    alternateRowStyles: { fillColor: N_CREAM },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 1) {
+        const notDone = data.cell.text[0] === 'Not done this week'
+        if (notDone) data.cell.styles.textColor = [180, 60, 60]
+      }
+    },
+  })
+  y = doc.lastAutoTable.finalY + 3
+
+  const now = new Date()
+  const isOverdue = !calibration || (now - new Date(calibration.created_at)) > 31 * 24 * 60 * 60 * 1000
+  const calDate = calibration
+    ? new Date(calibration.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'Never recorded'
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Monthly Check', 'Last completed', 'Status']],
+    body: [['Probe Calibration Check', calDate, isOverdue ? '⚠ Overdue' : '✓ Up to date']],
+    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
+    styles: { fontSize: 7.5, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, font: 'helvetica' },
+    columnStyles: { 0: { cellWidth: labelW }, 1: { cellWidth: dateW }, 2: { cellWidth: byW } },
+    theme: 'grid',
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 2) {
+        data.cell.styles.textColor = isOverdue ? [180, 60, 60] : [60, 140, 60]
+        data.cell.styles.fontStyle = 'bold'
+      }
+    },
+  })
+
+  return doc.lastAutoTable.finalY
+}
+
+export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStart, weekEnd, allRooms = null, periodicChecks = null) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()  // 297mm
   const pageH = doc.internal.pageSize.getHeight() // 210mm
@@ -584,6 +656,8 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       body: body2,
       ...tableStyles,
     })
+
+    drawPeriodicChecks(doc, doc.lastAutoTable.finalY + 6, room, periodicChecks, margin, pageW)
 
   }
 
