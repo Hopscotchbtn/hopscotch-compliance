@@ -510,7 +510,7 @@ function drawPeriodicChecks(doc, y, room, periodicChecks, margin, pageW) {
     startY: y,
     margin: { left: margin, right: margin },
     head: [['Monthly Check', 'Last completed', 'Status']],
-    body: [['Probe Calibration Check', calDate, isOverdue ? '⚠ Overdue' : '✓ Up to date']],
+    body: [['Probe Calibration Check', calDate, isOverdue ? 'OVERDUE' : 'Up to date']],
     headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2.5 },
     styles: { fontSize: 7.5, cellPadding: { top: 2.5, bottom: 2.5, left: 3, right: 3 }, font: 'helvetica' },
     columnStyles: { 0: { cellWidth: labelW }, 1: { cellWidth: dateW }, 2: { cellWidth: byW } },
@@ -578,7 +578,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     return doc
   }
 
-  const labelColW = 68
+  const labelColW = 50
   const dayColW = (pageW - margin * 2 - labelColW) / dates.length
 
   for (let ri = 0; ri < rooms.length; ri++) {
