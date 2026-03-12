@@ -43,7 +43,7 @@ export const saveRiskAssessment = async (assessmentData) => {
 
   const { data, error } = await supabase
     .from('risk_assessments')
-    .upsert([dbData], { onConflict: 'reference' })
+    .insert([dbData])
     .select()
 
   if (error) throw error
