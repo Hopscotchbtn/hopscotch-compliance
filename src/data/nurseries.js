@@ -7,4 +7,5 @@ export const nurseries = [
   'Seaford',
   'Worthing',
   'Head Office',
+  'Holiday Club',
 ]

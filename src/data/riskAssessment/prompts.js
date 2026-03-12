@@ -17,8 +17,8 @@ Output: Provide a structured, detailed list of hazards grouped under the above c
 
 Guidelines:
 - Identify 5-7 specific, actionable hazards relevant to the activity
-- Consider the assessment type, location, and age group (0-5 years)
-- Focus on realistic risks in early years childcare settings
+- Consider the assessment type, location, and age group (nurseries: 0-5 years; Holiday Club: 4-11 years)
+- Focus on realistic risks in the specific childcare setting (nursery or holiday club)
 - Each hazard should be a clear, concise statement (one sentence)
 - Prioritize hazards from most to least critical
 - Consider these categories: physical safety, supervision needs, equipment hazards, environmental risks, health concerns, security issues, emergency scenarios
@@ -75,7 +75,7 @@ Format the response as raw JSON only. The JSON should have all the placeholder n
 Important guidelines:
 - Control measures should be detailed and specific to nursery settings
 - Reference EYFS requirements and Ofsted expectations where relevant
-- Consider the age group and developmental stage of children
+- Consider the age group and developmental stage of children (nurseries: 0-5 years; Holiday Club: 4-11 years)
 - Include supervision requirements appropriate to the activity
 - Ensure measures are practical and implementable
 

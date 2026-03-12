@@ -103,7 +103,7 @@ export function RiskAssessmentWizard() {
         if (!formData.assessmentType) return 'Please select an assessment type'
         if (!formData.activityName) return 'Please enter an activity name'
         if (!formData.assessorName) return 'Please enter your name'
-        if (!formData.nursery) return 'Please select a nursery'
+        if (!formData.nursery) return 'Please select a location'
         return null
       case 2:
         if (formData.peopleAtRisk.length === 0) return 'Please select at least one group at risk'
@@ -270,13 +270,23 @@ export function RiskAssessmentWizard() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Nursery *
+          Location *
         </label>
         <Select
           value={formData.nursery}
-          onChange={(e) => updateField('nursery', e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value
+            setFormData(prev => {
+              const updates = { ...prev, nursery: val }
+              if (val === 'Holiday Club' && !prev.peopleAtRisk.includes('Children (4-11 years)')) {
+                updates.peopleAtRisk = [...prev.peopleAtRisk, 'Children (4-11 years)']
+              }
+              return updates
+            })
+            setError(null)
+          }}
         >
-          <option value="">Select nursery...</option>
+          <option value="">Select location...</option>
           {nurseries.map(n => (
             <option key={n} value={n}>{n}</option>
           ))}

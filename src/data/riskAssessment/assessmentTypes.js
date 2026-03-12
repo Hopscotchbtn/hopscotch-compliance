@@ -67,6 +67,7 @@ export const peopleAtRiskOptions = [
   { id: 'children-0-2', label: 'Children (Under 2s)' },
   { id: 'children-2-3', label: 'Children (2-3 years)' },
   { id: 'children-3-5', label: 'Children (3-5 years)' },
+  { id: 'children-4-11', label: 'Children (4-11 years)' },
   { id: 'staff', label: 'Staff' },
   { id: 'visitors', label: 'Visitors' },
   { id: 'parents', label: 'Parents/Carers' },
