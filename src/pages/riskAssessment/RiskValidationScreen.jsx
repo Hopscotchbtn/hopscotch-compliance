@@ -239,7 +239,7 @@ export function RiskValidationScreen() {
         <div className="rounded-xl p-4 flex items-start gap-3" style={{ backgroundColor: '#fbee57' }}>
           <AlertTriangle className="w-5 h-5 text-gray-700 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-gray-800">
-            <strong>Do not enter personal data</strong> into this form. If this assessment relates to a specific child or group of children, add any personal details directly to the downloaded Word document.
+            <strong>Do not enter personal data into this form apart from the assessor's initials.</strong> If this assessment relates to a specific child or group of children, add any personal details directly to the downloaded Word document.
           </p>
         </div>
 
