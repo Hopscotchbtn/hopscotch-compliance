@@ -31,9 +31,12 @@ export const saveRiskAssessment = async (assessmentData) => {
     assessment_date: assessmentData.assessment_date || assessmentData.assessmentDate,
     assessor_name: assessmentData.assessor_name || assessmentData.assessorName,
     activity_description: assessmentData.activity_description || assessmentData.activityDescription || assessmentData.activityName,
-    people_at_risk: assessmentData.people_at_risk || (Array.isArray(assessmentData.peopleAtRisk)
-      ? assessmentData.peopleAtRisk
-      : (assessmentData.peopleAtRisk || '').split(',').map(s => s.trim())),
+    people_at_risk: (() => {
+      const val = assessmentData.people_at_risk ?? assessmentData.peopleAtRisk
+      if (Array.isArray(val)) return val
+      if (typeof val === 'string') return val.split(',').map(s => s.trim()).filter(Boolean)
+      return []
+    })(),
     policies_selected: assessmentData.policiesSelected || [],
     hazards: hazardsWithDetails.length > 0 ? hazardsWithDetails : (assessmentData.hazards || []),
     safe_system_of_work: assessmentData.safe_system_of_work || assessmentData.safeSystemOfWork,
