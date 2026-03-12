@@ -423,12 +423,11 @@ function drawChecklistReference(doc, y, margin, pageW) {
     margin: { left: margin, right: pageW / 2 + 1 },
     head: [['Opening Kitchen Checks', '']],
     body: openingRows,
-    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 8, fontStyle: 'bold', cellPadding: 2.5, halign: 'left' },
-    styles: { fontSize: 8, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, font: 'helvetica', lineColor: [220, 220, 220], fillColor: N_CREAM },
+    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2, halign: 'left' },
+    styles: { fontSize: 7.5, cellPadding: { top: 1.5, bottom: 1.5, left: 3, right: 3 }, font: 'helvetica', lineColor: [220, 220, 220], fillColor: N_CREAM },
     columnStyles: { 0: { cellWidth: itemColW }, 1: { cellWidth: itemColW } },
     theme: 'grid',
     didParseCell: (data) => {
-      // Merge header across both columns visually
       if (data.row.index === -1 && data.column.index === 1) {
         data.cell.styles.fillColor = N_PINK
       }
@@ -442,8 +441,8 @@ function drawChecklistReference(doc, y, margin, pageW) {
     margin: { left: pageW / 2 + 1, right: margin },
     head: [['Closing Kitchen Check', '']],
     body: closingRows,
-    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 8, fontStyle: 'bold', cellPadding: 2.5, halign: 'left' },
-    styles: { fontSize: 8, cellPadding: { top: 2.5, bottom: 2.5, left: 4, right: 4 }, font: 'helvetica', lineColor: [220, 220, 220], fillColor: N_CREAM },
+    headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2, halign: 'left' },
+    styles: { fontSize: 7.5, cellPadding: { top: 1.5, bottom: 1.5, left: 3, right: 3 }, font: 'helvetica', lineColor: [220, 220, 220], fillColor: N_CREAM },
     columnStyles: { 0: { cellWidth: itemColW }, 1: { cellWidth: itemColW } },
     theme: 'grid',
     didParseCell: (data) => {
@@ -453,7 +452,7 @@ function drawChecklistReference(doc, y, margin, pageW) {
     },
   })
 
-  return Math.max(panelBottomY, doc.lastAutoTable.finalY) + 5
+  return Math.max(panelBottomY, doc.lastAutoTable.finalY) + 3
 }
 
 function drawPeriodicChecks(doc, y, room, periodicChecks, margin, pageW) {
@@ -598,13 +597,13 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y + 6, { align: 'center' })
       doc.setDrawColor(...N_GREEN)
       doc.setLineWidth(0.5)
-      doc.line(margin, y + 10, pageW - margin, y + 10)
-      return y + 16
+      doc.line(margin, y + 8, pageW - margin, y + 8)
+      return y + 12
     }
 
     const tableStyles = {
-      headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
-      styles: { fontSize: 7, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, font: 'helvetica', valign: 'middle' },
+      headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', halign: 'center', cellPadding: 2 },
+      styles: { fontSize: 7, cellPadding: { top: 1.5, bottom: 1.5, left: 3, right: 3 }, font: 'helvetica', valign: 'middle' },
       alternateRowStyles: { fillColor: N_CREAM },
       columnStyles: {
         0: { cellWidth: labelColW, textColor: FOREST, fillColor: [245, 247, 245] },
@@ -614,9 +613,9 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
 
     // ── Page 1: logo + header + reference panel + opening + packed lunches ──
     if (ri > 0) doc.addPage()
-    let y = 8
+    let y = 6
     if (logoDataURL) {
-      try { doc.addImage(logoDataURL, 'PNG', (pageW - 22) / 2, y, 22, 22); y += 26 }
+      try { doc.addImage(logoDataURL, 'PNG', (pageW - 16) / 2, y, 16, 16); y += 19 }
       catch { y += 4 }
     }
     y = drawRoomHeader(doc, y)
@@ -635,7 +634,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
 
     // ── Page 2: little tums + closing + manager sign-off ───────────────────
     doc.addPage()
-    let y2 = 8
+    let y2 = 6
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(9)
     doc.setTextColor(...FOREST)
@@ -644,10 +643,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     doc.setFontSize(7.5)
     doc.setTextColor(...MID_GREY)
     doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y2 + 5, { align: 'center' })
-    doc.setDrawColor(...N_GREEN)
-    doc.setLineWidth(0.5)
-    doc.line(margin, y2 + 9, pageW - margin, y2 + 9)
-    y2 += 14
+    y2 += 10
 
     autoTable(doc, {
       startY: y2,
@@ -657,7 +653,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       ...tableStyles,
     })
 
-    drawPeriodicChecks(doc, doc.lastAutoTable.finalY + 6, room, periodicChecks, margin, pageW)
+    drawPeriodicChecks(doc, doc.lastAutoTable.finalY + 4, room, periodicChecks, margin, pageW)
 
   }
 
