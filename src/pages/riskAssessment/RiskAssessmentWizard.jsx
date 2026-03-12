@@ -304,6 +304,13 @@ export function RiskAssessmentWizard() {
     </div>
   )
 
+  const isHolidayClub = formData.nursery === 'Holiday Club'
+  const nurseryOnlyAgeIds = ['children-0-2', 'children-2-3', 'children-3-5']
+  const holidayClubOnlyAgeIds = ['children-4-5', 'children-5-7', 'children-7-11']
+  const filteredPeopleAtRisk = peopleAtRiskOptions.filter(o =>
+    isHolidayClub ? !nurseryOnlyAgeIds.includes(o.id) : !holidayClubOnlyAgeIds.includes(o.id)
+  )
+
   const renderStep2 = () => (
     <div className="space-y-4">
       <div>
@@ -311,7 +318,7 @@ export function RiskAssessmentWizard() {
           Who might be at risk? *
         </label>
         <div className="space-y-2">
-          {peopleAtRiskOptions.map(option => (
+          {filteredPeopleAtRisk.map(option => (
             <label key={option.id} className="flex items-center gap-3 p-3 bg-white rounded-lg border-2 border-gray-200 cursor-pointer hover:border-hop-forest transition-colors">
               <Checkbox
                 checked={formData.peopleAtRisk.includes(option.label)}
