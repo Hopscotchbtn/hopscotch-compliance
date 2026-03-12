@@ -117,16 +117,17 @@ export function RiskAssessmentDashboard() {
             <FileText className="w-5 h-5" />
             Recent Assessments
           </h2>
-          <Select
-            value={locationFilter}
-            onChange={(e) => setLocationFilter(e.target.value)}
-            className="text-sm w-full mb-5"
-          >
-            <option value="">All locations</option>
-            {nurseries.map(n => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </Select>
+          <div className="mb-5">
+            <Select
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+            >
+              <option value="">All locations</option>
+              {nurseries.map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </Select>
+          </div>
           {loading ? (
             <Card padding="default">
               <div className="text-center text-gray-500 py-4">Loading...</div>
