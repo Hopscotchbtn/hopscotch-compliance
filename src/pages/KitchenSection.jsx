@@ -1290,7 +1290,7 @@ export function KitchenSection() {
             {editableNames ? (
               <input
                 type="text"
-                value={itemName(item)}
+                value={deliveryData.itemNames?.[item.id] ?? ''}
                 onChange={(e) => setDeliveryData(prev => ({
                   ...prev,
                   itemNames: { ...prev.itemNames, [item.id]: e.target.value }
