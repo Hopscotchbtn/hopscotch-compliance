@@ -138,10 +138,10 @@ export function RiskAssessmentDashboard() {
               </div>
             </Card>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {recentAssessments.filter(a => !locationFilter || a.nursery === locationFilter).map((assessment) => (
                 <Link key={assessment.id} to={`/risk-assessment/${assessment.id}`}>
-                  <Card padding="small" className="cursor-pointer hover:shadow-md transition-shadow">
+                  <Card padding="small" className="cursor-pointer hover:shadow-md transition-shadow border border-black">
                     <div className="flex justify-between items-start">
                       <div>
                         <div className="font-medium text-hop-forest">
