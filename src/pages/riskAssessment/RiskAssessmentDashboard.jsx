@@ -120,7 +120,7 @@ export function RiskAssessmentDashboard() {
           <Select
             value={locationFilter}
             onChange={(e) => setLocationFilter(e.target.value)}
-            className="text-sm w-full mb-3"
+            className="text-sm w-full mb-5"
           >
             <option value="">All locations</option>
             {nurseries.map(n => (
