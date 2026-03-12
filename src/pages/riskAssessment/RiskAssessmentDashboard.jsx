@@ -117,7 +117,7 @@ export function RiskAssessmentDashboard() {
 
   return (
     <div className="min-h-screen bg-hop-pebble">
-      <Header title="Risk Assessments" showBack />
+      <Header title="Risk Assessments" showBack onBack={() => navigate('/')} />
 
       <div className="max-w-lg mx-auto p-4 space-y-6">
         {/* New Assessment Button */}
