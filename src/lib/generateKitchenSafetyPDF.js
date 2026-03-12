@@ -249,8 +249,29 @@ const OPENING_ITEMS = [
   'Staff fit, well, in uniform',
 ]
 
+const CLOSING_ITEMS = [
+  'Rubbish out',
+  'Cloths & aprons cleaned / removed',
+  'No food left out',
+  'All foods checked & date labelled',
+  'Foods covered',
+  'Utensils washed-up',
+  'Daily cleaning tasks done',
+  'Diary completed',
+]
+
+const LT_LUNCH_IDS = ['lt1', 'lt2', 'lt3', 'lt4']
+const LT_TEA_IDS   = ['lt5', 'lt6']
+
 function tick(sectionData) {
   return sectionData?.completedBy || sectionData?.signedBy ? '✓' : '–'
+}
+
+function ltTemp(ltData, mealKey, itemId) {
+  const entry = ltData?.[mealKey]?.[itemId]
+  if (!entry) return '–'
+  if (entry.skipped) return 'N/A'
+  return entry.temp ? `${entry.temp}°C` : '–'
 }
 
 function buildRoomTable(dates, history) {
@@ -266,16 +287,18 @@ function buildRoomTable(dates, history) {
   if (!openFridges.length) openFridges.push(1)
   if (!closeFridges.length) closeFridges.push(1)
 
+  const ltItems = kitchenSafety.littleTumsItems || []
+  const ltLunchItems = ltItems.filter(i => LT_LUNCH_IDS.includes(i.id))
+  const ltTeaItems   = ltItems.filter(i => LT_TEA_IDS.includes(i.id))
+
   const body = []
 
   // ── Opening Kitchen Checks ─────────────────────────────────────────────
   body.push(sectionHeaderRow('Opening Kitchen Checks', colCount))
-  OPENING_ITEMS.forEach(text => {
-    body.push([text, ...dates.map(d => tick(sd(d).opening))])
-  })
+  body.push(['All opening checks completed', ...dates.map(d => tick(sd(d).opening))])
   openFridges.forEach(n => {
     body.push([
-      `Fridge ${n} temp`,
+      `Fridge ${n} temperature`,
       ...dates.map(d => {
         const f = sd(d).opening?.temperatures?.[`fridge${n}`]
         if (!f?.temp) return '–'
@@ -299,14 +322,48 @@ function buildRoomTable(dates, history) {
   })
   body.push(['Initials', ...dates.map(d => sd(d).packedLunch?.completedBy || '–')])
 
+  // ── Little Tums — Lunch ───────────────────────────────────────────────
+  body.push(sectionHeaderRow('Little Tums — Lunch', colCount))
+  ltLunchItems.forEach(item => {
+    body.push([
+      item.label,
+      ...dates.map(d => {
+        const ltData = sd(d).littleTums?.deliveryData
+        const customName = ltData?.itemNames?.[item.id]
+        const display = ltTemp(ltData, 'lunch', item.id)
+        return customName && display !== '–' && display !== 'N/A' ? `${customName}: ${display}` : display
+      }),
+    ])
+  })
+  body.push(['Initials', ...dates.map(d => {
+    const lt = sd(d).littleTums
+    return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.lunchDone ? '✓' : '–')
+  })])
+
+  // ── Little Tums — Tea ─────────────────────────────────────────────────
+  body.push(sectionHeaderRow('Little Tums — Tea', colCount))
+  ltTeaItems.forEach(item => {
+    body.push([
+      item.label,
+      ...dates.map(d => {
+        const ltData = sd(d).littleTums?.deliveryData
+        const customName = ltData?.itemNames?.[item.id]
+        const display = ltTemp(ltData, 'tea', item.id)
+        return customName && display !== '–' && display !== 'N/A' ? `${customName}: ${display}` : display
+      }),
+    ])
+  })
+  body.push(['Initials', ...dates.map(d => {
+    const lt = sd(d).littleTums
+    return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.teaDone ? '✓' : '–')
+  })])
+
   // ── Closing Kitchen Check ─────────────────────────────────────────────
   body.push(sectionHeaderRow('Closing Kitchen Check', colCount))
-  kitchenSafety.closingChecks.forEach(item => {
-    body.push([item.text, ...dates.map(d => tick(sd(d).closing))])
-  })
+  body.push(['All closing checks completed', ...dates.map(d => tick(sd(d).closing))])
   closeFridges.forEach(n => {
     body.push([
-      `Fridge ${n} temp`,
+      `Fridge ${n} temperature`,
       ...dates.map(d => {
         const f = sd(d).closing?.temperatures?.[`fridge${n}`]
         if (!f?.temp) return '–'
@@ -322,6 +379,24 @@ function buildRoomTable(dates, history) {
   body.push(['Comments', ...dates.map(d => sd(d).signoff?.responses?.managerComments || '–')])
 
   return body
+}
+
+function drawChecklistReference(doc, y, margin, pageW) {
+  const openingText = OPENING_ITEMS.map((t, i) => `${i + 1}. ${t}`).join('\n')
+  const closingText = CLOSING_ITEMS.map((t, i) => `${i + 1}. ${t}`).join('\n')
+  const colW = (pageW - margin * 2) / 2
+
+  autoTable(doc, {
+    startY: y,
+    margin: { left: margin, right: margin },
+    head: [['Opening Kitchen Checks', 'Closing Kitchen Check']],
+    body: [[openingText, closingText]],
+    headStyles: { fillColor: FOREST, textColor: WHITE, fontSize: 7, fontStyle: 'bold', cellPadding: 2.5, halign: 'left' },
+    styles: { fontSize: 6.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, font: 'helvetica', lineColor: [220, 220, 220] },
+    columnStyles: { 0: { cellWidth: colW }, 1: { cellWidth: colW } },
+    theme: 'grid',
+  })
+  return doc.lastAutoTable.finalY + 5
 }
 
 export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStart, weekEnd) {
@@ -401,6 +476,9 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       catch { y += 4 }
     }
     y = drawRoomHeader(doc, y)
+
+    // ── Checklist reference panel ───────────────────────────────────────────
+    y = drawChecklistReference(doc, y, margin, pageW)
 
     // ── Table ──────────────────────────────────────────────────────────────
     const head = [['', ...dates.map(d => formatDayHeader(d))]]
