@@ -3,7 +3,9 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
+import { Select } from '../../components/ui/Select'
 import { getRecentAssessments, getRiskAssessmentStats, getDraftAssessments } from '../../lib/riskAssessmentDb'
+import { nurseries } from '../../data/nurseries'
 import { FileText, Plus, Clock, CheckCircle, AlertCircle } from 'lucide-react'
 
 export function RiskAssessmentDashboard() {
@@ -12,6 +14,7 @@ export function RiskAssessmentDashboard() {
   const [recentAssessments, setRecentAssessments] = useState([])
   const [drafts, setDrafts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [locationFilter, setLocationFilter] = useState('')
 
   useEffect(() => {
     loadData()
@@ -21,7 +24,7 @@ export function RiskAssessmentDashboard() {
     try {
       const [statsData, recent, draftData] = await Promise.all([
         getRiskAssessmentStats(),
-        getRecentAssessments(5),
+        getRecentAssessments(50),
         getDraftAssessments()
       ])
       setStats(statsData)
@@ -110,10 +113,22 @@ export function RiskAssessmentDashboard() {
 
         {/* Recent Assessments */}
         <section>
-          <h2 className="text-lg font-semibold text-hop-forest mb-3 flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Recent Assessments
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-hop-forest flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Recent Assessments
+            </h2>
+            <Select
+              value={locationFilter}
+              onChange={(e) => setLocationFilter(e.target.value)}
+              className="text-sm w-40"
+            >
+              <option value="">All locations</option>
+              {nurseries.map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </Select>
+          </div>
           {loading ? (
             <Card padding="default">
               <div className="text-center text-gray-500 py-4">Loading...</div>
@@ -126,7 +141,7 @@ export function RiskAssessmentDashboard() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {recentAssessments.map((assessment) => (
+              {recentAssessments.filter(a => !locationFilter || a.nursery === locationFilter).map((assessment) => (
                 <Link key={assessment.id} to={`/risk-assessment/${assessment.id}`}>
                   <Card padding="small" className="cursor-pointer hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">
