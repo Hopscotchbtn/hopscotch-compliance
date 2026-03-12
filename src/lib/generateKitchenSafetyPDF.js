@@ -352,7 +352,7 @@ function buildRoomTable(dates, history) {
   })
   body2.push(['Initials', ...dates.map(d => {
     const lt = sd(d).littleTums
-    return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.lunchDone ? 'Y' : '-')
+    return lt?.completedBy || lt?.signedBy || '-'
   })])
 
   // ── Little Tums — Tea ─────────────────────────────────────────────────
@@ -370,7 +370,7 @@ function buildRoomTable(dates, history) {
   })
   body2.push(['Initials', ...dates.map(d => {
     const lt = sd(d).littleTums
-    return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.teaDone ? 'Y' : '-')
+    return lt?.completedBy || lt?.signedBy || '-'
   })])
 
   // ── Closing Kitchen Check ─────────────────────────────────────────────
@@ -508,6 +508,12 @@ function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
     : 'Never recorded'
 
   const calBody = []
+  // Summary row always first
+  calBody.push([
+    { content: `Last calibrated: ${calDate}`, colSpan: 3 },
+    { content: isOverdue ? 'OVERDUE' : 'Up to date', colSpan: 2, styles: { textColor: isOverdue ? [180, 60, 60] : [60, 140, 60], fontStyle: 'bold', halign: 'center' } },
+  ])
+  // Probe detail rows if available
   if (calDetailData?.deliveryData) {
     ;[1, 2].forEach(n => {
       const p = calDetailData.deliveryData[`probe${n}`]
@@ -518,14 +524,11 @@ function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
       calBody.push([p.identity, p.boilingTemp ? `${p.boilingTemp}°C` : '-', p.icedTemp ? `${p.icedTemp}°C` : '-', result, p.initials || '-'])
     })
   }
-  if (!calBody.length) {
-    calBody.push([`Last done: ${calDate}`, '', '', isOverdue ? 'OVERDUE' : 'Up to date', calibration?.completed_by || '-'])
-  }
 
   autoTable(doc, {
     startY: y,
     margin: { left: margin, right: margin },
-    head: [['Probe Calibration (Monthly) - Probe ID', 'Boiling', 'Iced', 'Result', 'Initials']],
+    head: [['Probe Calibration (Monthly)', 'Boiling', 'Iced', 'Result', 'Initials']],
     body: calBody,
     headStyles: { fillColor: N_PINK, textColor: FOREST, fontSize: 7.5, fontStyle: 'bold', cellPadding: 2 },
     styles: { fontSize: 7.5, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, font: 'helvetica' },
