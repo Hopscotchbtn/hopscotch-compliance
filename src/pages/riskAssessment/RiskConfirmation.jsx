@@ -59,7 +59,7 @@ export function RiskConfirmation() {
             color="forest"
             fullWidth
             size="large"
-            onClick={() => navigate('/risk-assessment/new')}
+            onClick={() => navigate('/risk-assessment/new', { replace: true })}
           >
             <Plus className="w-5 h-5 mr-2" />
             Create Another Assessment
@@ -68,7 +68,7 @@ export function RiskConfirmation() {
           <Button
             color="freshair"
             fullWidth
-            onClick={() => navigate('/risk-assessment')}
+            onClick={() => navigate('/risk-assessment', { replace: true })}
           >
             <FileText className="w-5 h-5 mr-2" />
             View All Assessments
@@ -77,7 +77,7 @@ export function RiskConfirmation() {
           <Button
             variant="secondary"
             fullWidth
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/', { replace: true })}
           >
             <Home className="w-5 h-5 mr-2" />
             Back to Dashboard

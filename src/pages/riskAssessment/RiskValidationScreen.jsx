@@ -91,8 +91,9 @@ export function RiskValidationScreen() {
         saveError = err?.message || JSON.stringify(err)
       }
 
-      // Navigate to confirmation regardless of save result
+      // Navigate to confirmation regardless of save result — replace so back button skips this screen
       navigate('/risk-assessment/confirmation', {
+        replace: true,
         state: {
           assessmentType: draft.assessment_type,
           activityName: draft.activity_description,
