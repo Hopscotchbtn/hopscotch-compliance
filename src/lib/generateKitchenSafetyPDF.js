@@ -236,7 +236,7 @@ function formatDayHeader(dateStr) {
   const d = new Date(dateStr + 'T12:00:00')
   const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' })
   const date = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-  return `${weekday}\n${date}`
+  return `${weekday} ${date}`
 }
 
 
@@ -286,6 +286,7 @@ function ltTemp(ltData, mealKey, itemId) {
   return entry.temp ? `${entry.temp}°C` : '–'
 }
 
+// Returns { body1: opening + packed lunches, body2: little tums + closing + sign-off }
 function buildRoomTable(dates, history) {
   const colCount = dates.length + 1
   const sd = (d) => history[d]?.sectionData || {}
@@ -303,13 +304,13 @@ function buildRoomTable(dates, history) {
   const ltLunchItems = ltItems.filter(i => LT_LUNCH_IDS.includes(i.id))
   const ltTeaItems   = ltItems.filter(i => LT_TEA_IDS.includes(i.id))
 
-  const body = []
+  const body1 = []
 
   // ── Opening Kitchen Checks ─────────────────────────────────────────────
-  body.push(sectionHeaderRow('Opening Kitchen Checks', colCount))
-  body.push(['All opening checks completed', ...dates.map(d => tick(sd(d).opening))])
+  body1.push(sectionHeaderRow('Opening Kitchen Checks', colCount))
+  body1.push(['All opening checks completed', ...dates.map(d => tick(sd(d).opening))])
   openFridges.forEach(n => {
-    body.push([
+    body1.push([
       `Fridge ${n} temperature`,
       ...dates.map(d => {
         const f = sd(d).opening?.temperatures?.[`fridge${n}`]
@@ -318,12 +319,12 @@ function buildRoomTable(dates, history) {
       }),
     ])
   })
-  body.push(['Initials', ...dates.map(d => sd(d).opening?.completedBy || sd(d).opening?.signedBy || '–')])
+  body1.push(['Initials', ...dates.map(d => sd(d).opening?.completedBy || sd(d).opening?.signedBy || '–')])
 
   // ── Packed Lunches ────────────────────────────────────────────────────
-  body.push(sectionHeaderRow('Packed Lunches', colCount))
+  body1.push(sectionHeaderRow('Packed Lunches', colCount))
   nurseryPackedLunchChecks.forEach(item => {
-    body.push([
+    body1.push([
       item.text,
       ...dates.map(d => {
         const val = sd(d).packedLunch?.deliveryData?.packedLunch?.[item.id]
@@ -332,12 +333,14 @@ function buildRoomTable(dates, history) {
       }),
     ])
   })
-  body.push(['Initials', ...dates.map(d => sd(d).packedLunch?.completedBy || '–')])
+  body1.push(['Initials', ...dates.map(d => sd(d).packedLunch?.completedBy || '–')])
+
+  const body2 = []
 
   // ── Little Tums — Lunch ───────────────────────────────────────────────
-  body.push(sectionHeaderRow('Little Tums — Lunch', colCount))
+  body2.push(sectionHeaderRow('Little Tums — Lunch', colCount))
   ltLunchItems.forEach(item => {
-    body.push([
+    body2.push([
       item.label,
       ...dates.map(d => {
         const ltData = sd(d).littleTums?.deliveryData
@@ -347,15 +350,15 @@ function buildRoomTable(dates, history) {
       }),
     ])
   })
-  body.push(['Initials', ...dates.map(d => {
+  body2.push(['Initials', ...dates.map(d => {
     const lt = sd(d).littleTums
     return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.lunchDone ? '✓' : '–')
   })])
 
   // ── Little Tums — Tea ─────────────────────────────────────────────────
-  body.push(sectionHeaderRow('Little Tums — Tea', colCount))
+  body2.push(sectionHeaderRow('Little Tums — Tea', colCount))
   ltTeaItems.forEach(item => {
-    body.push([
+    body2.push([
       item.label,
       ...dates.map(d => {
         const ltData = sd(d).littleTums?.deliveryData
@@ -365,16 +368,16 @@ function buildRoomTable(dates, history) {
       }),
     ])
   })
-  body.push(['Initials', ...dates.map(d => {
+  body2.push(['Initials', ...dates.map(d => {
     const lt = sd(d).littleTums
     return lt?.completedBy || lt?.signedBy || (lt?.deliveryData?.teaDone ? '✓' : '–')
   })])
 
   // ── Closing Kitchen Check ─────────────────────────────────────────────
-  body.push(sectionHeaderRow('Closing Kitchen Check', colCount))
-  body.push(['All closing checks completed', ...dates.map(d => tick(sd(d).closing))])
+  body2.push(sectionHeaderRow('Closing Kitchen Check', colCount))
+  body2.push(['All closing checks completed', ...dates.map(d => tick(sd(d).closing))])
   closeFridges.forEach(n => {
-    body.push([
+    body2.push([
       `Fridge ${n} temperature`,
       ...dates.map(d => {
         const f = sd(d).closing?.temperatures?.[`fridge${n}`]
@@ -383,14 +386,14 @@ function buildRoomTable(dates, history) {
       }),
     ])
   })
-  body.push(['Initials', ...dates.map(d => sd(d).closing?.completedBy || sd(d).closing?.signedBy || '–')])
+  body2.push(['Initials', ...dates.map(d => sd(d).closing?.completedBy || sd(d).closing?.signedBy || '–')])
 
   // ── Manager Sign-off ──────────────────────────────────────────────────
-  body.push(sectionHeaderRow('Manager Sign-off', colCount))
-  body.push(['Initials', ...dates.map(d => sd(d).signoff?.responses?.managerName || '–')])
-  body.push(['Comments', ...dates.map(d => sd(d).signoff?.responses?.managerComments || '–')])
+  body2.push(sectionHeaderRow('Manager Sign-off', colCount))
+  body2.push(['Initials', ...dates.map(d => sd(d).signoff?.responses?.managerName || '–')])
+  body2.push(['Comments', ...dates.map(d => sd(d).signoff?.responses?.managerComments || '–')])
 
-  return body
+  return { body1, body2 }
 }
 
 function twoColumnText(items) {
@@ -516,42 +519,18 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       doc.setFont('helvetica', 'bold')
       doc.setFontSize(11)
       doc.setTextColor(...FOREST)
-      doc.text('Kitchen Food Safety Diary', pageW / 2, y, { align: 'center' })
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(9)
-      doc.setTextColor(...N_GREEN)
-      doc.text(room, pageW / 2, y + 6, { align: 'center' })
+      doc.text(`Kitchen Food Safety Diary — ${room}`, pageW / 2, y, { align: 'center' })
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(7.5)
       doc.setTextColor(...MID_GREY)
-      doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y + 12, { align: 'center' })
+      doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y + 6, { align: 'center' })
       doc.setDrawColor(...N_GREEN)
       doc.setLineWidth(0.5)
-      doc.line(margin, y + 16, pageW - margin, y + 16)
-      return y + 22
+      doc.line(margin, y + 10, pageW - margin, y + 10)
+      return y + 16
     }
 
-    // First page of this room
-    if (ri > 0) doc.addPage()
-    let y = 8
-    if (logoDataURL) {
-      try { doc.addImage(logoDataURL, 'PNG', (pageW - 22) / 2, y, 22, 22); y += 26 }
-      catch { y += 4 }
-    }
-    y = drawRoomHeader(doc, y)
-
-    // ── Checklist reference panel ───────────────────────────────────────────
-    y = drawChecklistReference(doc, y, margin, pageW)
-
-    // ── Table ──────────────────────────────────────────────────────────────
-    const head = [['', ...dates.map(d => formatDayHeader(d))]]
-    const body = buildRoomTable(dates, history)
-
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      head,
-      body,
+    const tableStyles = {
       headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
       styles: { fontSize: 7, cellPadding: { top: 2, bottom: 2, left: 3, right: 3 }, font: 'helvetica', valign: 'middle' },
       alternateRowStyles: { fillColor: N_CREAM },
@@ -559,19 +538,51 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
         0: { cellWidth: labelColW, textColor: FOREST, fillColor: [245, 247, 245] },
         ...Object.fromEntries(dates.map((_, i) => [i + 1, { cellWidth: dayColW, halign: 'center' }])),
       },
-      didDrawPage: (data) => {
-        // Repeat room label on overflow pages (no logo)
-        if (data.pageNumber > 1 || ri > 0) {
-          const pageNum = doc.internal.getCurrentPageInfo().pageNumber
-          const firstRoomPage = data.settings.startY > 30
-          if (!firstRoomPage) {
-            doc.setFont('helvetica', 'bold')
-            doc.setFontSize(8)
-            doc.setTextColor(...N_GREEN)
-            doc.text(`${room} (continued)`, margin, 8)
-          }
-        }
-      },
+    }
+
+    // ── Page 1: logo + header + reference panel + opening + packed lunches ──
+    if (ri > 0) doc.addPage()
+    let y = 8
+    if (logoDataURL) {
+      try { doc.addImage(logoDataURL, 'PNG', (pageW - 22) / 2, y, 22, 22); y += 26 }
+      catch { y += 4 }
+    }
+    y = drawRoomHeader(doc, y)
+    y = drawChecklistReference(doc, y, margin, pageW)
+
+    const head = [['', ...dates.map(d => formatDayHeader(d))]]
+    const { body1, body2 } = buildRoomTable(dates, history)
+
+    autoTable(doc, {
+      startY: y,
+      margin: { left: margin, right: margin },
+      head,
+      body: body1,
+      ...tableStyles,
+    })
+
+    // ── Page 2: little tums + closing + manager sign-off ───────────────────
+    doc.addPage()
+    let y2 = 8
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(...FOREST)
+    doc.text(`Kitchen Food Safety Diary — ${room}`, pageW / 2, y2, { align: 'center' })
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.setTextColor(...MID_GREY)
+    doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y2 + 5, { align: 'center' })
+    doc.setDrawColor(...N_GREEN)
+    doc.setLineWidth(0.5)
+    doc.line(margin, y2 + 9, pageW - margin, y2 + 9)
+    y2 += 14
+
+    autoTable(doc, {
+      startY: y2,
+      margin: { left: margin, right: margin },
+      head,
+      body: body2,
+      ...tableStyles,
     })
 
   }
