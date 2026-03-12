@@ -1339,7 +1339,7 @@ export function KitchenSection() {
 
     // Lunch — step 1: arrival temperatures
     if (phase === 'lunch') {
-      const allFilled = lunchItems.every(i => deliveryData.lunch?.[i.id]?.temp || deliveryData.lunch?.[i.id]?.skipped)
+      const allFilled = lunchItems.some(i => deliveryData.lunch?.[i.id]?.temp || deliveryData.lunch?.[i.id]?.skipped)
       return (
         <div className="min-h-screen bg-hop-pebble">
           <Header title="Lunch — Arrival" subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
@@ -1437,7 +1437,7 @@ export function KitchenSection() {
 
     // Tea — step 1: arrival temperatures
     if (phase === 'tea') {
-      const allFilled = teaItems.every(i => deliveryData.tea?.[i.id]?.temp || deliveryData.tea?.[i.id]?.skipped)
+      const allFilled = teaItems.some(i => deliveryData.tea?.[i.id]?.temp || deliveryData.tea?.[i.id]?.skipped)
       return (
         <div className="min-h-screen bg-hop-pebble">
           <Header title="Tea — Arrival" subtitle="Little Tums temperatures" showBack onBack={() => setPhase('ltMenu')} />
