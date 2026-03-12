@@ -37,6 +37,75 @@ export function RiskAssessmentDashboard() {
     }
   }
 
+  const isReviewStageDraft = (draft) =>
+    Array.isArray(draft.hazards) && draft.hazards.some(h => h.control_measures)
+
+  const resumeDraft = (draft) => {
+    if (isReviewStageDraft(draft)) {
+      const flatDraft = {
+        unique_id: draft.reference,
+        assessment_type: draft.assessment_type,
+        assessment_date: draft.assessment_date,
+        assessor_name: draft.assessor_name,
+        activity_description: draft.activity_description,
+        location: draft.location,
+        people_at_risk: Array.isArray(draft.people_at_risk)
+          ? draft.people_at_risk.join(', ')
+          : draft.people_at_risk,
+        review_date: draft.review_date,
+        safe_system_of_work: draft.safe_system_of_work || '',
+      }
+      draft.hazards.forEach((h, index) => {
+        const i = index + 1
+        flatDraft[`hazard_${i}`] = h.hazard || ''
+        flatDraft[`pre_rating_${i}`] = h.pre_rating || ''
+        flatDraft[`control_measures_${i}`] = h.control_measures || ''
+        flatDraft[`post_rating_${i}`] = h.post_rating || ''
+        flatDraft[`additional_controls_${i}`] = h.additional_controls || ''
+        flatDraft[`reassess_rating_${i}`] = h.reassess_rating || ''
+      })
+      const formData = {
+        assessmentType: draft.assessment_type,
+        activityName: draft.activity_description,
+        assessmentDate: draft.assessment_date,
+        assessorName: draft.assessor_name,
+        nursery: draft.nursery,
+        location: draft.location,
+        peopleAtRisk: Array.isArray(draft.people_at_risk)
+          ? draft.people_at_risk
+          : (draft.people_at_risk || '').split(',').map(s => s.trim()).filter(Boolean),
+        policiesSelected: draft.policies_selected || [],
+        overview: '',
+      }
+      navigate('/risk-assessment/review', {
+        state: { draft: flatDraft, formData, draftId: draft.id }
+      })
+    } else {
+      const hazards = draft.hazards?.map(h => h.hazard).filter(Boolean) || []
+      navigate('/risk-assessment/new', {
+        state: {
+          prefill: {
+            assessmentType: draft.assessment_type,
+            activityName: draft.activity_description,
+            assessmentDate: draft.assessment_date,
+            assessorName: draft.assessor_name,
+            nursery: draft.nursery,
+            location: draft.location || '',
+            peopleAtRisk: Array.isArray(draft.people_at_risk)
+              ? draft.people_at_risk
+              : (draft.people_at_risk || '').split(',').map(s => s.trim()).filter(Boolean),
+            policiesSelected: draft.policies_selected || [],
+            overview: '',
+            selectedHazards: hazards,
+            suggestedHazards: hazards,
+            customHazards: [],
+          },
+          draftId: draft.id
+        }
+      })
+    }
+  }
+
   const formatDate = (dateStr) => {
     if (!dateStr) return 'N/A'
     return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -87,27 +156,26 @@ export function RiskAssessmentDashboard() {
             </h2>
             <div className="space-y-2">
               {drafts.map((draft) => (
-                <Card key={draft.id} padding="small">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="font-medium text-hop-forest">
-                        {draft.assessment_type}
+                <button key={draft.id} onClick={() => resumeDraft(draft)} className="w-full text-left">
+                  <Card padding="small" className="cursor-pointer hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium text-hop-forest">
+                          {draft.assessment_type}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {draft.activity_description || 'Untitled'}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {draft.nursery} • {formatDate(draft.created_at)}
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {draft.activity_description || 'Untitled'}
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        {draft.nursery} • {formatDate(draft.created_at)}
-                      </div>
+                      <Clock className="w-5 h-5 text-hop-marmalade flex-shrink-0" />
                     </div>
-                    <Clock className="w-5 h-5 text-hop-marmalade flex-shrink-0" />
-                  </div>
-                </Card>
+                  </Card>
+                </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-2 text-center">
-              Draft editing coming soon
-            </p>
           </section>
         )}
 

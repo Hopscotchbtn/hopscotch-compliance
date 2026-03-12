@@ -21,6 +21,9 @@ export function RiskValidationScreen() {
   const location = useLocation()
   const { draft: initialDraft, formData } = location.state || {}
 
+
+  const { draftId: incomingDraftId } = location.state || {}
+  const [draftId, setDraftId] = useState(incomingDraftId || null)
   const [draft, setDraft] = useState(initialDraft || {})
   const [loading, setLoading] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('')
@@ -84,7 +87,7 @@ export function RiskValidationScreen() {
           ...formData,
           ...draft,
           status: 'completed'
-        })
+        }, draftId)
         trackAssessmentEvent('completed', formData).catch(() => {})
       } catch (err) {
         console.error('Failed to save completed assessment:', err)
@@ -113,11 +116,12 @@ export function RiskValidationScreen() {
   const handleSaveDraft = async () => {
     setLoading(true)
     try {
-      await saveRiskAssessment({
+      const { data } = await saveRiskAssessment({
         ...formData,
         ...draft,
         status: 'draft'
-      })
+      }, draftId)
+      if (data && data[0] && !draftId) setDraftId(data[0].id)
       navigate('/risk-assessment')
     } catch (err) {
       console.error('Save draft error:', err)

@@ -1,9 +1,9 @@
 import { supabase } from './supabase'
 
-export const saveRiskAssessment = async (assessmentData) => {
+export const saveRiskAssessment = async (assessmentData, existingId = null) => {
   if (!supabase) {
     console.log('Offline mode: Assessment would be saved:', assessmentData)
-    return { data: [{ id: 'offline-' + Date.now(), ...assessmentData }], error: null }
+    return { data: [{ id: existingId || 'offline-' + Date.now(), ...assessmentData }], error: null }
   }
 
   // Build hazards array with full details for re-downloading
@@ -44,13 +44,23 @@ export const saveRiskAssessment = async (assessmentData) => {
     docx_url: assessmentData.docxUrl,
   }
 
-  const { data, error } = await supabase
-    .from('risk_assessments')
-    .insert([dbData])
-    .select()
-
-  if (error) throw error
-  return { data, error: null }
+  if (existingId) {
+    const { data, error } = await supabase
+      .from('risk_assessments')
+      .update(dbData)
+      .eq('id', existingId)
+      .select()
+      .single()
+    if (error) throw error
+    return { data: [data], error: null }
+  } else {
+    const { data, error } = await supabase
+      .from('risk_assessments')
+      .insert([dbData])
+      .select()
+    if (error) throw error
+    return { data, error: null }
+  }
 }
 
 export const updateRiskAssessment = async (id, fields) => {

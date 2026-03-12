@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Header } from '../../components/Header'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
@@ -29,12 +29,28 @@ const STEPS = [
 
 export function RiskAssessmentWizard() {
   const navigate = useNavigate()
-  const [currentStep, setCurrentStep] = useState(1)
+  const location = useLocation()
+  const { prefill, draftId: incomingDraftId } = location.state || {}
+  const [draftId, setDraftId] = useState(incomingDraftId || null)
+  const [currentStep, setCurrentStep] = useState(prefill ? 3 : 1)
   const [loading, setLoading] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState('')
   const [error, setError] = useState(null)
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(prefill ? {
+    assessmentType: prefill.assessmentType || '',
+    activityName: prefill.activityName || '',
+    assessmentDate: prefill.assessmentDate || new Date().toISOString().split('T')[0],
+    assessorName: prefill.assessorName || storage.getUserName() || '',
+    nursery: prefill.nursery || '',
+    location: prefill.location || '',
+    peopleAtRisk: prefill.peopleAtRisk || [],
+    policiesSelected: prefill.policiesSelected || [],
+    overview: prefill.overview || '',
+    suggestedHazards: prefill.suggestedHazards || [],
+    selectedHazards: prefill.selectedHazards || [],
+    customHazards: prefill.customHazards || [],
+  } : {
     assessmentType: '',
     activityName: '',
     assessmentDate: new Date().toISOString().split('T')[0],
@@ -200,7 +216,8 @@ export function RiskAssessmentWizard() {
       navigate('/risk-assessment/review', {
         state: {
           draft,
-          formData
+          formData,
+          draftId
         }
       })
     } catch (err) {
@@ -216,11 +233,12 @@ export function RiskAssessmentWizard() {
     try {
       setLoading(true)
       const allHazards = [...formData.selectedHazards, ...formData.customHazards]
-      await saveRiskAssessment({
+      const { data } = await saveRiskAssessment({
         ...formData,
         hazards: allHazards.map(h => ({ hazard: h })),
         status: 'draft'
-      })
+      }, draftId)
+      if (data && data[0] && !draftId) setDraftId(data[0].id)
       navigate('/risk-assessment')
     } catch (err) {
       console.error('Save draft error:', err)
@@ -429,7 +447,7 @@ export function RiskAssessmentWizard() {
 
   return (
     <div className="min-h-screen bg-hop-pebble">
-      <Header title="New Risk Assessment" showBack />
+      <Header title={prefill ? "Resume Draft" : "New Risk Assessment"} showBack />
 
       <div className="max-w-lg mx-auto p-4">
         <div className="rounded-xl p-4 mb-4 flex items-start gap-3" style={{ backgroundColor: '#fbee57' }}>
