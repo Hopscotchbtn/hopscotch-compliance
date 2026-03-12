@@ -8,7 +8,7 @@ import { Textarea } from '../../components/ui/Textarea'
 import { Select } from '../../components/ui/Select'
 import { generateDocx, formatAssessmentForDocx } from '../../lib/riskAssessmentAi'
 import { saveRiskAssessment, trackAssessmentEvent } from '../../lib/riskAssessmentDb'
-import { Loader2, Download, Save, ChevronDown, ChevronUp, Edit2, Check } from 'lucide-react'
+import { Loader2, Download, Save, ChevronDown, ChevronUp, Edit2, Check, AlertTriangle } from 'lucide-react'
 
 const RISK_RATINGS = [
   { value: 'H', label: 'High', color: 'bg-red-100 text-red-800 border-red-300' },
@@ -235,6 +235,15 @@ export function RiskValidationScreen() {
       <Header title="Review Assessment" showBack />
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
+        <Card padding="small" className="bg-blue-50 border-blue-200">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-700">
+              <strong>Do not enter personal data</strong> into this form. If this assessment relates to a specific child or group of children, add any personal details directly to the downloaded Word document.
+            </p>
+          </div>
+        </Card>
+
         {error && (
           <Card padding="small" className="bg-red-50 border-red-200">
             <p className="text-red-700 text-sm">{error}</p>

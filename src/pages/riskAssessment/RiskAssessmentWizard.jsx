@@ -432,6 +432,15 @@ export function RiskAssessmentWizard() {
       <Header title="New Risk Assessment" showBack />
 
       <div className="max-w-lg mx-auto p-4">
+        <Card padding="small" className="bg-blue-50 border-blue-200 mb-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-700">
+              <strong>Do not enter personal data</strong> into this form. If this assessment relates to a specific child or group of children, add any personal details directly to the downloaded Word document.
+            </p>
+          </div>
+        </Card>
+
         <StepProgress
           currentStep={currentStep}
           totalSteps={STEPS.length}
