@@ -80,13 +80,13 @@ export function Home() {
         {/* More Tools Section */}
         <div className="border-t border-gray-200 pt-6 mb-8">
           <h3 className="text-center text-gray-500 text-sm font-medium mb-4">More Tools</h3>
-          <div className="space-y-5">
-            <Link to="/risk-assessment">
+          <div>
+            <Link to="/risk-assessment" className="block mb-5">
               <Button color="apple" size="large" fullWidth className="border border-black">
                 <span className="text-lg">📋 Risk Assessments</span>
               </Button>
             </Link>
-            <Link to="/famly-dashboard">
+            <Link to="/famly-dashboard" className="block">
               <Button color="freshair" size="large" fullWidth className="border border-black">
                 <span className="text-lg">📊 Accident &amp; Incident Dashboard</span>
               </Button>
