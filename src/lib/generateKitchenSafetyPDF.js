@@ -535,7 +535,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     if (ri > 0) doc.addPage()
     let y = 8
     if (logoDataURL) {
-      try { doc.addImage(logoDataURL, 'PNG', (pageW - 44) / 2, y, 44, 20); y += 24 }
+      try { doc.addImage(logoDataURL, 'PNG', (pageW - 22) / 2, y, 22, 22); y += 26 }
       catch { y += 4 }
     }
     y = drawRoomHeader(doc, y)
