@@ -106,4 +106,12 @@ export const storage = {
       console.warn('Could not save custom rooms to localStorage')
     }
   },
+
+  clearUserData: () => {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.USER_NAME)
+    } catch {
+      console.warn('Could not clear user data from localStorage')
+    }
+  },
 }

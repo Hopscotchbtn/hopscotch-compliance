@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom'
 const STORAGE_KEY = 'hopscotch_authenticated'
 function handleLogout() {
   localStorage.removeItem(STORAGE_KEY)
+  storage.clearUserData()
   window.location.href = '/'
 }
+import { storage } from '../lib/storage'
 import { LogoWithText } from '../components/Logo'
 import { Button } from '../components/ui/Button'
 import { formatDate } from '../lib/utils'

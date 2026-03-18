@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { storage } from '../lib/storage'
 import { LogoWithText } from './Logo'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
@@ -28,6 +29,7 @@ export function usePasswordAuth() {
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY)
+    storage.clearUserData()
     setIsAuthenticated(false)
   }
 
@@ -91,7 +93,11 @@ export function PasswordGate({ children }) {
           </form>
         </Card>
 
-        <p className="text-center text-gray-400 text-xs mt-6">
+        <p className="text-center text-gray-400 text-xs mt-6 px-2 leading-relaxed">
+          By using this tool, staff acknowledge that their name and signature will be recorded against compliance checks. This data is processed under legal obligation (food safety and Ofsted regulations) and retained for 3 years. For queries contact your manager.
+        </p>
+
+        <p className="text-center text-gray-400 text-xs mt-3">
           Hopscotch Children's Nurseries
         </p>
       </div>
