@@ -63,6 +63,14 @@ export function ChecksMenu() {
             </Button>
           </Link>
 
+          {isHolidayClub && (
+            <Link to="/glue-gun" state={{ section }}>
+              <Button color="sunshine" size="large" fullWidth className="border border-black">
+                <span className="text-lg">🔌 Hot Glue Gun Register</span>
+              </Button>
+            </Link>
+          )}
+
           <div>
             <Link to="/check/firstAidBox" state={{ section }}>
               <Button color={isHolidayClub ? 'blossom' : 'marmalade'} size="large" fullWidth className="border border-black">
@@ -82,14 +90,6 @@ export function ChecksMenu() {
               </div>
             )}
           </div>
-
-          {isHolidayClub && (
-            <Link to="/glue-gun" state={{ section }}>
-              <Button color="marmalade" size="large" fullWidth className="border border-black">
-                <span className="text-lg">🔫 Hot Glue Gun Register</span>
-              </Button>
-            </Link>
-          )}
         </div>
 
         {/* View checks links */}
