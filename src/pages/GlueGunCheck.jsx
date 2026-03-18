@@ -91,7 +91,7 @@ export function GlueGunCheck() {
                 onClick={() => { setView('signOut'); setInitials('') }}
               className="border border-black"
               >
-                🔴 Sign Out Hot Glue Gun
+                🔴 Sign In Hot Glue Gun
               </Button>
               <Button
                 color="apple"
@@ -100,7 +100,7 @@ export function GlueGunCheck() {
                 onClick={() => { setView('signIn'); setInitials('') }}
                 className="border border-black"
               >
-                ✅ Sign In Hot Glue Gun
+                ✅ Sign Out Hot Glue Gun
               </Button>
             </div>
 
