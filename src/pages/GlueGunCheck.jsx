@@ -89,6 +89,7 @@ export function GlueGunCheck() {
                 size="large"
                 fullWidth
                 onClick={() => { setView('signOut'); setInitials('') }}
+              className="border border-black"
               >
                 🔴 Sign Out Hot Glue Gun
               </Button>
@@ -97,6 +98,7 @@ export function GlueGunCheck() {
                 size="large"
                 fullWidth
                 onClick={() => { setView('signIn'); setInitials('') }}
+                className="border border-black"
               >
                 ✅ Sign In Hot Glue Gun
               </Button>
