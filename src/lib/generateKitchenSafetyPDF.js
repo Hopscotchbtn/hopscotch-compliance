@@ -178,15 +178,6 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
     })
     y = doc.lastAutoTable.finalY + 3
 
-    if (sd.signoff.managerSignature) {
-      y = sectionLabel(doc, 'Signature', y, margin)
-      try {
-        doc.setDrawColor(210)
-        doc.setFillColor(...WHITE)
-        doc.roundedRect(margin, y, 80, 24, 2, 2, 'FD')
-        doc.addImage(sd.signoff.managerSignature, 'PNG', margin + 1, y + 1, 78, 22)
-      } catch { /* skip */ }
-    }
   }
 }
 

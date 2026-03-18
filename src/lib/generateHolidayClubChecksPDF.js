@@ -1,7 +1,5 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { supabase } from './supabase'
-
 const FOREST    = [26, 58, 42]
 const MARMALADE = [109, 159, 107]
 const MID_GREY  = [130, 130, 130]
@@ -44,20 +42,6 @@ async function fetchDataURL(url) {
     const res = await fetch(url)
     const blob = await res.blob()
     return blobToDataURL(blob)
-  } catch { return null }
-}
-
-async function fetchSignatureDataURL(url) {
-  if (!url) return null
-  try {
-    // Use Supabase SDK to download — handles auth and CORS
-    const path = url.split('/check-signatures/')[1]
-    if (path && supabase) {
-      const { data, error } = await supabase.storage.from('check-signatures').download(path)
-      if (!error && data) return blobToDataURL(data)
-    }
-    // Fallback to direct fetch
-    return fetchDataURL(url)
   } catch { return null }
 }
 
@@ -107,22 +91,12 @@ export async function generateHolidayClubChecksPDF(nursery, checks, weekStart, w
   })
   y = doc.lastAutoTable.finalY + 8
 
-  // ── Fetch signatures and build rows ───────────────────────────────────────
-  // Sort checks ascending by date
-  const sorted = [...checks].sort((a, b) => a.created_at.localeCompare(b.created_at))
-
-  // Pre-fetch all signature images
-  const sigImages = await Promise.all(
-    sorted.map(c => fetchSignatureDataURL(c.signature_url))
-  )
-
   // ── Sign-off table ────────────────────────────────────────────────────────
-  const SIG_H = 18   // row height for signature rows (mm)
-  const SIG_W = 40   // signature image width (mm)
+  const sorted = [...checks].sort((a, b) => a.created_at.localeCompare(b.created_at))
+  const ROW_H        = 10
   const COL_DATE     = 28
   const COL_INITIALS = 16
-  const COL_SIG      = SIG_W + 4
-  const COL_COMMENTS = pageW - margin * 2 - COL_DATE - COL_INITIALS - COL_SIG
+  const COL_COMMENTS = pageW - margin * 2 - COL_DATE - COL_INITIALS
 
   // Draw header row manually
   doc.setFillColor(...MARMALADE)
@@ -133,7 +107,6 @@ export async function generateHolidayClubChecksPDF(nursery, checks, weekStart, w
   let x = margin + 1.5
   doc.text('Date', x, y + 4.5); x += COL_DATE
   doc.text('Initials', x, y + 4.5); x += COL_INITIALS
-  doc.text('Signature', x, y + 4.5); x += COL_SIG
   doc.text('Comments', x, y + 4.5)
   y += 7
 
@@ -148,53 +121,42 @@ export async function generateHolidayClubChecksPDF(nursery, checks, weekStart, w
 
   for (let i = 0; i < sorted.length; i++) {
     const check = sorted[i]
-    const sigDataURL = sigImages[i]
 
-    // Check if we need a new page
-    if (y + SIG_H > 280) {
+    if (y + ROW_H > 280) {
       doc.addPage()
       y = 14
     }
 
     const rowY = y
-    const rowH = SIG_H
 
     // Row border
     doc.setDrawColor(200)
     doc.setLineWidth(0.2)
-    doc.rect(margin, rowY, pageW - margin * 2, rowH, 'S')
+    doc.rect(margin, rowY, pageW - margin * 2, ROW_H, 'S')
 
     // Column dividers
     doc.setDrawColor(220)
     let cx = margin + COL_DATE
-    doc.line(cx, rowY, cx, rowY + rowH); cx += COL_INITIALS
-    doc.line(cx, rowY, cx, rowY + rowH); cx += COL_SIG
-    doc.line(cx, rowY, cx, rowY + rowH)
+    doc.line(cx, rowY, cx, rowY + ROW_H); cx += COL_INITIALS
+    doc.line(cx, rowY, cx, rowY + ROW_H)
 
     // Date
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
     doc.setTextColor(40, 40, 40)
-    doc.text(formatDate(check.created_at), margin + 1.5, rowY + rowH / 2, { baseline: 'middle' })
+    doc.text(formatDate(check.created_at), margin + 1.5, rowY + ROW_H / 2, { baseline: 'middle' })
 
     // Initials
-    doc.text(check.completed_by || '–', margin + COL_DATE + 1.5, rowY + rowH / 2, { baseline: 'middle' })
-
-    // Signature image
-    if (sigDataURL) {
-      try {
-        doc.addImage(sigDataURL, 'PNG', margin + COL_DATE + COL_INITIALS + 1, rowY + 1, SIG_W, rowH - 2)
-      } catch { /* skip */ }
-    }
+    doc.text(check.completed_by || '–', margin + COL_DATE + 1.5, rowY + ROW_H / 2, { baseline: 'middle' })
 
     // Comments — wrap text
-    const commentX = margin + COL_DATE + COL_INITIALS + COL_SIG + 1.5
+    const commentX = margin + COL_DATE + COL_INITIALS + 1.5
     const commentText = check.overall_notes || '–'
     const wrapped = doc.splitTextToSize(commentText, COL_COMMENTS - 3)
     doc.setFontSize(7.5)
     doc.text(wrapped, commentX, rowY + 3)
 
-    y += rowH
+    y += ROW_H
   }
 
   // ── Footer ────────────────────────────────────────────────────────────────

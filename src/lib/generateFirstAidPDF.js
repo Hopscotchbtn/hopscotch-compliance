@@ -1,7 +1,5 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { supabase } from './supabase'
-
 const FOREST    = [26, 58, 42]
 const GREEN     = [109, 159, 107]
 const MID_GREY  = [130, 130, 130]
@@ -66,18 +64,6 @@ async function fetchDataURL(url) {
   } catch { return null }
 }
 
-async function fetchSignatureDataURL(url) {
-  if (!url) return null
-  try {
-    const path = url.split('/check-signatures/')[1]
-    if (path && supabase) {
-      const { data, error } = await supabase.storage.from('check-signatures').download(path)
-      if (!error && data) return blobToDataURL(data)
-    }
-    return fetchDataURL(url)
-  } catch { return null }
-}
-
 export async function generateFirstAidPDF(nursery, checks, weekStart, weekEnd) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const pageW = doc.internal.pageSize.getWidth()
@@ -124,20 +110,13 @@ export async function generateFirstAidPDF(nursery, checks, weekStart, weekEnd) {
   })
   y = doc.lastAutoTable.finalY + 8
 
-  // ── Fetch signatures ───────────────────────────────────────────────────────
-  const sorted = [...checks].sort((a, b) => a.created_at.localeCompare(b.created_at))
-  const sigImages = await Promise.all(
-    sorted.map(c => fetchSignatureDataURL(c.signature_url))
-  )
-
   // ── Sign-off table ────────────────────────────────────────────────────────
-  const SIG_H = 18
-  const SIG_W = 36
-  const COL_DATE      = 24
-  const COL_INITIALS  = 14
-  const COL_PRESENT   = 20
-  const COL_SIG       = SIG_W + 4
-  const COL_MISSING   = pageW - margin * 2 - COL_DATE - COL_INITIALS - COL_PRESENT - COL_SIG
+  const sorted = [...checks].sort((a, b) => a.created_at.localeCompare(b.created_at))
+  const ROW_H        = 10
+  const COL_DATE     = 24
+  const COL_INITIALS = 14
+  const COL_PRESENT  = 20
+  const COL_MISSING  = pageW - margin * 2 - COL_DATE - COL_INITIALS - COL_PRESENT
 
   // Header row
   doc.setFillColor(...GREEN)
@@ -149,7 +128,6 @@ export async function generateFirstAidPDF(nursery, checks, weekStart, weekEnd) {
   doc.text('Date', x, y + 4.5); x += COL_DATE
   doc.text('Initials', x, y + 4.5); x += COL_INITIALS
   doc.text('All present?', x, y + 4.5); x += COL_PRESENT
-  doc.text('Signature', x, y + 4.5); x += COL_SIG
   doc.text('Missing items for order', x, y + 4.5)
   y += 7
 
@@ -164,10 +142,9 @@ export async function generateFirstAidPDF(nursery, checks, weekStart, weekEnd) {
 
   for (let i = 0; i < sorted.length; i++) {
     const check = sorted[i]
-    const sigDataURL = sigImages[i]
     const { allPresent, missing } = parseNotes(check.overall_notes)
 
-    if (y + SIG_H > 280) {
+    if (y + ROW_H > 280) {
       doc.addPage()
       y = 14
     }
@@ -177,47 +154,39 @@ export async function generateFirstAidPDF(nursery, checks, weekStart, weekEnd) {
     // Row border
     doc.setDrawColor(200)
     doc.setLineWidth(0.2)
-    doc.rect(margin, rowY, pageW - margin * 2, SIG_H, 'S')
+    doc.rect(margin, rowY, pageW - margin * 2, ROW_H, 'S')
 
     // Column dividers
     doc.setDrawColor(220)
     let cx = margin + COL_DATE
-    doc.line(cx, rowY, cx, rowY + SIG_H); cx += COL_INITIALS
-    doc.line(cx, rowY, cx, rowY + SIG_H); cx += COL_PRESENT
-    doc.line(cx, rowY, cx, rowY + SIG_H); cx += COL_SIG
-    doc.line(cx, rowY, cx, rowY + SIG_H)
+    doc.line(cx, rowY, cx, rowY + ROW_H); cx += COL_INITIALS
+    doc.line(cx, rowY, cx, rowY + ROW_H); cx += COL_PRESENT
+    doc.line(cx, rowY, cx, rowY + ROW_H)
 
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(8)
     doc.setTextColor(40, 40, 40)
 
     // Date
-    doc.text(formatDate(check.created_at), margin + 1.5, rowY + SIG_H / 2, { baseline: 'middle' })
+    doc.text(formatDate(check.created_at), margin + 1.5, rowY + ROW_H / 2, { baseline: 'middle' })
 
     // Initials
-    doc.text(check.completed_by || '–', margin + COL_DATE + 1.5, rowY + SIG_H / 2, { baseline: 'middle' })
+    doc.text(check.completed_by || '–', margin + COL_DATE + 1.5, rowY + ROW_H / 2, { baseline: 'middle' })
 
     // All present?
     const presentText = allPresent === true ? 'Yes' : allPresent === false ? 'No' : '–'
     doc.setTextColor(allPresent === true ? 60 : allPresent === false ? 180 : 130, allPresent === true ? 120 : 40, allPresent === true ? 60 : 40)
-    doc.text(presentText, margin + COL_DATE + COL_INITIALS + 1.5, rowY + SIG_H / 2, { baseline: 'middle' })
+    doc.text(presentText, margin + COL_DATE + COL_INITIALS + 1.5, rowY + ROW_H / 2, { baseline: 'middle' })
     doc.setTextColor(40, 40, 40)
 
-    // Signature
-    if (sigDataURL) {
-      try {
-        doc.addImage(sigDataURL, 'PNG', margin + COL_DATE + COL_INITIALS + COL_PRESENT + 1, rowY + 1, SIG_W, SIG_H - 2)
-      } catch { /* skip */ }
-    }
-
     // Missing items
-    const missingX = margin + COL_DATE + COL_INITIALS + COL_PRESENT + COL_SIG + 1.5
+    const missingX = margin + COL_DATE + COL_INITIALS + COL_PRESENT + 1.5
     const missingText = missing || (allPresent ? '–' : '')
     const wrapped = doc.splitTextToSize(missingText, COL_MISSING - 3)
     doc.setFontSize(7.5)
     doc.text(wrapped, missingX, rowY + 3)
 
-    y += SIG_H
+    y += ROW_H
   }
 
   // ── Footer ────────────────────────────────────────────────────────────────
