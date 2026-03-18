@@ -66,7 +66,7 @@ export function ChecksMenu() {
           {isHolidayClub && (
             <Link to="/glue-gun" state={{ section }}>
               <Button color="sunshine" size="large" fullWidth className="border border-black">
-                <span className="text-lg">🔌 Hot Glue Gun Register</span>
+                <span className="text-lg">🎨 Hot Glue Gun Register</span>
               </Button>
             </Link>
           )}
