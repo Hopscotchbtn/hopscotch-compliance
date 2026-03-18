@@ -441,6 +441,51 @@ export const getLastCheck = async (nursery, checkType) => {
   return data[0]
 }
 
+export const getPeriodicKitchenChecks = async (nursery, weekStart, weekEnd) => {
+  if (!supabase) return { weekly: [], calibration: null }
+
+  const start = new Date(weekStart); start.setHours(0, 0, 0, 0)
+  const end   = new Date(weekEnd);   end.setHours(23, 59, 59, 999)
+
+  const [{ data: weekly }, { data: calData }] = await Promise.all([
+    supabase
+      .from('checks')
+      .select('check_type, room, created_at, completed_by')
+      .eq('nursery', nursery)
+      .in('check_type', ['probeCheck', 'supermarketTemp'])
+      .gte('created_at', start.toISOString())
+      .lte('created_at', end.toISOString())
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('checks')
+      .select('created_at, completed_by, room')
+      .eq('nursery', nursery)
+      .eq('check_type', 'probeCalibration')
+      .order('created_at', { ascending: false })
+      .limit(1),
+  ])
+
+  return { weekly: weekly || [], calibration: calData?.[0] || null }
+}
+
+export const getTodayGlueGunEntries = async (nursery) => {
+  if (!supabase) return []
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const { data, error } = await supabase
+    .from('checks')
+    .select('check_type, completed_by, created_at')
+    .eq('nursery', nursery)
+    .in('check_type', ['glueGunOut', 'glueGunIn'])
+    .gte('created_at', today.toISOString())
+    .order('created_at', { ascending: true })
+
+  if (error) return []
+  return data || []
+}
+
 export const getChecksHistory = async (nursery, days = 30) => {
   if (!supabase) {
     console.log('Offline mode: Would fetch checks history')

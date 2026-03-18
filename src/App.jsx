@@ -28,6 +28,7 @@ import { HolidayClubChecklist } from './pages/HolidayClubChecklist'
 import { NurseryRoomChecklist } from './pages/NurseryRoomChecklist'
 import { FirstAidChecklist } from './pages/FirstAidChecklist'
 import { GardenChecklist } from './pages/GardenChecklist'
+import { GlueGunCheck } from './pages/GlueGunCheck'
 import { ChecksMenu } from './pages/ChecksMenu'
 
 function App() {
@@ -48,6 +49,7 @@ function App() {
           <Route path="/issues" element={<Issues />} />
           <Route path="/history" element={<History />} />
           <Route path="/history/request" element={<RequestRecords />} />
+          <Route path="/glue-gun" element={<GlueGunCheck />} />
 
           {/* Kitchen Food Safety */}
           <Route path="/kitchen-safety" element={<KitchenSafety />} />
