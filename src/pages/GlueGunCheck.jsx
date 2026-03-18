@@ -7,10 +7,7 @@ import { submitCheck } from '../lib/supabase'
 import { getTodayGlueGunEntries } from '../lib/supabase'
 import { formatTime } from '../lib/utils'
 
-const LOCATIONS = [
-  { value: 'Holland Road', label: 'Holland Road' },
-  { value: 'School Road', label: 'School Road' },
-]
+const LOCATIONS = ['Holland Road', 'School Road']
 
 const SIGN_OUT_STATEMENT = `I confirm that I am trained to use the hot glue gun and will follow all safety procedures, including supervision, safe handling, and proper storage, as outlined in the risk assessment. I accept responsibility for the equipment while it is signed out to me.`
 
@@ -76,7 +73,7 @@ export function GlueGunCheck() {
             <Select
               label="Location"
               value={nursery}
-              onChange={(val) => { setNursery(val); setView('main') }}
+              onChange={(e) => { setNursery(e.target.value); setView('main') }}
               options={LOCATIONS}
               placeholder="Select location"
             />
