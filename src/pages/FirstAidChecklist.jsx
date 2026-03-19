@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
-import { SignatureCanvas } from '../components/SignatureCanvas'
-import { submitCheck, uploadSignature, getLastCheck } from '../lib/supabase'
+import { submitCheck, getLastCheck } from '../lib/supabase'
 
 const ITEMS = [
   'First Aid booklet',
@@ -40,7 +39,6 @@ export function FirstAidChecklist() {
   const [allPresent, setAllPresent] = useState(null) // true | false | null
   const [missingItems, setMissingItems] = useState('')
   const [initials, setInitials] = useState(initialCompletedBy || '')
-  const [signature, setSignature] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
@@ -57,13 +55,11 @@ export function FirstAidChecklist() {
   const isValid = allPresent !== null
     && (allPresent || missingItems.trim())
     && initials.trim()
-    && signature
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
     setError(null)
     try {
-      const signatureUrl = signature ? await uploadSignature(signature) : null
       const submitItems = ITEMS.map((text, i) => ({
         id: i + 1,
         text,
@@ -79,7 +75,6 @@ export function FirstAidChecklist() {
         notes: allPresent
           ? 'All items present'
           : `Missing items: ${missingItems.trim()}`,
-        signatureUrl,
       })
 
       navigate(section ? `/section/${section}` : '/')
@@ -188,11 +183,6 @@ export function FirstAidChecklist() {
             placeholder="e.g. PF"
             className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest"
           />
-        </div>
-
-        {/* Signature */}
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <SignatureCanvas onSignature={setSignature} />
         </div>
 
         {error && (
