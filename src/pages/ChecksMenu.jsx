@@ -1,30 +1,12 @@
-import { useState, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
 import { formatDate } from '../lib/utils'
-import { getLastCheck } from '../lib/supabase'
-import { storage } from '../lib/storage'
-
-const HOLIDAY_CLUB_LOCATIONS = ['Holland Road', 'School Road']
 
 export function ChecksMenu() {
   const { section } = useParams()
   const title = section === 'holiday-club' ? 'Holiday Club' : 'Nursery'
   const isHolidayClub = section === 'holiday-club'
-  // firstAidDates: { [location]: { created_at } | null }
-  const [firstAidDates, setFirstAidDates] = useState({})
-
-  useEffect(() => {
-    if (!isHolidayClub) return
-    Promise.all(
-      HOLIDAY_CLUB_LOCATIONS.map(loc => getLastCheck(loc, 'firstAidBox'))
-    ).then(results => {
-      const dates = {}
-      HOLIDAY_CLUB_LOCATIONS.forEach((loc, i) => { dates[loc] = results[i] || null })
-      setFirstAidDates(dates)
-    })
-  }, [isHolidayClub])
 
   return (
     <div className="min-h-screen bg-hop-pebble">
@@ -71,25 +53,11 @@ export function ChecksMenu() {
             </Link>
           )}
 
-          <div>
-            <Link to="/check/firstAidBox" state={{ section }}>
-              <Button color={isHolidayClub ? 'blossom' : 'marmalade'} size="large" fullWidth className="border border-black">
-                <span className="text-lg">🩹 {isHolidayClub ? 'First Aid Box Checklist' : 'Weekly First Aid Box Check'}</span>
-              </Button>
-            </Link>
-            {isHolidayClub && Object.keys(firstAidDates).length > 0 && (
-              <div className="mt-1 space-y-0.5">
-                {HOLIDAY_CLUB_LOCATIONS.map(loc => {
-                  const d = firstAidDates[loc]
-                  return (
-                    <p key={loc} className="text-xs text-center text-gray-500">
-                      {loc}: <span className="font-medium">{d ? new Date(d.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Not yet completed'}</span>
-                    </p>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          <Link to="/check/firstAidBox" state={{ section }}>
+            <Button color={isHolidayClub ? 'blossom' : 'marmalade'} size="large" fullWidth className="border border-black">
+              <span className="text-lg">🩹 {isHolidayClub ? 'First Aid Box Checklist' : 'Weekly First Aid Box Check'}</span>
+            </Button>
+          </Link>
         </div>
 
         {/* View checks links */}

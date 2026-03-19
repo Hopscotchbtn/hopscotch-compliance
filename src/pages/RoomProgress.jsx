@@ -8,7 +8,7 @@ import { Button } from '../components/ui/Button'
 import { checkTypes } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
-import { getTodayChecksByType, getChecksForDateRange, getCustomRooms, saveCustomRooms } from '../lib/supabase'
+import { getTodayChecksByType, getChecksForDateRange, getCustomRooms, saveCustomRooms, getLastCheck } from '../lib/supabase'
 import { formatDate } from '../lib/utils'
 import { generateDailyChecksExcel, generateFirstAidExcel, generateNurseryRoomChecksExcel } from '../lib/generateRecordsExcel'
 
@@ -56,6 +56,15 @@ export function RoomProgress() {
   const [dlEnd, setDlEnd] = useState(prevMonth.end)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState(null)
+  const [lastFirstAidCheck, setLastFirstAidCheck] = useState(undefined)
+
+  useEffect(() => {
+    if (checkTypeId === 'firstAidBox' && nursery) {
+      getLastCheck(nursery, 'firstAidBox').then(setLastFirstAidCheck).catch(() => setLastFirstAidCheck(null))
+    } else {
+      setLastFirstAidCheck(undefined)
+    }
+  }, [nursery, checkTypeId])
 
   const handleDownloadExcel = async () => {
     if (!nursery || !dlStart || !dlEnd) return
@@ -278,6 +287,22 @@ export function RoomProgress() {
               </Button>
             </div>
           </Card>
+
+          {checkTypeId === 'firstAidBox' && nursery && lastFirstAidCheck !== undefined && (
+            <div className="mt-4 p-4 bg-white rounded-xl border-2 border-gray-200">
+              <p className="text-sm font-medium text-hop-forest mb-2">Last First Aid Box Check</p>
+              {lastFirstAidCheck ? (
+                <p className="text-sm text-gray-600">
+                  {new Date(lastFirstAidCheck.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {lastFirstAidCheck.completed_by && (
+                    <span className="text-gray-400"> · {lastFirstAidCheck.completed_by}</span>
+                  )}
+                </p>
+              ) : (
+                <p className="text-sm text-gray-400">No previous check recorded</p>
+              )}
+            </div>
+          )}
 
           {(isHolidayClub || checkTypeId === 'firstAidBox' || checkTypeId === 'gardenOutdoor' || (isNursery && checkTypeId === 'roomSafety')) && (
             <div className="mt-4 p-4 bg-white rounded-xl border-2 border-gray-200">
