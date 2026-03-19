@@ -451,3 +451,256 @@ export async function generateKitchenSafetyExcel(nursery, checks, startDate, end
   const start = new Date(startDate).toISOString().slice(0, 10)
   downloadBuffer(buffer, `Kitchen-Safety-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
 }
+
+export async function generateNurseryKitchenSafetyExcel(nursery, checks, rooms, startDate, endDate, periodicChecks) {
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Hopscotch'
+  const logo = await fetchLogo('/hopscotch-logo.png')
+  const LOGO_ROWS = 7
+
+  const addSheetHeader = (ws, title, colCount) => {
+    if (logo) {
+      const logoId = wb.addImage({ base64: logo.base64, extension: 'png' })
+      const targetWidth = 180
+      const targetHeight = logo.dims ? Math.round(targetWidth * (logo.dims.height / logo.dims.width)) : 100
+      ws.addImage(logoId, { tl: { col: 0, row: 0 }, ext: { width: targetWidth, height: targetHeight } })
+    }
+    for (let i = 0; i < LOGO_ROWS; i++) ws.addRow([])
+    const titleRow = ws.addRow([`Hopscotch Nursery – ${title}`])
+    ws.mergeCells(titleRow.number, 1, titleRow.number, colCount)
+    applyHeaderStyle(titleRow.getCell(1))
+    titleRow.height = 20
+    const subRow = ws.addRow([`${nursery}  ·  ${formatDateRange(startDate, endDate)}`])
+    ws.mergeCells(subRow.number, 1, subRow.number, colCount)
+    subRow.getCell(1).font = { color: { argb: FOREST_ARGB }, size: 9 }
+    subRow.getCell(1).alignment = { vertical: 'middle' }
+    ws.addRow([])
+  }
+
+  const addBorders = (ws, dataStart, colCount) => {
+    for (let r = dataStart; r <= ws.rowCount; r++) {
+      for (let c = 1; c <= colCount; c++) {
+        ws.getCell(r, c).border = {
+          top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          right: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+        }
+      }
+    }
+  }
+
+  const styleDataRow = (r) => {
+    r.height = 16
+    r.eachCell(cell => { cell.alignment = { vertical: 'middle', wrapText: true }; cell.font = { size: 10 } })
+    if (r.number % 2 === 0) {
+      r.eachCell(cell => { cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } } })
+    }
+  }
+
+  const parseSd = (check) => {
+    try { return JSON.parse(check.overall_notes || '{}').sectionData || {} } catch { return {} }
+  }
+
+  const fridgeTemp = (sd, section, n) => {
+    const f = sd?.[section]?.temperatures?.[`fridge${n}`]
+    if (!f?.temp) return '–'
+    return f.name ? `${f.name}: ${f.temp}°C` : `${f.temp}°C`
+  }
+
+  const tick = (sd) => sd ? '✓' : '–'
+
+  // ── Per-room daily sheets ─────────────────────────────────────────────────
+  const dailyCols = [
+    { header: 'Date', width: 14 },
+    { header: 'Opening ✓', width: 12 },
+    { header: 'Fridge 1 Opening', width: 18 },
+    { header: 'Fridge 2 Opening', width: 18 },
+    { header: 'Fridge 3 Opening', width: 18 },
+    { header: 'Opening Initials', width: 15 },
+    { header: 'Packed Lunches ✓', width: 16 },
+    { header: 'Packed Lunch Initials', width: 18 },
+    { header: 'Little Tums Lunch ✓', width: 18 },
+    { header: 'Little Tums Tea ✓', width: 16 },
+    { header: 'Little Tums Initials', width: 18 },
+    { header: 'Closing ✓', width: 12 },
+    { header: 'Fridge 1 Closing', width: 18 },
+    { header: 'Fridge 2 Closing', width: 18 },
+    { header: 'Fridge 3 Closing', width: 18 },
+    { header: 'Closing Initials', width: 15 },
+    { header: 'Manager Sign-off', width: 16 },
+    { header: 'Manager Comments', width: 40 },
+  ]
+
+  for (const room of rooms) {
+    const ws = wb.addWorksheet(room.slice(0, 31))
+    addSheetHeader(ws, room, dailyCols.length)
+
+    const headerRow = ws.addRow(dailyCols.map(c => c.header))
+    headerRow.height = 18
+    headerRow.eachCell(cell => applyHeaderStyle(cell, true))
+
+    const byDate = {}
+    checks.filter(c => c.room === room).forEach(c => {
+      const d = new Date(c.created_at)
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      const sd = parseSd(c)
+      if (!byDate[key] || sd) byDate[key] = sd
+    })
+
+    const cursor = new Date(startDate); cursor.setHours(0, 0, 0, 0)
+    const end = new Date(endDate); end.setHours(23, 59, 59, 999)
+    while (cursor <= end) {
+      const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`
+      const sd = byDate[key]
+      const ltData = sd?.littleTums?.deliveryData
+      const r = ws.addRow([
+        formatDate(key),
+        tick(sd?.opening),
+        fridgeTemp(sd, 'opening', 1),
+        fridgeTemp(sd, 'opening', 2),
+        fridgeTemp(sd, 'opening', 3),
+        sd?.opening?.completedBy || sd?.opening?.signedBy || '–',
+        tick(sd?.packedLunch),
+        sd?.packedLunch?.completedBy || '–',
+        ltData ? '✓' : '–',
+        ltData ? '✓' : '–',
+        sd?.littleTums?.completedBy || sd?.littleTums?.signedBy || '–',
+        tick(sd?.closing),
+        fridgeTemp(sd, 'closing', 1),
+        fridgeTemp(sd, 'closing', 2),
+        fridgeTemp(sd, 'closing', 3),
+        sd?.closing?.completedBy || sd?.closing?.signedBy || '–',
+        sd?.signoff?.responses?.managerName || '–',
+        sd?.signoff?.responses?.managerComments || '–',
+      ])
+      styleDataRow(r)
+      cursor.setDate(cursor.getDate() + 1)
+    }
+
+    dailyCols.forEach((col, i) => { ws.getColumn(i + 1).width = col.width })
+    addBorders(ws, LOGO_ROWS + 4, dailyCols.length)
+    await ws.protect('', { selectLockedCells: true, selectUnlockedCells: false })
+  }
+
+  // ── Reheated Food Log sheet ───────────────────────────────────────────────
+  const reheatCols = [
+    { header: 'Date', width: 14 },
+    { header: 'Room', width: 16 },
+    { header: 'Food Name', width: 24 },
+    { header: "Child's Initials", width: 14 },
+    { header: 'Core Temp', width: 14 },
+    { header: 'Pass / Fail', width: 12 },
+    { header: 'Checker Initials', width: 16 },
+  ]
+
+  const wsReheat = wb.addWorksheet('Reheated Food Log')
+  addSheetHeader(wsReheat, 'Reheated Food Log', reheatCols.length)
+
+  const rhHeader = wsReheat.addRow(reheatCols.map(c => c.header))
+  rhHeader.height = 18
+  rhHeader.eachCell(cell => applyHeaderStyle(cell, true))
+
+  const allReheatEntries = []
+  checks.forEach(c => {
+    const sd = parseSd(c)
+    const entries = sd?.reheatTemp?.deliveryData?.reheatEntries || []
+    const d = new Date(c.created_at)
+    const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    entries.filter(e => e.foodName || e.temp).forEach(e => {
+      allReheatEntries.push({ dateKey, room: c.room || '', ...e })
+    })
+  })
+  allReheatEntries.sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+
+  if (allReheatEntries.length === 0) {
+    const r = wsReheat.addRow(['No reheated food entries recorded in this period'])
+    wsReheat.mergeCells(r.number, 1, r.number, reheatCols.length)
+    r.getCell(1).font = { size: 10, color: { argb: 'FF888888' } }
+    r.getCell(1).alignment = { vertical: 'middle' }
+  } else {
+    allReheatEntries.forEach(e => {
+      const temp = parseFloat(e.temp)
+      const passFail = e.temp !== '' && !isNaN(temp) ? (temp >= 75 ? 'Pass' : 'FAIL') : '–'
+      const r = wsReheat.addRow([
+        formatDate(e.dateKey),
+        e.room,
+        e.foodName || '–',
+        e.childInitials || '–',
+        e.temp ? `${e.temp}°C` : '–',
+        passFail,
+        e.checkerInitials || '–',
+      ])
+      styleDataRow(r)
+      if (passFail === 'FAIL') {
+        r.getCell(6).font = { size: 10, bold: true, color: { argb: 'FFB22222' } }
+      }
+    })
+  }
+
+  reheatCols.forEach((col, i) => { wsReheat.getColumn(i + 1).width = col.width })
+  addBorders(wsReheat, LOGO_ROWS + 4, reheatCols.length)
+  await wsReheat.protect('', { selectLockedCells: true, selectUnlockedCells: false })
+
+  // ── Periodic Checks sheet ─────────────────────────────────────────────────
+  const wsP = wb.addWorksheet('Periodic Checks')
+  const pColCount = 4
+  addSheetHeader(wsP, 'Periodic Checks', pColCount)
+
+  const addSectionHeader = (ws, label) => {
+    const r = ws.addRow([label])
+    ws.mergeCells(r.number, 1, r.number, pColCount)
+    applyHeaderStyle(r.getCell(1), true)
+    r.height = 18
+  }
+
+  // Extract periodic data from checks sectionData
+  let latestProbeCheck = null
+  let latestSupermarketTemp = null
+  checks.forEach(c => {
+    const sd = parseSd(c)
+    if (sd?.probeCheck) latestProbeCheck = sd.probeCheck
+    if (sd?.supermarketTemp) latestSupermarketTemp = sd.supermarketTemp
+  })
+
+  // Probe check
+  addSectionHeader(wsP, 'Fridge/Freezer Probe Thermometer Check (Weekly)')
+  const probeSubHeader = wsP.addRow(['Check', 'Temperature', 'Initials', ''])
+  probeSubHeader.eachCell(cell => { cell.font = { bold: true, size: 10, color: { argb: FOREST_ARGB } }; cell.alignment = { vertical: 'middle' } })
+  if (latestProbeCheck) {
+    styleDataRow(wsP.addRow(['Opening', latestProbeCheck.temperatures?.probeOpening ? `${latestProbeCheck.temperatures.probeOpening}°C` : '–', latestProbeCheck.responses?.openingInitials || latestProbeCheck.completedBy || '–', '']))
+    styleDataRow(wsP.addRow(['Closing', latestProbeCheck.temperatures?.probeClosing ? `${latestProbeCheck.temperatures.probeClosing}°C` : '–', latestProbeCheck.responses?.closingInitials || '–', '']))
+  } else {
+    wsP.addRow([{ value: 'Not completed this period', colSpan: pColCount }])
+  }
+
+  wsP.addRow([])
+
+  // Supermarket temps
+  addSectionHeader(wsP, 'Supermarket Food Temperatures (Weekly)')
+  const smSubHeader = wsP.addRow(['Food', 'Time', 'Temperature', 'Initials'])
+  smSubHeader.eachCell(cell => { cell.font = { bold: true, size: 10, color: { argb: FOREST_ARGB } }; cell.alignment = { vertical: 'middle' } })
+  const smEntries = (latestSupermarketTemp?.deliveryData?.supermarketEntries || []).filter(e => e.food || e.temp)
+  if (smEntries.length) {
+    smEntries.forEach(e => styleDataRow(wsP.addRow([e.food || '–', e.time || '–', e.temp ? `${e.temp}°C` : '–', e.initials || '–'])))
+  } else {
+    wsP.addRow(['Not completed this period'])
+  }
+
+  wsP.addRow([])
+
+  // Calibration
+  addSectionHeader(wsP, 'Probe Calibration (Monthly)')
+  const calDate = periodicChecks?.calibration?.created_at
+    ? new Date(periodicChecks.calibration.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'Not recorded'
+  styleDataRow(wsP.addRow([`Last calibration: ${calDate}`, '', '', '']))
+
+  ;[20, 16, 16, 14].forEach((w, i) => { wsP.getColumn(i + 1).width = w })
+  addBorders(wsP, LOGO_ROWS + 4, pColCount)
+  await wsP.protect('', { selectLockedCells: true, selectUnlockedCells: false })
+
+  const buffer = await wb.xlsx.writeBuffer()
+  const start = new Date(startDate).toISOString().slice(0, 10)
+  downloadBuffer(buffer, `Kitchen-Safety-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
+}
