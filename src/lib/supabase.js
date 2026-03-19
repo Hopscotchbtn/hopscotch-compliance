@@ -486,6 +486,25 @@ export const getTodayGlueGunEntries = async (nursery) => {
   return data || []
 }
 
+export const getGlueGunEntriesForRange = async (nursery, startDate, endDate) => {
+  if (!supabase) return []
+
+  const start = new Date(startDate); start.setHours(0, 0, 0, 0)
+  const end = new Date(endDate); end.setHours(23, 59, 59, 999)
+
+  const { data, error } = await supabase
+    .from('checks')
+    .select('check_type, completed_by, created_at')
+    .eq('nursery', nursery)
+    .in('check_type', ['glueGunOut', 'glueGunIn'])
+    .gte('created_at', start.toISOString())
+    .lte('created_at', end.toISOString())
+    .order('created_at', { ascending: true })
+
+  if (error) return []
+  return data || []
+}
+
 export const getChecksHistory = async (nursery, days = 30) => {
   if (!supabase) {
     console.log('Offline mode: Would fetch checks history')

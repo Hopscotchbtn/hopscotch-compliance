@@ -342,6 +342,27 @@ export async function generateFirstAidExcel(nursery, checks, startDate, endDate,
   downloadBuffer(buffer, `First-Aid-Box-Checks-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
 }
 
+export async function generateGlueGunExcel(nursery, entries, startDate, endDate) {
+  const columns = [
+    { header: 'Date', width: 14 },
+    { header: 'Time', width: 10 },
+    { header: 'Action', width: 16 },
+    { header: 'Initials', width: 12 },
+  ]
+
+  const rows = entries.map(e => [
+    formatDate(e.created_at),
+    new Date(e.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+    e.check_type === 'glueGunOut' ? 'Signed In' : 'Signed Out',
+    e.completed_by || '',
+  ])
+
+  const wb = await buildWorkbook('Hot Glue Gun Register', nursery, startDate, endDate, columns, rows, { orgLabel: 'Holiday Club', logoPath: '/hopscotch-holiday-club-logo.png' })
+  const buffer = await wb.xlsx.writeBuffer()
+  const start = new Date(startDate).toISOString().slice(0, 10)
+  downloadBuffer(buffer, `Glue-Gun-Register-${nursery.replace(/\s+/g, '-')}-${start}.xlsx`)
+}
+
 export async function generateKitchenSafetyExcel(nursery, checks, startDate, endDate) {
   const columns = [
     { header: 'Date', width: 14 },
