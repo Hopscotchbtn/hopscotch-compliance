@@ -109,6 +109,13 @@ export function ChecksMenu() {
             📅 View check history (30 days)
           </Link>
         </div>
+
+        {/* GDPR notice */}
+        <div className="rounded-xl p-4 bg-gray-50 border border-gray-200">
+          <p className="text-xs text-gray-500 leading-relaxed">
+            <span className="font-medium text-gray-600">Data notice:</span> Information collected through these checks is recorded for health, safety, and compliance purposes under legitimate interest (UK GDPR Article 6(1)(f)). Only the minimum data required is collected. Records are held securely and retained in line with Hopscotch's data retention policy. Access is restricted to authorised staff only.
+          </p>
+        </div>
       </div>
     </div>
   )
