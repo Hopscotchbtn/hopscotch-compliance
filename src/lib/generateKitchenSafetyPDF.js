@@ -364,6 +364,33 @@ function buildRoomTable(dates, history) {
     return lt?.completedBy || lt?.signedBy || '-'
   })])
 
+  // ── Reheated Food Temperatures ────────────────────────────────────────
+  body2.push(sectionHeaderRow('Reheated Food Temperatures', colCount))
+  const maxReheat = Math.max(0, ...dates.map(d => {
+    const entries = sd(d).reheatTemp?.deliveryData?.reheatEntries || []
+    return entries.filter(e => e.foodName || e.temp).length
+  }))
+  if (maxReheat === 0) {
+    body2.push(['No entries recorded', ...dates.map(() => '-')])
+  } else {
+    for (let i = 0; i < maxReheat; i++) {
+      body2.push([
+        `Entry ${i + 1}`,
+        ...dates.map(d => {
+          const entries = sd(d).reheatTemp?.deliveryData?.reheatEntries || []
+          const e = entries[i]
+          if (!e || (!e.foodName && !e.temp)) return '-'
+          const parts = []
+          if (e.foodName) parts.push(e.foodName)
+          if (e.childInitials) parts.push(`(${e.childInitials})`)
+          if (e.temp) parts.push(`${e.temp}°C`)
+          if (e.checkerInitials) parts.push(`[${e.checkerInitials}]`)
+          return parts.join(' ')
+        }),
+      ])
+    }
+  }
+
   // ── Closing Kitchen Check ─────────────────────────────────────────────
   body2.push(sectionHeaderRow('Closing Kitchen Check', colCount))
   body2.push(['All closing checks completed', ...dates.map(d => tick(sd(d).closing))])

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
-import { SignatureCanvas } from '../components/SignatureCanvas'
-import { submitCheck, uploadSignature } from '../lib/supabase'
+import { submitCheck } from '../lib/supabase'
 
 const ITEMS = [
   { id: 1, text: 'All electrical equipment present must be in good condition, with wires out of reach of children or made safe. (Defective or surplus equipment must be removed from rooms, never left stored in the room)' },
@@ -25,15 +24,12 @@ export function HolidayClubChecklist() {
   const { nursery, completedBy } = location.state || {}
 
   const [comment, setComment] = useState('')
-  const [signature, setSignature] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!nursery) navigate('/')
   }, [nursery, navigate])
-
-  const isValid = signature
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
@@ -47,8 +43,6 @@ export function HolidayClubChecklist() {
         photo_url: null,
       }))
 
-      const signatureUrl = signature ? await uploadSignature(signature) : null
-
       await submitCheck({
         nursery,
         room: 'Holiday Club',
@@ -56,7 +50,6 @@ export function HolidayClubChecklist() {
         completedBy,
         items: submitItems,
         notes: comment.trim(),
-        signatureUrl,
       })
 
       navigate('/section/holiday-club')
@@ -97,10 +90,6 @@ export function HolidayClubChecklist() {
           />
         </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <SignatureCanvas onSignature={setSignature} />
-        </div>
-
         {error && (
           <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
             {error}
@@ -111,10 +100,10 @@ export function HolidayClubChecklist() {
           color="forest"
           size="large"
           fullWidth
-          disabled={isSubmitting || !isValid}
+          disabled={isSubmitting}
           onClick={handleSubmit}
         >
-          {isSubmitting ? 'Submitting...' : !signature ? 'Sign to Submit' : 'Submit Check'}
+          {isSubmitting ? 'Submitting...' : 'Submit Check'}
         </Button>
 
         <div className="text-center space-y-2 pb-4">

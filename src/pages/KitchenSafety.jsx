@@ -9,7 +9,7 @@ import { kitchenSafety, isMonday, isFirstOfMonth } from '../data/checklists'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 import { formatDate, formatTime } from '../lib/utils'
-import { upsertKitchenSafetyCheck, deleteTodayKitchenSafetyChecks, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms, submitCheck, getLastCheck, getKitchenSafetyChecksForRange } from '../lib/supabase'
+import { upsertKitchenSafetyCheck, deleteTodayKitchenSafetyChecks, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms, submitCheck, getLastCheck, getKitchenSafetyChecksForRange, getPeriodicKitchenChecks } from '../lib/supabase'
 import { generateAllRoomsKitchenSafetyPDF, generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 import { generateKitchenSafetyExcel } from '../lib/generateRecordsExcel'
 
@@ -17,6 +17,7 @@ const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Kitchen Checks',
   packedLunch: 'Packed Lunches',
   littleTums: 'Little Tums',
+  reheatTemp: 'Reheated Food Temperature Check',
   closing: 'Closing Kitchen Check',
   signoff: 'Manager Sign-off',
   probeCheck: 'Fridge/Freezer Probe Thermometer Check',
@@ -32,6 +33,7 @@ const DAILY_SECTIONS = [
   { id: 'opening', name: 'Opening Kitchen Checks', icon: '☀️', description: 'Morning checks & fridge temperatures' },
   { id: 'packedLunch', name: 'Packed Lunches', icon: '🥪', description: 'Visual check of packed lunches' },
   { id: 'littleTums', name: 'Little Tums', icon: '🍱', description: 'Nursery meals & tea' },
+  { id: 'reheatTemp', name: 'Reheated Food Temperature Check', icon: '🌡️', description: 'Temperature of reheated food for children' },
   { id: 'closing', name: 'Closing Kitchen Check', icon: '🌙', description: 'End of day fridge temperature' },
   { id: 'signoff', name: 'Manager Sign-off', icon: '✓', description: 'Review & approve' },
 ]
@@ -49,7 +51,7 @@ const NURSERY_SECTIONS = DAILY_SECTIONS.map(s =>
   s.id === 'signoff' ? { ...s, name: 'Manager/Room Lead Sign-off' } : s
 )
 const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
-  .filter(s => s.id !== 'littleTums')
+  .filter(s => s.id !== 'littleTums' && s.id !== 'reheatTemp')
   .map(s => {
     if (s.id === 'opening') return { ...s, name: 'Opening Fridge Checks', description: 'Opening fridge temperatures' }
     if (s.id === 'closing') return { ...s, name: 'Closing Fridge Checks', description: 'Closing fridge temperatures' }
@@ -165,7 +167,8 @@ export function KitchenSafety() {
         const allRoomsList = selectedDownloadRoom === 'all'
           ? [...nurseryRooms, ...customRooms]
           : null
-        const doc = await generateAllRoomsKitchenSafetyPDF(nursery, filteredChecks, weekStartDate, weekEndDate, allRoomsList)
+        const periodicChecks = await getPeriodicKitchenChecks(nursery, weekStartDate, weekEndDate)
+        const doc = await generateAllRoomsKitchenSafetyPDF(nursery, filteredChecks, weekStartDate, weekEndDate, allRoomsList, periodicChecks)
         const roomSuffix = selectedDownloadRoom === 'all' ? '' : `-${selectedDownloadRoom.replace(/\s+/g, '-')}`
         doc.save(`Kitchen-Safety-${nursery.replace(/\s+/g, '-')}${roomSuffix}-${week.value}.pdf`)
       }

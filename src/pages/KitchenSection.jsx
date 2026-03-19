@@ -74,6 +74,8 @@ const getSectionConfig = (sectionId) => {
         items: [],
         isSignoff: true,
       }
+    case 'reheatTemp':
+      return { title: 'Reheated Food Temperature Check', subtitle: 'Daily check', items: [], isReheatTemp: true }
     case 'probeCheck':
       return { title: 'Probe Thermometer Check', subtitle: 'Weekly check', items: [] }
     case 'supermarketTemp':
@@ -228,7 +230,7 @@ export function KitchenSection() {
   const isAlreadyCompleted = !!completedSections?.[sectionId]
 
   const [phase, setPhase] = useState(() => {
-    if (isAlreadyCompleted && config && !config.isPackedLunchOnly && !config.isDeliverySection && !config.isSignoff && !config.isLittleTums) {
+    if (isAlreadyCompleted && config && !config.isPackedLunchOnly && !config.isDeliverySection && !config.isSignoff && !config.isLittleTums && !config.isReheatTemp) {
       return 'summary'
     }
     if (config?.isLittleTums) return 'ltMenu'
@@ -528,6 +530,114 @@ export function KitchenSection() {
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
             />
           </Card>
+
+          <Button color="marmalade" size="large" fullWidth disabled={!isValid} onClick={() => handleComplete()}>
+            Complete
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Reheated Food Temperature Check ───────────────────────────────────────
+  if (sectionId === 'reheatTemp') {
+    const entries = deliveryData.reheatEntries || [{ foodName: '', childInitials: '', temp: '', checkerInitials: '' }]
+
+    const updateEntry = (index, field, value) => {
+      const updated = entries.map((e, i) => i === index ? { ...e, [field]: value } : e)
+      setDeliveryData(prev => ({ ...prev, reheatEntries: updated }))
+    }
+
+    const addEntry = () => {
+      if (entries.length >= 10) return
+      setDeliveryData(prev => ({
+        ...prev,
+        reheatEntries: [...entries, { foodName: '', childInitials: '', temp: '', checkerInitials: '' }],
+      }))
+    }
+
+    const isValid = entries.some(e => e.foodName.trim() && e.temp !== '' && e.checkerInitials.trim())
+
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header title="Reheated Food Temperature Check" subtitle="Daily check" showBack onBack={goBackToSections} />
+        <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+          <div className="bg-hop-freshair/30 border border-hop-freshair rounded-xl px-4 py-3">
+            <p className="text-sm text-hop-forest">
+              Check the core temperature of all reheated food brought in for children. All food must reach a core temperature of <span className="font-semibold">75°C or above</span> before serving.
+            </p>
+          </div>
+
+          {entries.map((entry, index) => (
+            <Card key={index} className="space-y-4">
+              <p className="font-medium text-hop-forest">Food {index + 1}</p>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Name of food <span className="text-hop-marmalade-dark">*</span></label>
+                <input
+                  type="text"
+                  value={entry.foodName}
+                  onChange={(e) => updateEntry(index, 'foodName', e.target.value)}
+                  placeholder="e.g. Chicken pasta"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Child's initials</label>
+                <input
+                  type="text"
+                  value={entry.childInitials}
+                  onChange={(e) => updateEntry(index, 'childInitials', e.target.value)}
+                  placeholder="e.g. JD"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Core temperature <span className="text-hop-marmalade-dark">*</span></label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={entry.temp}
+                    onChange={(e) => updateEntry(index, 'temp', e.target.value)}
+                    placeholder="0.0"
+                    className={`w-full px-4 py-3 pr-12 border-2 rounded-lg text-hop-forest text-lg font-body focus:outline-none focus:border-hop-forest ${
+                      entry.temp !== '' && parseFloat(entry.temp) < 75
+                        ? 'border-hop-marmalade-dark bg-hop-marmalade/10'
+                        : entry.temp !== '' && parseFloat(entry.temp) >= 75
+                        ? 'border-hop-apple bg-hop-apple/10'
+                        : 'border-gray-200'
+                    }`}
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-base">°C</span>
+                </div>
+                {entry.temp !== '' && parseFloat(entry.temp) < 75 && (
+                  <p className="text-xs text-hop-marmalade-dark mt-1">Below 75°C — food has not reached a safe temperature</p>
+                )}
+                {entry.temp !== '' && parseFloat(entry.temp) >= 75 && (
+                  <p className="text-xs text-hop-apple mt-1">✓ Safe temperature reached</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-hop-forest mb-2">Checker's initials <span className="text-hop-marmalade-dark">*</span></label>
+                <input
+                  type="text"
+                  value={entry.checkerInitials}
+                  onChange={(e) => updateEntry(index, 'checkerInitials', e.target.value)}
+                  placeholder="e.g. PF"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
+                />
+              </div>
+            </Card>
+          ))}
+
+          {entries.length < 10 && (
+            <button
+              onClick={addEntry}
+              className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-500 hover:border-hop-forest hover:text-hop-forest text-sm font-medium transition-colors"
+            >
+              + Add another food
+            </button>
+          )}
 
           <Button color="marmalade" size="large" fullWidth disabled={!isValid} onClick={() => handleComplete()}>
             Complete
