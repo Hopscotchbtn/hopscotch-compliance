@@ -288,7 +288,7 @@ export function RoomProgress() {
             </div>
           </Card>
 
-          {checkTypeId === 'firstAidBox' && nursery && lastFirstAidCheck !== undefined && (
+          {isHolidayClub && checkTypeId === 'firstAidBox' && nursery && lastFirstAidCheck !== undefined && (
             <div className="mt-4 p-4 bg-white rounded-xl border-2 border-gray-200">
               <p className="text-sm font-medium text-hop-forest mb-2">Last First Aid Box Check</p>
               {lastFirstAidCheck ? (
