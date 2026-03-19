@@ -5,7 +5,6 @@ import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
 import { submitCheck, getTodayGlueGunEntries, getGlueGunEntriesForRange } from '../lib/supabase'
 import { generateGlueGunExcel } from '../lib/generateRecordsExcel'
-import { getWeekOptions } from '../lib/generateKitchenSafetyPDF'
 
 const LOCATIONS = ['Holland Road', 'School Road']
 
@@ -13,11 +12,26 @@ const SIGN_IN_STATEMENT = `I confirm that I am trained to use the hot glue gun a
 
 const SIGN_OUT_STATEMENT = `I confirm that I have finished using the hot glue gun and have followed all required safety procedures, including supervision, safe handling, and proper storage, as outlined in the risk assessment. I confirm that the equipment has been returned in good condition.`
 
+function getMonthOptions(count = 12) {
+  const options = []
+  const now = new Date()
+  for (let i = 0; i < count; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
+    options.push({ value, label })
+  }
+  return options
+}
+
+const monthOptions = getMonthOptions(12)
+
 export function GlueGunCheck() {
   const location = useLocation()
   const navigate = useNavigate()
 
   const [nursery, setNursery] = useState('')
+  const [expandedPanel, setExpandedPanel] = useState(null) // null | 'signIn' | 'signOut'
   const [signInInitials, setSignInInitials] = useState('')
   const [signOutInitials, setSignOutInitials] = useState('')
   const [submittingIn, setSubmittingIn] = useState(false)
@@ -26,11 +40,13 @@ export function GlueGunCheck() {
   const [errorOut, setErrorOut] = useState(null)
   const [entries, setEntries] = useState([])
 
-  const [selectedWeek, setSelectedWeek] = useState('')
+  const [selectedMonth, setSelectedMonth] = useState('')
   const [downloadingExcel, setDownloadingExcel] = useState(false)
-  const weekOptions = getWeekOptions(5)
 
   const section = location.state?.section || 'holiday-club'
+
+  const hasSignInToday = entries.some(e => e.check_type === 'glueGunOut')
+  const hasSignOutToday = entries.some(e => e.check_type === 'glueGunIn')
 
   useEffect(() => {
     if (nursery) {
@@ -43,6 +59,12 @@ export function GlueGunCheck() {
       const updated = await getTodayGlueGunEntries(nursery).catch(() => [])
       setEntries(updated)
     }
+  }
+
+  const handleTogglePanel = (panel) => {
+    setExpandedPanel(prev => prev === panel ? null : panel)
+    setErrorIn(null)
+    setErrorOut(null)
   }
 
   const handleSignIn = async () => {
@@ -59,6 +81,7 @@ export function GlueGunCheck() {
         notes: null,
       })
       setSignInInitials('')
+      setExpandedPanel(null)
       await refreshEntries()
     } catch (err) {
       console.error(err)
@@ -82,6 +105,7 @@ export function GlueGunCheck() {
         notes: null,
       })
       setSignOutInitials('')
+      setExpandedPanel(null)
       await refreshEntries()
     } catch (err) {
       console.error(err)
@@ -92,21 +116,14 @@ export function GlueGunCheck() {
   }
 
   const handleDownloadExcel = async () => {
-    const week = weekOptions.find(w => w.value === selectedWeek)
-    if (!week || !nursery) return
+    if (!selectedMonth || !nursery) return
+    const [year, month] = selectedMonth.split('-').map(Number)
+    const startDate = new Date(year, month - 1, 1)
+    const endDate = new Date(year, month, 0) // last day of month
     setDownloadingExcel(true)
     try {
-      const entries = await getGlueGunEntriesForRange(
-        nursery,
-        new Date(week.value + 'T12:00:00'),
-        new Date(week.sunday + 'T12:00:00')
-      )
-      await generateGlueGunExcel(
-        nursery,
-        entries,
-        new Date(week.value + 'T12:00:00'),
-        new Date(week.sunday + 'T12:00:00')
-      )
+      const data = await getGlueGunEntriesForRange(nursery, startDate, endDate)
+      await generateGlueGunExcel(nursery, data, startDate, endDate)
     } catch (err) {
       console.error('Excel generation error:', err)
     } finally {
@@ -129,7 +146,7 @@ export function GlueGunCheck() {
           <Select
             label="Location"
             value={nursery}
-            onChange={(e) => setNursery(e.target.value)}
+            onChange={(e) => { setNursery(e.target.value); setExpandedPanel(null) }}
             options={LOCATIONS}
             placeholder="Select location"
           />
@@ -137,86 +154,142 @@ export function GlueGunCheck() {
 
         {nursery && (
           <>
-            {/* Download Excel */}
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-              <p className="text-sm font-medium text-hop-forest mb-3">Download Register</p>
-              <select
-                value={selectedWeek}
-                onChange={(e) => setSelectedWeek(e.target.value)}
-                className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest mb-3"
+            {/* Sign In button + expandable panel */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => handleTogglePanel('signIn')}
+                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
               >
-                <option value="">Select a week…</option>
-                {weekOptions.map(w => (
-                  <option key={w.value} value={w.value}>{w.label}</option>
-                ))}
-              </select>
-              <Button
-                color="marmalade"
-                size="large"
-                fullWidth
-                disabled={!selectedWeek || downloadingExcel}
-                onClick={handleDownloadExcel}
-              >
-                {downloadingExcel ? 'Generating…' : 'Download Excel'}
-              </Button>
+                <div className="flex items-center gap-3">
+                  {hasSignInToday ? (
+                    <div className="w-8 h-8 rounded-full bg-hop-apple flex items-center justify-center flex-shrink-0">
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-hop-sunshine/30 flex items-center justify-center flex-shrink-0">
+                      <span className="text-base">✏️</span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-hop-forest">Sign In — Hot Glue Gun</p>
+                    {hasSignInToday && (
+                      <p className="text-xs text-hop-apple mt-0.5">Signed in today</p>
+                    )}
+                  </div>
+                </div>
+                <svg
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedPanel === 'signIn' ? 'rotate-180' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {expandedPanel === 'signIn' && (
+                <div className="px-5 pb-5 pt-1 border-t border-gray-100 space-y-4">
+                  <p className="text-sm text-gray-700 leading-relaxed">{SIGN_IN_STATEMENT}</p>
+                  <div>
+                    <label className="block text-sm font-medium text-hop-forest mb-1">
+                      Initials <span className="text-hop-marmalade-dark">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={signInInitials}
+                      onChange={(e) => setSignInInitials(e.target.value)}
+                      placeholder="e.g. PF"
+                      maxLength={5}
+                      autoFocus
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest uppercase"
+                    />
+                  </div>
+                  {errorIn && <p className="text-sm text-red-600">{errorIn}</p>}
+                  <div className="flex gap-3">
+                    <Button
+                      color="sunshine"
+                      size="large"
+                      fullWidth
+                      disabled={!signInInitials.trim() || submittingIn}
+                      onClick={handleSignIn}
+                    >
+                      {submittingIn ? 'Submitting...' : 'Confirm Sign In'}
+                    </Button>
+                    <Button color="pebble" fullWidth onClick={() => setExpandedPanel(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Sign In */}
-            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 space-y-4">
-              <p className="text-sm font-semibold text-hop-forest">Sign In — Hot Glue Gun</p>
-              <p className="text-sm text-gray-700 leading-relaxed">{SIGN_IN_STATEMENT}</p>
-              <div>
-                <label className="block text-sm font-medium text-hop-forest mb-1">
-                  Initials <span className="text-hop-marmalade-dark">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={signInInitials}
-                  onChange={(e) => setSignInInitials(e.target.value)}
-                  placeholder="e.g. PF"
-                  maxLength={5}
-                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest uppercase"
-                />
-              </div>
-              {errorIn && <p className="text-sm text-red-600">{errorIn}</p>}
-              <Button
-                color="sunshine"
-                size="large"
-                fullWidth
-                disabled={!signInInitials.trim() || submittingIn}
-                onClick={handleSignIn}
+            {/* Sign Out button + expandable panel */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => handleTogglePanel('signOut')}
+                className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
               >
-                {submittingIn ? 'Submitting...' : 'Confirm Sign In'}
-              </Button>
-            </div>
+                <div className="flex items-center gap-3">
+                  {hasSignOutToday ? (
+                    <div className="w-8 h-8 rounded-full bg-hop-apple flex items-center justify-center flex-shrink-0">
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-hop-sunshine/30 flex items-center justify-center flex-shrink-0">
+                      <span className="text-base">✏️</span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-hop-forest">Sign Out — Hot Glue Gun</p>
+                    {hasSignOutToday && (
+                      <p className="text-xs text-hop-apple mt-0.5">Signed out today</p>
+                    )}
+                  </div>
+                </div>
+                <svg
+                  className={`w-5 h-5 text-gray-400 transition-transform ${expandedPanel === 'signOut' ? 'rotate-180' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-            {/* Sign Out */}
-            <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200 space-y-4">
-              <p className="text-sm font-semibold text-hop-forest">Sign Out — Hot Glue Gun</p>
-              <p className="text-sm text-gray-700 leading-relaxed">{SIGN_OUT_STATEMENT}</p>
-              <div>
-                <label className="block text-sm font-medium text-hop-forest mb-1">
-                  Initials <span className="text-hop-marmalade-dark">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={signOutInitials}
-                  onChange={(e) => setSignOutInitials(e.target.value)}
-                  placeholder="e.g. PF"
-                  maxLength={5}
-                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest uppercase"
-                />
-              </div>
-              {errorOut && <p className="text-sm text-red-600">{errorOut}</p>}
-              <Button
-                color="sunshine"
-                size="large"
-                fullWidth
-                disabled={!signOutInitials.trim() || submittingOut}
-                onClick={handleSignOut}
-              >
-                {submittingOut ? 'Submitting...' : 'Confirm Sign Out'}
-              </Button>
+              {expandedPanel === 'signOut' && (
+                <div className="px-5 pb-5 pt-1 border-t border-gray-100 space-y-4">
+                  <p className="text-sm text-gray-700 leading-relaxed">{SIGN_OUT_STATEMENT}</p>
+                  <div>
+                    <label className="block text-sm font-medium text-hop-forest mb-1">
+                      Initials <span className="text-hop-marmalade-dark">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={signOutInitials}
+                      onChange={(e) => setSignOutInitials(e.target.value)}
+                      placeholder="e.g. PF"
+                      maxLength={5}
+                      autoFocus
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest uppercase"
+                    />
+                  </div>
+                  {errorOut && <p className="text-sm text-red-600">{errorOut}</p>}
+                  <div className="flex gap-3">
+                    <Button
+                      color="sunshine"
+                      size="large"
+                      fullWidth
+                      disabled={!signOutInitials.trim() || submittingOut}
+                      onClick={handleSignOut}
+                    >
+                      {submittingOut ? 'Submitting...' : 'Confirm Sign Out'}
+                    </Button>
+                    <Button color="pebble" fullWidth onClick={() => setExpandedPanel(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Today's log */}
@@ -237,6 +310,37 @@ export function GlueGunCheck() {
                 </div>
               </div>
             )}
+
+            {/* Download Register */}
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+              <p className="text-sm font-medium text-hop-forest mb-3">Download Register</p>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest mb-3"
+              >
+                <option value="">Select a month…</option>
+                {monthOptions.map(m => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+              <Button
+                color="marmalade"
+                size="large"
+                fullWidth
+                disabled={!selectedMonth || downloadingExcel}
+                onClick={handleDownloadExcel}
+              >
+                {downloadingExcel ? 'Generating…' : 'Download Excel'}
+              </Button>
+            </div>
+
+            {/* GDPR notice */}
+            <div className="rounded-xl p-4 bg-gray-50 border border-gray-200">
+              <p className="text-xs text-gray-500 leading-relaxed">
+                <span className="font-medium text-gray-600">Data notice:</span> Initials are recorded for health and safety accountability purposes under legitimate interest (UK GDPR Article 6(1)(f)). Only the minimum data required is collected. Records are held securely and retained in line with Hopscotch's data retention policy. Access to downloaded records is restricted to authorised staff only.
+              </p>
+            </div>
 
             <div className="text-center pt-2">
               <button
