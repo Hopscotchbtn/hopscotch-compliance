@@ -476,7 +476,7 @@ export const getTodayGlueGunEntries = async (nursery) => {
 
   const { data, error } = await supabase
     .from('checks')
-    .select('check_type, completed_by, created_at')
+    .select('check_type, completed_by, created_at, overall_notes')
     .eq('nursery', nursery)
     .in('check_type', ['glueGunOut', 'glueGunIn'])
     .gte('created_at', today.toISOString())
@@ -494,7 +494,7 @@ export const getGlueGunEntriesForRange = async (nursery, startDate, endDate) => 
 
   const { data, error } = await supabase
     .from('checks')
-    .select('check_type, completed_by, created_at')
+    .select('check_type, completed_by, created_at, overall_notes')
     .eq('nursery', nursery)
     .in('check_type', ['glueGunOut', 'glueGunIn'])
     .gte('created_at', start.toISOString())

@@ -28,7 +28,9 @@ export function GlueGunCheck() {
   const [nursery, setNursery] = useState('')
   const [expandedPanel, setExpandedPanel] = useState(null) // null | 'signIn' | 'signOut'
   const [signInInitials, setSignInInitials] = useState('')
+  const [signInComments, setSignInComments] = useState('')
   const [signOutInitials, setSignOutInitials] = useState('')
+  const [signOutComments, setSignOutComments] = useState('')
   const [submittingIn, setSubmittingIn] = useState(false)
   const [submittingOut, setSubmittingOut] = useState(false)
   const [errorIn, setErrorIn] = useState(null)
@@ -75,9 +77,10 @@ export function GlueGunCheck() {
         checkType: 'glueGunOut',
         completedBy: signInInitials.trim().toUpperCase(),
         items: [],
-        notes: null,
+        notes: signInComments.trim() || null,
       })
       setSignInInitials('')
+      setSignInComments('')
       setExpandedPanel(null)
       await refreshEntries()
     } catch (err) {
@@ -99,9 +102,10 @@ export function GlueGunCheck() {
         checkType: 'glueGunIn',
         completedBy: signOutInitials.trim().toUpperCase(),
         items: [],
-        notes: null,
+        notes: signOutComments.trim() || null,
       })
       setSignOutInitials('')
+      setSignOutComments('')
       setExpandedPanel(null)
       await refreshEntries()
     } catch (err) {
@@ -188,6 +192,18 @@ export function GlueGunCheck() {
                   <p className="text-sm text-gray-700 leading-relaxed">{SIGN_IN_STATEMENT}</p>
                   <div>
                     <label className="block text-sm font-medium text-hop-forest mb-1">
+                      Comments
+                    </label>
+                    <textarea
+                      value={signInComments}
+                      onChange={(e) => setSignInComments(e.target.value)}
+                      placeholder="Any comments (optional)"
+                      rows={2}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-hop-forest mb-1">
                       Initials <span className="text-hop-marmalade-dark">*</span>
                     </label>
                     <input
@@ -257,6 +273,18 @@ export function GlueGunCheck() {
                   <p className="text-sm text-gray-700 leading-relaxed">{SIGN_OUT_STATEMENT}</p>
                   <div>
                     <label className="block text-sm font-medium text-hop-forest mb-1">
+                      Comments
+                    </label>
+                    <textarea
+                      value={signOutComments}
+                      onChange={(e) => setSignOutComments(e.target.value)}
+                      placeholder="Any comments (optional)"
+                      rows={2}
+                      className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-hop-forest mb-1">
                       Initials <span className="text-hop-marmalade-dark">*</span>
                     </label>
                     <input
@@ -294,13 +322,18 @@ export function GlueGunCheck() {
                 <p className="text-sm font-semibold text-hop-forest mb-3">Today's log</p>
                 <div className="space-y-2">
                   {entries.map((e, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm">
-                      <span className={`font-medium ${e.check_type === 'glueGunOut' ? 'text-hop-marmalade-dark' : 'text-green-700'}`}>
-                        {e.check_type === 'glueGunOut' ? 'Signed in' : 'Signed out'}
-                      </span>
-                      <span className="text-gray-500">
-                        {e.completed_by} · {formatEntryTime(e.created_at)}
-                      </span>
+                    <div key={i} className="text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className={`font-medium ${e.check_type === 'glueGunOut' ? 'text-hop-marmalade-dark' : 'text-green-700'}`}>
+                          {e.check_type === 'glueGunOut' ? 'Signed in' : 'Signed out'}
+                        </span>
+                        <span className="text-gray-500">
+                          {e.completed_by} · {formatEntryTime(e.created_at)}
+                        </span>
+                      </div>
+                      {e.overall_notes && (
+                        <p className="text-xs text-gray-400 mt-0.5 pl-1">{e.overall_notes}</p>
+                      )}
                     </div>
                   ))}
                 </div>

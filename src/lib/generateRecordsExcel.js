@@ -345,8 +345,10 @@ export async function generateFirstAidExcel(nursery, checks, startDate, endDate,
 export async function generateGlueGunExcel(nursery, entries, startDate, endDate) {
   const columns = [
     { header: 'Date', width: 16 },
-    { header: 'Signed In Initials', width: 24 },
-    { header: 'Signed Out Initials', width: 24 },
+    { header: 'Signed In Initials', width: 22 },
+    { header: 'Sign In Comments', width: 36 },
+    { header: 'Signed Out Initials', width: 22 },
+    { header: 'Sign Out Comments', width: 36 },
   ]
 
   // Index entries by local date
@@ -354,9 +356,14 @@ export async function generateGlueGunExcel(nursery, entries, startDate, endDate)
   entries.forEach(e => {
     const d = new Date(e.created_at)
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    if (!byDate[key]) byDate[key] = { signedIn: [], signedOut: [] }
-    if (e.check_type === 'glueGunOut') byDate[key].signedIn.push(e.completed_by || '')
-    else byDate[key].signedOut.push(e.completed_by || '')
+    if (!byDate[key]) byDate[key] = { signedIn: [], signedInComments: [], signedOut: [], signedOutComments: [] }
+    if (e.check_type === 'glueGunOut') {
+      byDate[key].signedIn.push(e.completed_by || '')
+      if (e.overall_notes) byDate[key].signedInComments.push(e.overall_notes)
+    } else {
+      byDate[key].signedOut.push(e.completed_by || '')
+      if (e.overall_notes) byDate[key].signedOutComments.push(e.overall_notes)
+    }
   })
 
   // One row per date in range
@@ -371,7 +378,9 @@ export async function generateGlueGunExcel(nursery, entries, startDate, endDate)
     rows.push([
       formatDate(key),
       day ? day.signedIn.join(', ') : '',
+      day ? day.signedInComments.join(' | ') : '',
       day ? day.signedOut.join(', ') : '',
+      day ? day.signedOutComments.join(' | ') : '',
     ])
     cursor.setDate(cursor.getDate() + 1)
   }
