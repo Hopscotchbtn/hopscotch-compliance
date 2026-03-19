@@ -344,18 +344,37 @@ export async function generateFirstAidExcel(nursery, checks, startDate, endDate,
 
 export async function generateGlueGunExcel(nursery, entries, startDate, endDate) {
   const columns = [
-    { header: 'Date', width: 14 },
-    { header: 'Time', width: 10 },
-    { header: 'Action', width: 16 },
-    { header: 'Initials', width: 12 },
+    { header: 'Date', width: 16 },
+    { header: 'Signed In Initials', width: 24 },
+    { header: 'Signed Out Initials', width: 24 },
   ]
 
-  const rows = entries.map(e => [
-    formatDate(e.created_at),
-    new Date(e.created_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
-    e.check_type === 'glueGunOut' ? 'Signed In' : 'Signed Out',
-    e.completed_by || '',
-  ])
+  // Index entries by local date
+  const byDate = {}
+  entries.forEach(e => {
+    const d = new Date(e.created_at)
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    if (!byDate[key]) byDate[key] = { signedIn: [], signedOut: [] }
+    if (e.check_type === 'glueGunOut') byDate[key].signedIn.push(e.completed_by || '')
+    else byDate[key].signedOut.push(e.completed_by || '')
+  })
+
+  // One row per date in range
+  const rows = []
+  const cursor = new Date(startDate)
+  cursor.setHours(0, 0, 0, 0)
+  const end = new Date(endDate)
+  end.setHours(23, 59, 59, 999)
+  while (cursor <= end) {
+    const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}-${String(cursor.getDate()).padStart(2, '0')}`
+    const day = byDate[key]
+    rows.push([
+      formatDate(key),
+      day ? day.signedIn.join(', ') : '',
+      day ? day.signedOut.join(', ') : '',
+    ])
+    cursor.setDate(cursor.getDate() + 1)
+  }
 
   const wb = await buildWorkbook('Hot Glue Gun Register', nursery, startDate, endDate, columns, rows, { orgLabel: 'Holiday Club', logoPath: '/hopscotch-holiday-club-logo.png' })
   const buffer = await wb.xlsx.writeBuffer()

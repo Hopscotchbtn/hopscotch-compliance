@@ -12,19 +12,14 @@ const SIGN_IN_STATEMENT = `I confirm that I am trained to use the hot glue gun a
 
 const SIGN_OUT_STATEMENT = `I confirm that I have finished using the hot glue gun and have followed all required safety procedures, including supervision, safe handling, and proper storage, as outlined in the risk assessment. I confirm that the equipment has been returned in good condition.`
 
-function getMonthOptions(count = 12) {
-  const options = []
+function defaultDateRange() {
   const now = new Date()
-  for (let i = 0; i < count; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    const label = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
-    options.push({ value, label })
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: now.toISOString().slice(0, 10),
   }
-  return options
 }
-
-const monthOptions = getMonthOptions(12)
 
 export function GlueGunCheck() {
   const location = useLocation()
@@ -40,8 +35,10 @@ export function GlueGunCheck() {
   const [errorOut, setErrorOut] = useState(null)
   const [entries, setEntries] = useState([])
 
-  const [selectedMonth, setSelectedMonth] = useState('')
+  const [dlStart, setDlStart] = useState(() => defaultDateRange().start)
+  const [dlEnd, setDlEnd] = useState(() => defaultDateRange().end)
   const [downloadingExcel, setDownloadingExcel] = useState(false)
+  const [downloadError, setDownloadError] = useState(null)
 
   const section = location.state?.section || 'holiday-club'
 
@@ -116,16 +113,15 @@ export function GlueGunCheck() {
   }
 
   const handleDownloadExcel = async () => {
-    if (!selectedMonth || !nursery) return
-    const [year, month] = selectedMonth.split('-').map(Number)
-    const startDate = new Date(year, month - 1, 1)
-    const endDate = new Date(year, month, 0) // last day of month
+    if (!dlStart || !dlEnd || !nursery) return
     setDownloadingExcel(true)
+    setDownloadError(null)
     try {
-      const data = await getGlueGunEntriesForRange(nursery, startDate, endDate)
-      await generateGlueGunExcel(nursery, data, startDate, endDate)
+      const data = await getGlueGunEntriesForRange(nursery, new Date(dlStart + 'T00:00:00'), new Date(dlEnd + 'T23:59:59'))
+      await generateGlueGunExcel(nursery, data, new Date(dlStart + 'T00:00:00'), new Date(dlEnd + 'T23:59:59'))
     } catch (err) {
       console.error('Excel generation error:', err)
+      setDownloadError('Failed to generate. Please try again.')
     } finally {
       setDownloadingExcel(false)
     }
@@ -313,26 +309,37 @@ export function GlueGunCheck() {
 
             {/* Download Register */}
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-              <p className="text-sm font-medium text-hop-forest mb-3">Download Register</p>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest mb-3"
-              >
-                <option value="">Select a month…</option>
-                {monthOptions.map(m => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
+              <p className="text-sm font-medium text-hop-forest mb-3">📥 Download Register</p>
+              <div className="flex gap-2 mb-3">
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 mb-1">From</p>
+                  <input
+                    type="date"
+                    value={dlStart}
+                    onChange={e => setDlStart(e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest"
+                  />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 mb-1">To</p>
+                  <input
+                    type="date"
+                    value={dlEnd}
+                    onChange={e => setDlEnd(e.target.value)}
+                    className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-hop-forest text-sm font-body focus:outline-none focus:border-hop-forest"
+                  />
+                </div>
+              </div>
               <Button
                 color="marmalade"
                 size="large"
                 fullWidth
-                disabled={!selectedMonth || downloadingExcel}
+                disabled={!dlStart || !dlEnd || !nursery || downloadingExcel}
                 onClick={handleDownloadExcel}
               >
                 {downloadingExcel ? 'Generating…' : 'Download Excel'}
               </Button>
+              {downloadError && <p className="mt-2 text-xs text-red-600">{downloadError}</p>}
             </div>
 
             {/* GDPR notice */}
