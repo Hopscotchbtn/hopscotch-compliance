@@ -138,6 +138,39 @@ export function KitchenSafetySummaryEntry({ check, section = '' }) {
   )
 }
 
+export function GlueGunSummaryEntry({ checks }) {
+  const nursery = checks[0]?.nursery
+  const signIns = checks.filter(c => c.check_type === 'glueGunOut')
+  const signOuts = checks.filter(c => c.check_type === 'glueGunIn')
+  const formatTime = (isoStr) => new Date(isoStr).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+
+  return (
+    <Card>
+      <div className="flex items-start gap-3">
+        <StatusDot status="pass" />
+        <div className="flex-1 min-w-0">
+          <span className="font-medium text-hop-forest">Hot Glue Gun Register</span>
+          {nursery && <p className="text-sm text-gray-500">{nursery}</p>}
+          <div className="mt-2 space-y-1">
+            {signIns.map((e, i) => (
+              <div key={`in-${i}`} className="flex items-center gap-2 text-xs">
+                <span className="text-hop-marmalade-dark">✓</span>
+                <span className="text-hop-forest">Signed in — {e.completed_by} · {formatTime(e.created_at)}</span>
+              </div>
+            ))}
+            {signOuts.map((e, i) => (
+              <div key={`out-${i}`} className="flex items-center gap-2 text-xs">
+                <span className="text-green-600">✓</span>
+                <span className="text-hop-forest">Signed out — {e.completed_by} · {formatTime(e.created_at)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 export function RoomSafetyGroupEntry({ nursery, checks }) {
   const completedRooms = new Set(checks.map(c => c.room))
 

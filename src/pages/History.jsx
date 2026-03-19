@@ -6,14 +6,17 @@ import { Card } from '../components/ui/Card'
 import { getChecksHistory } from '../lib/supabase'
 import { nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
-import { SummaryEntry, RoomSafetyGroupEntry, KitchenSafetySummaryEntry } from '../components/SummaryEntry'
+import { SummaryEntry, RoomSafetyGroupEntry, KitchenSafetySummaryEntry, GlueGunSummaryEntry } from '../components/SummaryEntry'
 
 const holidayClubLocations = ['Holland Road', 'School Road']
+
+const GLUE_GUN_TYPES = ['glueGunOut', 'glueGunIn']
 
 const holidayClubCheckTypes = [
   { value: 'roomSafety', label: 'Holiday Club Daily Checks' },
   { value: 'kitchenSafety', label: 'Daily Kitchen Safety' },
   { value: 'firstAidBox', label: 'Weekly First Aid Box Check' },
+  { value: 'glueGun', label: 'Hot Glue Gun Register' },
 ]
 
 const nurseryCheckTypes = [
@@ -67,11 +70,15 @@ export function History() {
     }
   }
 
-  const allowedTypes = availableCheckTypes.map(t => t.value)
+  const allowedTypes = availableCheckTypes.flatMap(t => t.value === 'glueGun' ? GLUE_GUN_TYPES : [t.value])
   const filteredChecks = checks
     .filter(c => nurseryFilter === 'all' ? locationOptions.includes(c.nursery) : true)
     .filter(c => allowedTypes.includes(c.check_type))
-    .filter(c => checkTypeFilter === 'all' || c.check_type === checkTypeFilter)
+    .filter(c => {
+      if (checkTypeFilter === 'all') return true
+      if (checkTypeFilter === 'glueGun') return GLUE_GUN_TYPES.includes(c.check_type)
+      return c.check_type === checkTypeFilter
+    })
 
   const checksByDate = filteredChecks.reduce((acc, check) => {
     const date = new Date(check.created_at)
@@ -254,11 +261,15 @@ const isToday = (date) => date?.toDateString() === today.toDateString()
                       {(() => {
                         // Group nursery roomSafety checks (multiple rooms) into one entry
                         const roomSafetyByNursery = {}
+                        const glueGunByNursery = {}
                         const otherChecks = []
                         selectedDateChecks.forEach(check => {
                           if (check.check_type === 'roomSafety' && section !== 'holiday-club') {
                             if (!roomSafetyByNursery[check.nursery]) roomSafetyByNursery[check.nursery] = []
                             roomSafetyByNursery[check.nursery].push(check)
+                          } else if (GLUE_GUN_TYPES.includes(check.check_type)) {
+                            if (!glueGunByNursery[check.nursery]) glueGunByNursery[check.nursery] = []
+                            glueGunByNursery[check.nursery].push(check)
                           } else {
                             otherChecks.push(check)
                           }
@@ -276,6 +287,9 @@ const isToday = (date) => date?.toDateString() === today.toDateString()
                           <>
                             {Object.entries(roomSafetyByNursery).map(([nurseryName, roomChecks]) => (
                               <RoomSafetyGroupEntry key={`rs-${nurseryName}`} nursery={nurseryName} checks={roomChecks} />
+                            ))}
+                            {Object.entries(glueGunByNursery).map(([nurseryName, ggChecks]) => (
+                              <GlueGunSummaryEntry key={`gg-${nurseryName}`} checks={ggChecks} />
                             ))}
                             {dedupedOther.map(check => (
                               check.check_type === 'kitchenSafety'

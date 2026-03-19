@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Select } from '../components/ui/Select'
-import { SummaryEntry, RoomSafetyGroupEntry, KitchenSafetySummaryEntry } from '../components/SummaryEntry'
+import { SummaryEntry, RoomSafetyGroupEntry, KitchenSafetySummaryEntry, GlueGunSummaryEntry } from '../components/SummaryEntry'
 import { getTodayChecks } from '../lib/supabase'
 import { nurseries } from '../data/nurseries'
 import { formatDate } from '../lib/utils'
@@ -109,11 +109,14 @@ export function Summary() {
                 </h3>
                 <div className="space-y-3">
                   {(() => {
+                    const glueGunTypes = ['glueGunOut', 'glueGunIn']
                     const roomSafetyChecks = section !== 'holiday-club' ? nurseryChecks.filter(c => c.check_type === 'roomSafety') : []
                     const otherChecks = section !== 'holiday-club' ? nurseryChecks.filter(c => c.check_type !== 'roomSafety') : nurseryChecks
+                    const glueGunChecks = otherChecks.filter(c => glueGunTypes.includes(c.check_type))
                     // Deduplicate kitchenSafety: keep only the most recent per room (getTodayChecks is DESC so first wins)
                     const seenKS = new Set()
                     const deduped = otherChecks.filter(c => {
+                      if (glueGunTypes.includes(c.check_type)) return false
                       if (c.check_type !== 'kitchenSafety') return true
                       const key = c.room || ''
                       if (seenKS.has(key)) return false
@@ -124,6 +127,9 @@ export function Summary() {
                       <>
                         {roomSafetyChecks.length > 0 && (
                           <RoomSafetyGroupEntry key="rs-group" nursery={nurseryName} checks={roomSafetyChecks} />
+                        )}
+                        {glueGunChecks.length > 0 && (
+                          <GlueGunSummaryEntry key="glue-gun-group" checks={glueGunChecks} />
                         )}
                         {deduped.map(check => (
                           check.check_type === 'kitchenSafety'
