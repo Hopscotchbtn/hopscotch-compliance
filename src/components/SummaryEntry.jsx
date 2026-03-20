@@ -65,11 +65,15 @@ export function SummaryEntry({ check, section = '' }) {
 
 const KITCHEN_SECTION_LABELS = {
   opening: { holiday: 'Opening Fridge Checks', nursery: 'Opening Kitchen Checks' },
+  sterilisation: { holiday: null, nursery: 'Sterilisation Equipment & Feeding Bottle Checks' },
   packedLunch: { holiday: 'Packed Lunches', nursery: 'Packed Lunches' },
   littleTums: { holiday: null, nursery: 'Little Tums' },
+  reheatTemp: { holiday: null, nursery: 'Reheated Food Temperature Check' },
   closing: { holiday: 'Closing Fridge Checks', nursery: 'Closing Kitchen Check' },
   signoff: { holiday: 'Manager Sign-off', nursery: 'Manager/Room Lead Sign-off' },
 }
+
+const STERILISATION_ROOMS = ['Blue Room', 'Yellow Room']
 
 export function KitchenSafetySummaryEntry({ check, section = '' }) {
   const isHolidayClub = section === 'holiday-club'
@@ -99,7 +103,11 @@ export function KitchenSafetySummaryEntry({ check, section = '' }) {
   })
 
   const dailySectionIds = Object.entries(KITCHEN_SECTION_LABELS)
-    .filter(([, v]) => isHolidayClub ? v.holiday !== null : true)
+    .filter(([id, v]) => {
+      if (isHolidayClub && v.holiday === null) return false
+      if (id === 'sterilisation' && !STERILISATION_ROOMS.includes(check.room)) return false
+      return true
+    })
     .map(([id]) => id)
 
   const anyDone = dailySectionIds.some(id => completedSections[id])
