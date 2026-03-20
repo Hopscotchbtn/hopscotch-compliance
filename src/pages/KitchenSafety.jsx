@@ -15,8 +15,7 @@ import { generateKitchenSafetyExcel, generateNurseryKitchenSafetyExcel } from '.
 
 const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Kitchen Checks',
-  sterilisationMorning: 'Sterilisation Equipment & Feeding Bottle Checks (Morning)',
-  sterilisationAfternoon: 'Sterilisation Equipment & Feeding Bottle Checks (Afternoon)',
+  sterilisation: 'Sterilisation Equipment & Feeding Bottle Checks',
   packedLunch: 'Packed Lunches',
   littleTums: 'Little Tums',
   reheatTemp: 'Reheated Food Temperature Check',
@@ -53,8 +52,7 @@ const STERILISATION_ROOMS = ['Blue Room', 'Yellow Room']
 
 const NURSERY_SECTIONS = [
   DAILY_SECTIONS[0],
-  { id: 'sterilisationMorning', name: 'Sterilisation Checks — Morning', icon: '🍼', description: 'Morning sterilisation equipment checks' },
-  { id: 'sterilisationAfternoon', name: 'Sterilisation Checks — Afternoon', icon: '🍼', description: 'Afternoon sterilisation check' },
+  { id: 'sterilisation', name: 'Sterilisation Equipment & Feeding Bottle Checks', icon: '🍼', description: 'Morning and afternoon sterilisation checks' },
   ...DAILY_SECTIONS.slice(1).map(s => s.id === 'signoff' ? { ...s, name: 'Manager/Room Lead Sign-off' } : s),
 ]
 const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
@@ -100,10 +98,7 @@ export function KitchenSafety() {
   const SECTIONS = isHolidayClub ? HOLIDAY_CLUB_SECTIONS : NURSERY_SECTIONS
 
   const getSectionsForRoom = (room) =>
-    SECTIONS.filter(s =>
-      !['sterilisationMorning', 'sterilisationAfternoon'].includes(s.id) ||
-      STERILISATION_ROOMS.includes(room)
-    )
+    SECTIONS.filter(s => s.id !== 'sterilisation' || STERILISATION_ROOMS.includes(room))
 
   const [nursery, setNursery] = useState(() => {
     const last = storage.getLastNursery()
