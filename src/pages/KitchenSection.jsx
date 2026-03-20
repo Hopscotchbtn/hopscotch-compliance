@@ -60,10 +60,17 @@ const getSectionConfig = (sectionId) => {
         items: [],
         isLittleTums: true,
       }
-    case 'sterilisation':
+    case 'sterilisationMorning':
       return {
         title: 'Sterilisation Equipment & Feeding Bottle Checks',
-        subtitle: 'Morning & afternoon checks',
+        subtitle: 'Morning checks',
+        items: [],
+        isSterilisation: true,
+      }
+    case 'sterilisationAfternoon':
+      return {
+        title: 'Sterilisation Equipment & Feeding Bottle Checks',
+        subtitle: 'Afternoon check',
         items: [],
         isSterilisation: true,
       }
@@ -1703,91 +1710,83 @@ export function KitchenSection() {
 
   // ── Sterilisation Equipment & Feeding Bottle Checks ───────────────────────
   if (config.isSterilisation) {
-    const MORNING_ITEMS = [
-      { id: 's1', text: 'Sterilising equipment is clean and filled with fresh water' },
-      { id: 's2', text: 'Electric steam / microwave steam sterilisers are being used on the correct temperature / power setting and for the correct time' },
-      { id: 's3', text: 'Bottles and feeding equipment are sterilised before use' },
-    ]
-    const AFTERNOON_ITEMS = [
-      { id: 's3pm', text: 'Bottles and feeding equipment are sterilised before use' },
-    ]
+    const ITEMS = sectionId === 'sterilisationMorning'
+      ? [
+          { id: 's1', text: 'Sterilising equipment is clean and filled with fresh water' },
+          { id: 's2', text: 'Electric steam / microwave steam sterilisers are being used on the correct temperature / power setting and for the correct time' },
+          { id: 's3', text: 'Bottles and feeding equipment are sterilised before use' },
+        ]
+      : [
+          { id: 's3pm', text: 'Bottles and feeding equipment are sterilised before use' },
+        ]
 
-    const updateSteril = (period, id, field, value) => {
+    const updateItem = (id, yn) => {
       setDeliveryData(prev => ({
         ...prev,
-        sterilisation: {
-          ...prev.sterilisation,
-          [period]: {
-            ...prev.sterilisation?.[period],
-            [id]: { ...prev.sterilisation?.[period]?.[id], [field]: value },
-          },
+        items: {
+          ...prev.items,
+          [id]: { ...prev.items?.[id], yn, time: new Date().toISOString() },
         },
       }))
     }
 
-    const steril = deliveryData.sterilisation || {}
-    const morningComplete = MORNING_ITEMS.every(
-      item => steril.morning?.[item.id]?.yn && steril.morning?.[item.id]?.initials?.trim()
-    )
-
-    const renderItem = (period, item) => {
-      const entry = steril[period]?.[item.id] || {}
-      return (
-        <div key={item.id} className="space-y-2 py-3 border-b border-gray-100 last:border-0">
-          <p className="text-sm text-hop-forest">{item.text}</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex gap-1">
-              <button
-                onClick={() => updateSteril(period, item.id, 'yn', 'yes')}
-                className={`px-3 py-1.5 rounded text-sm font-medium ${entry.yn === 'yes' ? 'bg-hop-apple text-white' : 'bg-white border border-gray-300 text-gray-600'}`}
-              >
-                Y
-              </button>
-              <button
-                onClick={() => updateSteril(period, item.id, 'yn', 'no')}
-                className={`px-3 py-1.5 rounded text-sm font-medium ${entry.yn === 'no' ? 'bg-hop-marmalade-dark text-white' : 'bg-white border border-gray-300 text-gray-600'}`}
-              >
-                N
-              </button>
-            </div>
-            <input
-              type="text"
-              value={entry.time || ''}
-              onChange={(e) => updateSteril(period, item.id, 'time', e.target.value)}
-              placeholder="Time"
-              className="w-20 px-2 py-1.5 border border-gray-300 rounded text-sm text-hop-forest focus:outline-none focus:border-hop-forest"
-            />
-            <input
-              type="text"
-              value={entry.initials || ''}
-              onChange={(e) => updateSteril(period, item.id, 'initials', e.target.value)}
-              placeholder="Initials"
-              className="w-20 px-2 py-1.5 border border-gray-300 rounded text-sm text-hop-forest focus:outline-none focus:border-hop-forest"
-            />
-          </div>
-        </div>
-      )
+    const updateInitials = (id, initials) => {
+      setDeliveryData(prev => ({
+        ...prev,
+        items: {
+          ...prev.items,
+          [id]: { ...prev.items?.[id], initials },
+        },
+      }))
     }
+
+    const items = deliveryData.items || {}
+    const allComplete = ITEMS.every(item => items[item.id]?.yn && items[item.id]?.initials?.trim())
 
     return (
       <div className="min-h-screen bg-hop-pebble">
         <Header title={config.title} subtitle={config.subtitle} showBack onBack={goBackToSections} />
         <div className="px-4 py-6 max-w-md mx-auto space-y-4">
-          <Card>
-            <h3 className="font-medium text-hop-forest mb-1">Morning Checks</h3>
-            <div>
-              {MORNING_ITEMS.map(item => renderItem('morning', item))}
-            </div>
+          <Card className="space-y-1">
+            {ITEMS.map(item => {
+              const entry = items[item.id] || {}
+              return (
+                <div key={item.id} className="py-3 border-b border-gray-100 last:border-0 space-y-2">
+                  <p className="text-sm text-hop-forest">{item.text}</p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => updateItem(item.id, 'yes')}
+                        className={`px-4 py-1.5 rounded text-sm font-medium ${entry.yn === 'yes' ? 'bg-hop-apple text-white' : 'bg-white border border-gray-300 text-gray-600'}`}
+                      >
+                        Yes
+                      </button>
+                      <button
+                        onClick={() => updateItem(item.id, 'no')}
+                        className={`px-4 py-1.5 rounded text-sm font-medium ${entry.yn === 'no' ? 'bg-hop-marmalade-dark text-white' : 'bg-white border border-gray-300 text-gray-600'}`}
+                      >
+                        No
+                      </button>
+                    </div>
+                    {entry.time && (
+                      <span className="text-xs text-gray-400">
+                        {new Date(entry.time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                    <input
+                      type="text"
+                      value={entry.initials || ''}
+                      onChange={(e) => updateInitials(item.id, e.target.value)}
+                      placeholder="Initials"
+                      className="w-20 px-2 py-1.5 border border-gray-300 rounded text-sm text-hop-forest focus:outline-none focus:border-hop-forest"
+                    />
+                  </div>
+                </div>
+              )
+            })}
           </Card>
 
-          <Card>
-            <h3 className="font-medium text-hop-forest mb-1">Afternoon Check</h3>
-            <div>
-              {AFTERNOON_ITEMS.map(item => renderItem('afternoon', item))}
-            </div>
-          </Card>
-
-          <Button color="marmalade" size="large" fullWidth disabled={!morningComplete} onClick={() => handleComplete()}>
+          <Button color="marmalade" size="large" fullWidth disabled={!allComplete} onClick={() => handleComplete()}>
             Complete
           </Button>
         </div>

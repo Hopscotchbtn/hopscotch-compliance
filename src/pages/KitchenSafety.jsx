@@ -15,7 +15,8 @@ import { generateKitchenSafetyExcel, generateNurseryKitchenSafetyExcel } from '.
 
 const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Kitchen Checks',
-  sterilisation: 'Sterilisation Equipment & Feeding Bottle Checks',
+  sterilisationMorning: 'Sterilisation Equipment & Feeding Bottle Checks (Morning)',
+  sterilisationAfternoon: 'Sterilisation Equipment & Feeding Bottle Checks (Afternoon)',
   packedLunch: 'Packed Lunches',
   littleTums: 'Little Tums',
   reheatTemp: 'Reheated Food Temperature Check',
@@ -48,11 +49,12 @@ const MONTHLY_SECTIONS = [
   { id: 'probeCalibration', name: 'Probe Calibration Check', icon: '🔬', description: 'Monthly calibration of probe thermometers' },
 ]
 
-const STERILISATION_SECTION = { id: 'sterilisation', name: 'Sterilisation Equipment & Feeding Bottle Checks', icon: '🍼', description: 'Morning and afternoon sterilisation checks' }
+const STERILISATION_ROOMS = ['Blue Room', 'Yellow Room']
 
 const NURSERY_SECTIONS = [
   DAILY_SECTIONS[0],
-  STERILISATION_SECTION,
+  { id: 'sterilisationMorning', name: 'Sterilisation Checks — Morning', icon: '🍼', description: 'Morning sterilisation equipment checks' },
+  { id: 'sterilisationAfternoon', name: 'Sterilisation Checks — Afternoon', icon: '🍼', description: 'Afternoon sterilisation check' },
   ...DAILY_SECTIONS.slice(1).map(s => s.id === 'signoff' ? { ...s, name: 'Manager/Room Lead Sign-off' } : s),
 ]
 const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
@@ -96,6 +98,12 @@ export function KitchenSafety() {
   const isHolidayClub = section === 'holiday-club'
   const locationOptions = isHolidayClub ? holidayClubLocations : nurseries
   const SECTIONS = isHolidayClub ? HOLIDAY_CLUB_SECTIONS : NURSERY_SECTIONS
+
+  const getSectionsForRoom = (room) =>
+    SECTIONS.filter(s =>
+      !['sterilisationMorning', 'sterilisationAfternoon'].includes(s.id) ||
+      STERILISATION_ROOMS.includes(room)
+    )
 
   const [nursery, setNursery] = useState(() => {
     const last = storage.getLastNursery()
@@ -407,7 +415,8 @@ export function KitchenSafety() {
               const saved = storage.getKitchenSafetyState(roomKey(nursery, room))
               const completed = saved?.completedSections || {}
               const completedCount = Object.values(completed).filter(Boolean).length
-              const allDone = completedCount === SECTIONS.length
+              const roomSections = getSectionsForRoom(room)
+              const allDone = completedCount === roomSections.length
 
               return (
                 <div key={room} className="relative">
@@ -431,7 +440,7 @@ export function KitchenSafety() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                         </svg>
                       ) : completedCount > 0 ? (
-                        <span className="text-white text-xs font-bold">{completedCount}/{SECTIONS.length}</span>
+                        <span className="text-white text-xs font-bold">{completedCount}/{roomSections.length}</span>
                       ) : (
                         <div className="w-3 h-3 rounded-full bg-gray-300" />
                       )}
@@ -439,7 +448,7 @@ export function KitchenSafety() {
                     <div className="flex-1">
                       <p className="font-medium text-hop-forest">{room}</p>
                       {completedCount > 0 && !allDone && (
-                        <p className="text-sm text-hop-marmalade-dark">{completedCount} of {SECTIONS.length} sections done</p>
+                        <p className="text-sm text-hop-marmalade-dark">{completedCount} of {roomSections.length} sections done</p>
                       )}
                       {allDone && (
                         <p className="text-sm text-hop-apple">Completed</p>
@@ -573,20 +582,25 @@ export function KitchenSafety() {
 
       <div className="px-4 py-6 max-w-md mx-auto">
         {/* Overall progress */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-600">Today's Progress</span>
-            <span className="text-sm font-medium text-hop-forest">
-              {getCompletedCount()} of {SECTIONS.length} sections
-            </span>
-          </div>
-          <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-hop-marmalade transition-all duration-500 ease-out rounded-full"
-              style={{ width: `${(getCompletedCount() / SECTIONS.length) * 100}%` }}
-            />
-          </div>
-        </div>
+        {(() => {
+          const activeSections = getSectionsForRoom(selectedRoom)
+          return (
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-600">Today's Progress</span>
+                <span className="text-sm font-medium text-hop-forest">
+                  {getCompletedCount()} of {activeSections.length} sections
+                </span>
+              </div>
+              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-hop-marmalade transition-all duration-500 ease-out rounded-full"
+                  style={{ width: `${(getCompletedCount() / activeSections.length) * 100}%` }}
+                />
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Weekly/Monthly alerts */}
         {!isHolidayClub && (showWeeklyProbeCheck || showMonthlyCalibration) && (
@@ -615,7 +629,7 @@ export function KitchenSafety() {
             <p className="text-sm font-semibold text-hop-forest uppercase tracking-wide">Daily Checks</p>
           </div>
           <div className="divide-y divide-gray-100">
-            {SECTIONS.map((sectionItem) => {
+            {getSectionsForRoom(selectedRoom).map((sectionItem) => {
               const isComplete = completedSections[sectionItem.id]
               const isLocked = isSectionLocked(sectionItem.id)
 
