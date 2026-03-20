@@ -11,7 +11,6 @@ import { storage } from '../lib/storage'
 import { formatDate, formatTime } from '../lib/utils'
 import { upsertKitchenSafetyCheck, deleteTodayKitchenSafetyChecks, getTodayKitchenSafetyCheck, getCustomRooms, saveCustomRooms, submitCheck, getLastCheck, getKitchenSafetyChecksForRange, getPeriodicKitchenChecks } from '../lib/supabase'
 import { generateAllRoomsKitchenSafetyPDF, generateKitchenSafetyPDF, getWeekOptions } from '../lib/generateKitchenSafetyPDF'
-import { generateKitchenSafetyExcel, generateNurseryKitchenSafetyExcel } from '../lib/generateRecordsExcel'
 
 const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Kitchen Checks',
@@ -140,8 +139,7 @@ export function KitchenSafety() {
   const weekOptions = getWeekOptions(5)
 
   const [downloading, setDownloading] = useState(false)
-  const [downloadingExcel, setDownloadingExcel] = useState(false)
-  const [downloadingNurseryExcel, setDownloadingNurseryExcel] = useState(false)
+
   const [selectedDownloadRoom, setSelectedDownloadRoom] = useState('all')
 
   const handleDownloadPDF = async () => {
@@ -188,35 +186,6 @@ export function KitchenSafety() {
     }
   }
 
-  const handleDownloadExcel = async () => {
-    const week = weekOptions.find(w => w.value === selectedWeek)
-    if (!week) return
-    setDownloadingExcel(true)
-    try {
-      const checks = await getKitchenSafetyChecksForRange(nursery, new Date(week.value + 'T12:00:00'), new Date(week.sunday + 'T12:00:00'))
-      await generateKitchenSafetyExcel(nursery, checks, new Date(week.value + 'T12:00:00'), new Date(week.sunday + 'T12:00:00'))
-    } finally {
-      setDownloadingExcel(false)
-    }
-  }
-
-  const handleDownloadNurseryExcel = async () => {
-    const week = weekOptions.find(w => w.value === selectedWeek)
-    if (!week) return
-    setDownloadingNurseryExcel(true)
-    try {
-      const start = new Date(week.value + 'T12:00:00')
-      const end = new Date(week.sunday + 'T12:00:00')
-      const [checks, periodicChecks] = await Promise.all([
-        getKitchenSafetyChecksForRange(nursery, start, end),
-        getPeriodicKitchenChecks(nursery, start, end),
-      ])
-      const allRooms = [...nurseryRooms, ...customRooms]
-      await generateNurseryKitchenSafetyExcel(nursery, checks, allRooms, start, end, periodicChecks)
-    } finally {
-      setDownloadingNurseryExcel(false)
-    }
-  }
 
   // Fetch last completion dates for weekly + monthly checks
   useEffect(() => {
@@ -506,7 +475,7 @@ export function KitchenSafety() {
               </button>
             )}
           </div>
-          {/* Download PDF / Excel */}
+          {/* Download PDF */}
           <div className="mt-6 p-4 bg-white rounded-xl border-2 border-gray-200">
             <p className="text-sm font-medium text-hop-forest mb-3">Download Weekly Records</p>
             <div className="flex gap-2 mb-3">
@@ -531,26 +500,15 @@ export function KitchenSafety() {
                 ))}
               </select>
             </div>
-            <div className="flex gap-2">
-              <Button
-                color="marmalade"
-                size="large"
-                fullWidth
-                disabled={!selectedWeek || !nursery || downloading}
-                onClick={handleDownloadPDF}
-              >
-                {downloading ? 'Generating…' : 'PDF'}
-              </Button>
-              <Button
-                color="freshair"
-                size="large"
-                fullWidth
-                disabled={!selectedWeek || !nursery || downloadingNurseryExcel}
-                onClick={handleDownloadNurseryExcel}
-              >
-                {downloadingNurseryExcel ? 'Generating…' : 'Excel'}
-              </Button>
-            </div>
+            <Button
+              color="marmalade"
+              size="large"
+              fullWidth
+              disabled={!selectedWeek || !nursery || downloading}
+              onClick={handleDownloadPDF}
+            >
+              {downloading ? 'Generating…' : 'Download PDF'}
+            </Button>
           </div>
 
           <div className="mt-4 text-center">

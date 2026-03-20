@@ -10,7 +10,7 @@ const nurseryPackedLunchChecks = [
 ]
 
 const FOREST     = [26, 58, 42]
-const MARMALADE  = [224, 122, 28]
+const MARMALADE  = [253, 136, 74]
 const LIGHT_GREY = [248, 248, 248]
 const MID_GREY   = [130, 130, 130]
 const WHITE      = [255, 255, 255]
@@ -709,9 +709,9 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
         body: [
           ['All checks completed', sd.opening?.completedBy || sd.opening?.signedBy ? 'Yes' : '-', openInitials],
           ['Time', fmtTime(sd.opening?.completedAt), ''],
-          ['Fridge 1', fridgeResultCell('opening', 1), ''],
-          ['Fridge 2', fridgeResultCell('opening', 2), ''],
-          ['Fridge 3', fridgeResultCell('opening', 3), ''],
+          ['Fridge 1', fridgeResultCell('opening', 1), openInitials],
+          ['Fridge 2', fridgeResultCell('opening', 2), openInitials],
+          ['Fridge 3', fridgeResultCell('opening', 3), openInitials],
         ],
         headStyles: cHead, styles: cStyles,
         columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 18, halign: 'center' }, 2: { cellWidth: 17, halign: 'center' } },
@@ -727,9 +727,9 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
         head: [['Closing Kitchen Check', 'Result', 'Initials']],
         body: [
           ['All checks completed', sd.closing?.completedBy || sd.closing?.signedBy ? 'Yes' : '-', closeInitials],
-          ['Fridge 1', fridgeResultCell('closing', 1), ''],
-          ['Fridge 2', fridgeResultCell('closing', 2), ''],
-          ['Fridge 3', fridgeResultCell('closing', 3), ''],
+          ['Fridge 1', fridgeResultCell('closing', 1), closeInitials],
+          ['Fridge 2', fridgeResultCell('closing', 2), closeInitials],
+          ['Fridge 3', fridgeResultCell('closing', 3), closeInitials],
         ],
         headStyles: cHead, styles: cStyles,
         columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 18, halign: 'center' }, 2: { cellWidth: 17, halign: 'center' } },
@@ -799,7 +799,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
             body: ltRows,
             headStyles: cHead, styles: cStyles,
             columnStyles: {
-              0: { cellWidth: 86 },
+              0: { cellWidth: 100 },
               1: { cellWidth: 12, halign: 'center' },
               2: { cellWidth: 18, halign: 'center' },
               3: { cellWidth: 20, halign: 'center' },
@@ -868,13 +868,13 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       // ── Comments & Sign-off (side by side) ────────────────────────────────
       const commentsW = W * 0.62
       const signoffX  = margin + commentsW + 4
-      const signHeadStyles = { ...cHead, fontSize: 6.5, cellPadding: 1.5 }
+      const signHeadStyles = { ...cHead, cellPadding: { top: 1, bottom: 1, left: 2.5, right: 2.5 } }
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: pageW - (margin + commentsW) },
         head: [['Comments']],
         body: [[sd.signoff?.responses?.managerComments || '']],
-        headStyles: signHeadStyles, styles: { ...cStyles, minCellHeight: 14 },
+        headStyles: signHeadStyles, styles: cStyles, bodyStyles: { minCellHeight: 14 },
         theme: 'grid',
       })
       const commentsEnd = doc.lastAutoTable.finalY
@@ -883,7 +883,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
         margin: { left: signoffX, right: margin },
         head: [['Manager/Room Lead Sign Off']],
         body: [[sd.signoff?.responses?.managerName || '']],
-        headStyles: signHeadStyles, styles: { ...cStyles, minCellHeight: 14 },
+        headStyles: signHeadStyles, styles: cStyles, bodyStyles: { minCellHeight: 14 },
         theme: 'grid',
       })
       y = Math.max(commentsEnd, doc.lastAutoTable.finalY) + 3
