@@ -15,6 +15,7 @@ import { generateKitchenSafetyExcel, generateNurseryKitchenSafetyExcel } from '.
 
 const KITCHEN_SECTION_LABELS = {
   opening: 'Opening Kitchen Checks',
+  sterilisation: 'Sterilisation Equipment & Feeding Bottle Checks',
   packedLunch: 'Packed Lunches',
   littleTums: 'Little Tums',
   reheatTemp: 'Reheated Food Temperature Check',
@@ -47,9 +48,13 @@ const MONTHLY_SECTIONS = [
   { id: 'probeCalibration', name: 'Probe Calibration Check', icon: '🔬', description: 'Monthly calibration of probe thermometers' },
 ]
 
-const NURSERY_SECTIONS = DAILY_SECTIONS.map(s =>
-  s.id === 'signoff' ? { ...s, name: 'Manager/Room Lead Sign-off' } : s
-)
+const STERILISATION_SECTION = { id: 'sterilisation', name: 'Sterilisation Equipment & Feeding Bottle Checks', icon: '🍼', description: 'Morning and afternoon sterilisation checks' }
+
+const NURSERY_SECTIONS = [
+  DAILY_SECTIONS[0],
+  STERILISATION_SECTION,
+  ...DAILY_SECTIONS.slice(1).map(s => s.id === 'signoff' ? { ...s, name: 'Manager/Room Lead Sign-off' } : s),
+]
 const HOLIDAY_CLUB_SECTIONS = DAILY_SECTIONS
   .filter(s => s.id !== 'littleTums' && s.id !== 'reheatTemp')
   .map(s => {

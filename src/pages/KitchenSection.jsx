@@ -60,6 +60,13 @@ const getSectionConfig = (sectionId) => {
         items: [],
         isLittleTums: true,
       }
+    case 'sterilisation':
+      return {
+        title: 'Sterilisation Equipment & Feeding Bottle Checks',
+        subtitle: 'Morning & afternoon checks',
+        items: [],
+        isSterilisation: true,
+      }
     case 'packedLunch':
       return {
         title: 'Packed Lunches',
@@ -230,7 +237,7 @@ export function KitchenSection() {
   const isAlreadyCompleted = !!completedSections?.[sectionId]
 
   const [phase, setPhase] = useState(() => {
-    if (isAlreadyCompleted && config && !config.isPackedLunchOnly && !config.isDeliverySection && !config.isSignoff && !config.isLittleTums && !config.isReheatTemp) {
+    if (isAlreadyCompleted && config && !config.isPackedLunchOnly && !config.isDeliverySection && !config.isSignoff && !config.isLittleTums && !config.isReheatTemp && !config.isSterilisation) {
       return 'summary'
     }
     if (config?.isLittleTums) return 'ltMenu'
@@ -1687,6 +1694,100 @@ export function KitchenSection() {
             disabled={!lunchDone && !teaDone}
             onClick={() => handleComplete()}
           >
+            Complete
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Sterilisation Equipment & Feeding Bottle Checks ───────────────────────
+  if (config.isSterilisation) {
+    const MORNING_ITEMS = [
+      { id: 's1', text: 'Sterilising equipment is clean and filled with fresh water' },
+      { id: 's2', text: 'Electric steam / microwave steam sterilisers are being used on the correct temperature / power setting and for the correct time' },
+      { id: 's3', text: 'Bottles and feeding equipment are sterilised before use' },
+    ]
+    const AFTERNOON_ITEMS = [
+      { id: 's3pm', text: 'Bottles and feeding equipment are sterilised before use' },
+    ]
+
+    const updateSteril = (period, id, field, value) => {
+      setDeliveryData(prev => ({
+        ...prev,
+        sterilisation: {
+          ...prev.sterilisation,
+          [period]: {
+            ...prev.sterilisation?.[period],
+            [id]: { ...prev.sterilisation?.[period]?.[id], [field]: value },
+          },
+        },
+      }))
+    }
+
+    const steril = deliveryData.sterilisation || {}
+    const morningComplete = MORNING_ITEMS.every(
+      item => steril.morning?.[item.id]?.yn && steril.morning?.[item.id]?.initials?.trim()
+    )
+
+    const renderItem = (period, item) => {
+      const entry = steril[period]?.[item.id] || {}
+      return (
+        <div key={item.id} className="space-y-2 py-3 border-b border-gray-100 last:border-0">
+          <p className="text-sm text-hop-forest">{item.text}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex gap-1">
+              <button
+                onClick={() => updateSteril(period, item.id, 'yn', 'yes')}
+                className={`px-3 py-1.5 rounded text-sm font-medium ${entry.yn === 'yes' ? 'bg-hop-apple text-white' : 'bg-white border border-gray-300 text-gray-600'}`}
+              >
+                Y
+              </button>
+              <button
+                onClick={() => updateSteril(period, item.id, 'yn', 'no')}
+                className={`px-3 py-1.5 rounded text-sm font-medium ${entry.yn === 'no' ? 'bg-hop-marmalade-dark text-white' : 'bg-white border border-gray-300 text-gray-600'}`}
+              >
+                N
+              </button>
+            </div>
+            <input
+              type="text"
+              value={entry.time || ''}
+              onChange={(e) => updateSteril(period, item.id, 'time', e.target.value)}
+              placeholder="Time"
+              className="w-20 px-2 py-1.5 border border-gray-300 rounded text-sm text-hop-forest focus:outline-none focus:border-hop-forest"
+            />
+            <input
+              type="text"
+              value={entry.initials || ''}
+              onChange={(e) => updateSteril(period, item.id, 'initials', e.target.value)}
+              placeholder="Initials"
+              className="w-20 px-2 py-1.5 border border-gray-300 rounded text-sm text-hop-forest focus:outline-none focus:border-hop-forest"
+            />
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="min-h-screen bg-hop-pebble">
+        <Header title={config.title} subtitle={config.subtitle} showBack onBack={goBackToSections} />
+        <div className="px-4 py-6 max-w-md mx-auto space-y-4">
+          <Card>
+            <h3 className="font-medium text-hop-forest mb-1">Morning Checks</h3>
+            <div>
+              {MORNING_ITEMS.map(item => renderItem('morning', item))}
+            </div>
+          </Card>
+
+          <Card>
+            <h3 className="font-medium text-hop-forest mb-1">Afternoon Check</h3>
+            <div>
+              {AFTERNOON_ITEMS.map(item => renderItem('afternoon', item))}
+            </div>
+          </Card>
+
+          <Button color="marmalade" size="large" fullWidth disabled={!morningComplete} onClick={() => handleComplete()}>
             Complete
           </Button>
         </div>
