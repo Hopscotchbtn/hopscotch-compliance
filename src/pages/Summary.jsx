@@ -10,13 +10,31 @@ import { storage } from '../lib/storage'
 
 const holidayClubLocations = ['Holland Road', 'School Road']
 
+const GLUE_GUN_TYPES = ['glueGunOut', 'glueGunIn']
+
+const holidayClubCheckTypes = [
+  { value: 'roomSafety', label: 'Holiday Club Daily Checks' },
+  { value: 'kitchenSafety', label: 'Daily Kitchen Safety' },
+  { value: 'firstAidBox', label: 'Weekly First Aid Box Check' },
+  { value: 'glueGun', label: 'Hot Glue Gun Register' },
+]
+
+const nurseryCheckTypes = [
+  { value: 'roomSafety', label: 'Daily Room Opening Checks' },
+  { value: 'gardenOutdoor', label: 'Daily Garden Opening Checks' },
+  { value: 'kitchenSafety', label: 'Daily Kitchen Safety' },
+  { value: 'firstAidBox', label: 'Weekly First Aid Box Check' },
+]
+
 export function Summary() {
   const location = useLocation()
   const section = location.state?.section
   const locationOptions = section === 'holiday-club' ? holidayClubLocations : nurseries
+  const availableCheckTypes = section === 'holiday-club' ? holidayClubCheckTypes : nurseryCheckTypes
 
   const [checks, setChecks] = useState([])
   const [loading, setLoading] = useState(true)
+  const [checkTypeFilter, setCheckTypeFilter] = useState('all')
   const [filter, setFilter] = useState(() => {
     const last = storage.getLastNursery()
     if (section === 'holiday-club') {
@@ -42,9 +60,15 @@ export function Summary() {
   }
 
   // Filter to section's locations when showing all
-  const visibleChecks = filter === 'all' && section
+  const locationFiltered = filter === 'all' && section
     ? checks.filter(c => locationOptions.includes(c.nursery))
     : checks
+
+  const visibleChecks = checkTypeFilter === 'all'
+    ? locationFiltered
+    : checkTypeFilter === 'glueGun'
+      ? locationFiltered.filter(c => GLUE_GUN_TYPES.includes(c.check_type))
+      : locationFiltered.filter(c => c.check_type === checkTypeFilter)
 
   // Group checks by nursery
   const groupedChecks = visibleChecks.reduce((acc, check) => {
@@ -61,14 +85,23 @@ export function Summary() {
       <Header title="Today's Checks" subtitle={formatDate()} showBack />
 
       <div className="px-4 py-4 max-w-xl mx-auto">
-        {/* Filter */}
-        <div className="mb-6">
+        {/* Filters */}
+        <div className="mb-6 space-y-2">
           <Select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             options={['all', ...locationOptions]}
             placeholder="Filter by location"
           />
+          <Select
+            value={checkTypeFilter}
+            onChange={(e) => setCheckTypeFilter(e.target.value)}
+          >
+            <option value="all">All check types</option>
+            {availableCheckTypes.map(t => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </Select>
         </div>
 
         {/* Content */}
