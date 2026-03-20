@@ -677,86 +677,72 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
         continue
       }
 
-      // halfW ≈ 93mm each side with 4mm gap
-      const halfW = W / 2 - 2
-      const rightStart = margin + halfW + 4
+      // 3-column layout: opening checks+fridges | closing checks+fridges | packed lunches
+      const colGap = 3
+      const colW = (W - colGap * 2) / 3  // ≈ 61.3mm each
+      const col2Start = margin + colW + colGap
+      const col3Start = col2Start + colW + colGap
 
-      // ── Opening & Closing Checks (side by side) ────────────────────────────
+      const fridgeResultCell = (section, n) => {
+        const f = sd[section]?.temperatures?.[`fridge${n}`]
+        if (!f?.temp) return '-'
+        return f.name ? `${f.name}: ${f.temp}°C` : `${f.temp}°C`
+      }
+
+      // ── Opening checks + fridge temps (left column) ───────────────────────
       autoTable(doc, {
         startY: y,
-        margin: { left: margin, right: pageW - (margin + halfW) },
+        margin: { left: margin, right: pageW - (margin + colW) },
         head: [['Opening Kitchen Checks', 'Result']],
         body: [
           ['All checks completed', sd.opening?.completedBy || sd.opening?.signedBy ? 'Yes' : '-'],
           ['Time', fmtTime(sd.opening?.completedAt)],
           ['Initials', sd.opening?.completedBy || sd.opening?.signedBy || '-'],
+          ['Fridge 1', fridgeResultCell('opening', 1)],
+          ['Fridge 2', fridgeResultCell('opening', 2)],
+          ['Fridge 3', fridgeResultCell('opening', 3)],
         ],
         headStyles: cHead, styles: cStyles,
-        columnStyles: { 1: { cellWidth: 22, halign: 'center' } },
+        columnStyles: { 1: { cellWidth: 20, halign: 'center' } },
         theme: 'grid',
       })
-      const openEndY = doc.lastAutoTable.finalY
+      const col1EndY = doc.lastAutoTable.finalY
+
+      // ── Closing checks + fridge temps (middle column) ─────────────────────
       autoTable(doc, {
         startY: y,
-        margin: { left: rightStart, right: margin },
+        margin: { left: col2Start, right: pageW - (col2Start + colW) },
         head: [['Closing Kitchen Check', 'Result']],
         body: [
           ['All checks completed', sd.closing?.completedBy || sd.closing?.signedBy ? 'Yes' : '-'],
           ['Time', fmtTime(sd.closing?.completedAt)],
           ['Initials', sd.closing?.completedBy || sd.closing?.signedBy || '-'],
+          ['Fridge 1', fridgeResultCell('closing', 1)],
+          ['Fridge 2', fridgeResultCell('closing', 2)],
+          ['Fridge 3', fridgeResultCell('closing', 3)],
         ],
         headStyles: cHead, styles: cStyles,
-        columnStyles: { 1: { cellWidth: 22, halign: 'center' } },
+        columnStyles: { 1: { cellWidth: 20, halign: 'center' } },
         theme: 'grid',
       })
-      y = Math.max(openEndY, doc.lastAutoTable.finalY) + 3
+      const col2EndY = doc.lastAutoTable.finalY
 
-      // ── Fridge Temperatures (side by side) ────────────────────────────────
+      // ── Packed lunches (right column, alongside) ──────────────────────────
+      const plRows = nurseryPackedLunchChecks.map(item => {
+        const val = sd.packedLunch?.deliveryData?.packedLunch?.[item.id]
+        return [item.text, val ? val.charAt(0).toUpperCase() + val.slice(1) : (sd.packedLunch ? 'Yes' : '-')]
+      })
+      plRows.push(['Initials', sd.packedLunch?.completedBy || '-'])
       autoTable(doc, {
         startY: y,
-        margin: { left: margin, right: pageW - (margin + halfW) },
-        head: [['Opening Fridge Temps', 'Name', '°C']],
-        body: [1, 2, 3].map(n => {
-          const f = sd.opening?.temperatures?.[`fridge${n}`]
-          return [`Fridge ${n}`, f?.name || '-', f?.temp ? `${f.temp}°C` : '-']
-        }),
+        margin: { left: col3Start, right: margin },
+        head: [['Packed Lunches', 'Result']],
+        body: plRows,
         headStyles: cHead, styles: cStyles,
-        columnStyles: { 0: { cellWidth: 16 }, 2: { cellWidth: 16, halign: 'center' } },
+        columnStyles: { 1: { cellWidth: 16, halign: 'center' } },
         theme: 'grid',
       })
-      const openFridgeEnd = doc.lastAutoTable.finalY
-      autoTable(doc, {
-        startY: y,
-        margin: { left: rightStart, right: margin },
-        head: [['Closing Fridge Temps', 'Name', '°C']],
-        body: [1, 2, 3].map(n => {
-          const f = sd.closing?.temperatures?.[`fridge${n}`]
-          return [`Fridge ${n}`, f?.name || '-', f?.temp ? `${f.temp}°C` : '-']
-        }),
-        headStyles: cHead, styles: cStyles,
-        columnStyles: { 0: { cellWidth: 16 }, 2: { cellWidth: 16, halign: 'center' } },
-        theme: 'grid',
-      })
-      y = Math.max(openFridgeEnd, doc.lastAutoTable.finalY) + 3
-
-      // ── Packed Lunches ────────────────────────────────────────────────────
-      if (sd.packedLunch) {
-        const plRows = nurseryPackedLunchChecks.map(item => {
-          const val = sd.packedLunch.deliveryData?.packedLunch?.[item.id]
-          return [item.text, val ? val.charAt(0).toUpperCase() + val.slice(1) : 'Yes']
-        })
-        plRows.push(['Initials', sd.packedLunch.completedBy || '-'])
-        autoTable(doc, {
-          startY: y,
-          margin: { left: margin, right: margin },
-          head: [['Packed Lunches', 'Result']],
-          body: plRows,
-          headStyles: cHead, styles: cStyles,
-          columnStyles: { 1: { cellWidth: 22, halign: 'center' } },
-          theme: 'grid',
-        })
-        y = doc.lastAutoTable.finalY + 3
-      }
+      y = Math.max(col1EndY, col2EndY, doc.lastAutoTable.finalY) + 3
 
       // ── Little Tums ───────────────────────────────────────────────────────
       if (sd.littleTums) {
