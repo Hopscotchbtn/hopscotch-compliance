@@ -565,17 +565,35 @@ function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
   return doc.lastAutoTable.finalY
 }
 
+const STERILISATION_ROOMS = ['Blue Room', 'Yellow Room']
+
+const STERIL_MORNING_ITEMS = [
+  { id: 's1', text: 'Sterilising equipment is clean and filled with fresh water' },
+  { id: 's2', text: 'Electric steam / microwave steam sterilisers are used on the correct setting and for the correct time' },
+  { id: 's3', text: 'Bottles and feeding equipment are sterilised before use' },
+]
+const STERIL_AFTERNOON_ITEMS = [
+  { id: 's3pm', text: 'Bottles and feeding equipment are sterilised before use' },
+]
+
+function fmtTime(isoStr) {
+  if (!isoStr) return '-'
+  try { return new Date(isoStr).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) }
+  catch { return '-' }
+}
+
 export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStart, weekEnd, allRooms = null, periodicChecks = null) {
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-  const pageW = doc.internal.pageSize.getWidth()  // 297mm
-  const pageH = doc.internal.pageSize.getHeight() // 210mm
-  const margin = 12
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  const pageW = 210
+  const pageH = 297
+  const margin = 10
+  const W = pageW - margin * 2  // 190mm
 
   const logoDataURL = await fetchDataURL('/hopscotch-logo.png')
   const weekRange = formatWeekRange(weekStart, weekEnd)
   const dates = getDatesInRange(weekStart, weekEnd)
 
-  // Group checks by room, then by date; also extract periodic check data from sectionData
+  // Group checks by room then date; extract periodic check data
   const byRoom = {}
   const weekData = { probeCheck: null, supermarketTemp: null, probeCalibration: null }
   for (const check of checks) {
@@ -583,31 +601,20 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     if (!byRoom[room]) byRoom[room] = {}
     const dateStr = toDateStr(new Date(check.created_at))
     let sectionData = null
-    let completedSections = {}
-    try {
-      const parsed = JSON.parse(check.overall_notes || '{}')
-      sectionData = parsed.sectionData
-    } catch {}
-    if (check.items) {
-      check.items.forEach(item => { if (item.status === 'pass') completedSections[item.id] = true })
-    }
-    byRoom[room][dateStr] = { sectionData, completedSections }
-    // Extract periodic check data (last one found wins — checks are ordered ascending)
-    if (sectionData?.probeCheck)      weekData.probeCheck      = sectionData.probeCheck
-    if (sectionData?.supermarketTemp) weekData.supermarketTemp = sectionData.supermarketTemp
+    try { sectionData = JSON.parse(check.overall_notes || '{}').sectionData } catch {}
+    byRoom[room][dateStr] = { sectionData }
+    if (sectionData?.probeCheck)       weekData.probeCheck       = sectionData.probeCheck
+    if (sectionData?.supermarketTemp)  weekData.supermarketTemp  = sectionData.supermarketTemp
     if (sectionData?.probeCalibration) weekData.probeCalibration = sectionData.probeCalibration
   }
 
-  // Ensure all expected rooms appear, even with no data
   if (allRooms) {
     for (const room of allRooms) {
       if (!byRoom[room]) byRoom[room] = {}
     }
   }
 
-  const rooms = allRooms
-    ? allRooms.filter(r => byRoom[r] !== undefined)
-    : Object.keys(byRoom)
+  const rooms = allRooms ? allRooms.filter(r => byRoom[r] !== undefined) : Object.keys(byRoom)
 
   if (rooms.length === 0) {
     doc.setFont('helvetica', 'bold')
@@ -622,85 +629,280 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     return doc
   }
 
-  const labelColW = 50
-  const dayColW = (pageW - margin * 2 - labelColW) / dates.length
+  const cStyles = { fontSize: 7, cellPadding: { top: 1.5, bottom: 1.5, left: 2.5, right: 2.5 }, font: 'helvetica' }
+  const cHead   = { fillColor: MARMALADE, textColor: WHITE, fontSize: 7, fontStyle: 'bold', cellPadding: 2 }
 
-  for (let ri = 0; ri < rooms.length; ri++) {
-    const room = rooms[ri]
+  let firstPage = true
+
+  for (const room of rooms) {
     const history = byRoom[room]
+    const isSteriRoom = STERILISATION_ROOMS.includes(room)
 
-    const drawRoomHeader = (doc, y) => {
+    for (const dateStr of dates) {
+      if (!firstPage) doc.addPage()
+      firstPage = false
+
+      const sd = history[dateStr]?.sectionData || null
+      let y = margin
+
+      // Logo
+      if (logoDataURL) {
+        try { doc.addImage(logoDataURL, 'PNG', (pageW - 20) / 2, y, 20, 15); y += 17 } catch {}
+      }
+
+      // Page header
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(11)
+      doc.setFontSize(10)
       doc.setTextColor(...FOREST)
       doc.text(`Kitchen Food Safety Diary — ${room}`, pageW / 2, y, { align: 'center' })
+      y += 5
+      doc.setFontSize(8.5)
+      doc.text(`${formatDayName(dateStr)}, ${formatDayDate(dateStr)}`, pageW / 2, y, { align: 'center' })
+      y += 4
       doc.setFont('helvetica', 'normal')
-      doc.setFontSize(7.5)
+      doc.setFontSize(7)
       doc.setTextColor(...MID_GREY)
-      doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y + 6, { align: 'center' })
-      doc.setDrawColor(...N_GREEN)
+      doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y, { align: 'center' })
+      y += 3
+      doc.setDrawColor(...MARMALADE)
       doc.setLineWidth(0.5)
-      doc.line(margin, y + 8, pageW - margin, y + 8)
-      return y + 12
+      doc.line(margin, y, pageW - margin, y)
+      y += 4
+
+      if (!sd) {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9)
+        doc.setTextColor(...MID_GREY)
+        doc.text('No checks recorded for this day.', margin, y + 5)
+        continue
+      }
+
+      // halfW ≈ 93mm each side with 4mm gap
+      const halfW = W / 2 - 2
+      const rightStart = margin + halfW + 4
+
+      // ── Opening & Closing Checks (side by side) ────────────────────────────
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: pageW - (margin + halfW) },
+        head: [['Opening Kitchen Checks', 'Result']],
+        body: [
+          ['All checks completed', sd.opening?.completedBy || sd.opening?.signedBy ? 'Yes' : '-'],
+          ['Time', fmtTime(sd.opening?.completedAt)],
+          ['Initials', sd.opening?.completedBy || sd.opening?.signedBy || '-'],
+        ],
+        headStyles: cHead, styles: cStyles,
+        columnStyles: { 1: { cellWidth: 22, halign: 'center' } },
+        theme: 'grid',
+      })
+      const openEndY = doc.lastAutoTable.finalY
+      autoTable(doc, {
+        startY: y,
+        margin: { left: rightStart, right: margin },
+        head: [['Closing Kitchen Check', 'Result']],
+        body: [
+          ['All checks completed', sd.closing?.completedBy || sd.closing?.signedBy ? 'Yes' : '-'],
+          ['Time', fmtTime(sd.closing?.completedAt)],
+          ['Initials', sd.closing?.completedBy || sd.closing?.signedBy || '-'],
+        ],
+        headStyles: cHead, styles: cStyles,
+        columnStyles: { 1: { cellWidth: 22, halign: 'center' } },
+        theme: 'grid',
+      })
+      y = Math.max(openEndY, doc.lastAutoTable.finalY) + 3
+
+      // ── Fridge Temperatures (side by side) ────────────────────────────────
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: pageW - (margin + halfW) },
+        head: [['Opening Fridge Temps', 'Name', '°C']],
+        body: [1, 2, 3].map(n => {
+          const f = sd.opening?.temperatures?.[`fridge${n}`]
+          return [`Fridge ${n}`, f?.name || '-', f?.temp ? `${f.temp}°C` : '-']
+        }),
+        headStyles: cHead, styles: cStyles,
+        columnStyles: { 0: { cellWidth: 16 }, 2: { cellWidth: 16, halign: 'center' } },
+        theme: 'grid',
+      })
+      const openFridgeEnd = doc.lastAutoTable.finalY
+      autoTable(doc, {
+        startY: y,
+        margin: { left: rightStart, right: margin },
+        head: [['Closing Fridge Temps', 'Name', '°C']],
+        body: [1, 2, 3].map(n => {
+          const f = sd.closing?.temperatures?.[`fridge${n}`]
+          return [`Fridge ${n}`, f?.name || '-', f?.temp ? `${f.temp}°C` : '-']
+        }),
+        headStyles: cHead, styles: cStyles,
+        columnStyles: { 0: { cellWidth: 16 }, 2: { cellWidth: 16, halign: 'center' } },
+        theme: 'grid',
+      })
+      y = Math.max(openFridgeEnd, doc.lastAutoTable.finalY) + 3
+
+      // ── Packed Lunches ────────────────────────────────────────────────────
+      if (sd.packedLunch) {
+        const plRows = nurseryPackedLunchChecks.map(item => {
+          const val = sd.packedLunch.deliveryData?.packedLunch?.[item.id]
+          return [item.text, val ? val.charAt(0).toUpperCase() + val.slice(1) : 'Yes']
+        })
+        plRows.push(['Initials', sd.packedLunch.completedBy || '-'])
+        autoTable(doc, {
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [['Packed Lunches', 'Result']],
+          body: plRows,
+          headStyles: cHead, styles: cStyles,
+          columnStyles: { 1: { cellWidth: 22, halign: 'center' } },
+          theme: 'grid',
+        })
+        y = doc.lastAutoTable.finalY + 3
+      }
+
+      // ── Little Tums ───────────────────────────────────────────────────────
+      if (sd.littleTums) {
+        const ltItems = kitchenSafety.littleTumsItems || []
+        const ltData = sd.littleTums.deliveryData
+        const ltRows = []
+        ltItems.filter(i => LT_LUNCH_IDS.includes(i.id)).forEach(item => {
+          const entry = ltData?.lunch?.[item.id]
+          const label = ltData?.itemNames?.[item.id] || item.label
+          ltRows.push([
+            label, 'Lunch',
+            entry?.skipped ? 'N/A' : (entry?.temp ? `${entry.temp}°C` : '-'),
+            ltData?.lunchTwoHours === 'yes' ? 'Yes' : (ltData?.lunchTwoHours ? 'No' : '-'),
+            ltData?.lunchInitials || sd.littleTums.completedBy || '-',
+          ])
+        })
+        ltItems.filter(i => LT_TEA_IDS.includes(i.id)).forEach(item => {
+          const entry = ltData?.tea?.[item.id]
+          const label = ltData?.itemNames?.[item.id] || item.label
+          ltRows.push([
+            label, 'Tea',
+            entry?.skipped ? 'N/A' : (entry?.temp ? `${entry.temp}°C` : '-'),
+            ltData?.teaTwoHours === 'yes' ? 'Yes' : (ltData?.teaTwoHours ? 'No' : '-'),
+            ltData?.teaInitials || sd.littleTums.completedBy || '-',
+          ])
+        })
+        if (ltRows.length > 0) {
+          autoTable(doc, {
+            startY: y,
+            margin: { left: margin, right: margin },
+            head: [['Little Tums — Food Item', 'Meal', 'Temp', 'Within 2 hrs', 'Initials']],
+            body: ltRows,
+            headStyles: cHead, styles: cStyles,
+            columnStyles: {
+              0: { cellWidth: 115 },
+              1: { cellWidth: 14, halign: 'center' },
+              2: { cellWidth: 14, halign: 'center' },
+              3: { cellWidth: 22, halign: 'center' },
+              4: { cellWidth: 25, halign: 'center' },
+            },
+            theme: 'grid',
+          })
+          y = doc.lastAutoTable.finalY + 3
+        }
+      }
+
+      // ── Reheated Food Temperature Checks ─────────────────────────────────
+      if (sd.reheatTemp) {
+        const entries = (sd.reheatTemp.deliveryData?.reheatEntries || []).filter(e => e.foodName || e.temp)
+        autoTable(doc, {
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [['Reheated Food Temperature Checks', 'Child', 'Temp', 'Checker']],
+          body: entries.length
+            ? entries.map(e => [e.foodName || '-', e.childInitials || '-', e.temp ? `${e.temp}°C` : '-', e.checkerInitials || '-'])
+            : [['No entries recorded', '', '', '']],
+          headStyles: cHead, styles: cStyles,
+          columnStyles: {
+            0: { cellWidth: 110 },
+            1: { cellWidth: 28, halign: 'center' },
+            2: { cellWidth: 20, halign: 'center' },
+            3: { cellWidth: 32, halign: 'center' },
+          },
+          theme: 'grid',
+        })
+        y = doc.lastAutoTable.finalY + 3
+      }
+
+      // ── Sterilising Equipment & Feeding Bottle Checks (Blue/Yellow only) ──
+      if (isSteriRoom) {
+        const stData = sd.sterilisation?.deliveryData
+        const stRows = []
+        stRows.push([{ content: 'Morning', colSpan: 4, styles: { fillColor: N_BLUE, textColor: FOREST, fontStyle: 'bold', fontSize: 7 } }])
+        STERIL_MORNING_ITEMS.forEach(item => {
+          const d = stData?.morning?.[item.id]
+          stRows.push([item.text, d?.yn === 'yes' ? 'Yes' : (d?.yn === 'no' ? 'No' : '-'), fmtTime(d?.time), d?.initials || '-'])
+        })
+        stRows.push([{ content: 'Afternoon', colSpan: 4, styles: { fillColor: N_BLUE, textColor: FOREST, fontStyle: 'bold', fontSize: 7 } }])
+        STERIL_AFTERNOON_ITEMS.forEach(item => {
+          const d = stData?.afternoon?.[item.id]
+          stRows.push([item.text, d?.yn === 'yes' ? 'Yes' : (d?.yn === 'no' ? 'No' : '-'), fmtTime(d?.time), d?.initials || '-'])
+        })
+        autoTable(doc, {
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [['Sterilising Equipment & Feeding Bottle Checks', 'Completed', 'Time', 'Initials']],
+          body: stRows,
+          headStyles: cHead, styles: cStyles,
+          columnStyles: {
+            0: { cellWidth: 120 },
+            1: { cellWidth: 22, halign: 'center' },
+            2: { cellWidth: 22, halign: 'center' },
+            3: { cellWidth: 26, halign: 'center' },
+          },
+          theme: 'grid',
+        })
+        y = doc.lastAutoTable.finalY + 3
+      }
+
+      // ── Comments & Sign-off (side by side) ────────────────────────────────
+      const commentsW = W * 0.62
+      const signoffX  = margin + commentsW + 4
+      autoTable(doc, {
+        startY: y,
+        margin: { left: margin, right: pageW - (margin + commentsW) },
+        head: [['Comments']],
+        body: [[sd.signoff?.responses?.managerComments || '']],
+        headStyles: cHead, styles: { ...cStyles, minCellHeight: 16 },
+        theme: 'grid',
+      })
+      const commentsEnd = doc.lastAutoTable.finalY
+      autoTable(doc, {
+        startY: y,
+        margin: { left: signoffX, right: margin },
+        head: [['Manager / Room Lead']],
+        body: [[sd.signoff?.responses?.managerName || '']],
+        headStyles: cHead, styles: { ...cStyles, minCellHeight: 16 },
+        theme: 'grid',
+      })
+      y = Math.max(commentsEnd, doc.lastAutoTable.finalY) + 3
     }
-
-    const tableStyles = {
-      headStyles: { fillColor: N_GREEN, textColor: WHITE, fontSize: 7.5, fontStyle: 'bold', halign: 'center', cellPadding: 2 },
-      styles: { fontSize: 7, cellPadding: { top: 1.5, bottom: 1.5, left: 3, right: 3 }, font: 'helvetica', valign: 'middle' },
-      alternateRowStyles: { fillColor: N_CREAM },
-      columnStyles: {
-        0: { cellWidth: labelColW, textColor: FOREST, fillColor: [245, 247, 245] },
-        ...Object.fromEntries(dates.map((_, i) => [i + 1, { cellWidth: dayColW, halign: 'center' }])),
-      },
-    }
-
-    // ── Page 1: logo + header + reference panel + opening + packed lunches ──
-    if (ri > 0) doc.addPage()
-    let y = 6
-    if (logoDataURL) {
-      try { doc.addImage(logoDataURL, 'PNG', (pageW - 22) / 2, y, 22, 22); y += 26 }
-      catch { y += 4 }
-    }
-    y = drawRoomHeader(doc, y)
-    y = drawChecklistReference(doc, y, margin, pageW)
-
-    const head = [['', ...dates.map(d => formatDayHeader(d))]]
-    const { body1, body2 } = buildRoomTable(dates, history)
-
-    autoTable(doc, {
-      startY: y,
-      margin: { left: margin, right: margin },
-      head,
-      body: body1,
-      ...tableStyles,
-    })
-
-    // ── Page 2: little tums + closing + manager sign-off ───────────────────
-    doc.addPage()
-    let y2 = 6
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(...FOREST)
-    doc.text(`Kitchen Food Safety Diary — ${room}`, pageW / 2, y2, { align: 'center' })
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7.5)
-    doc.setTextColor(...MID_GREY)
-    doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, y2 + 5, { align: 'center' })
-    y2 += 10
-
-    autoTable(doc, {
-      startY: y2,
-      margin: { left: margin, right: margin },
-      head,
-      body: body2,
-      ...tableStyles,
-    })
-
-    drawPeriodicChecks(doc, doc.lastAutoTable.finalY + 4, weekData, periodicChecks, margin, pageW)
-
   }
 
-  // ── Footers on all pages ──────────────────────────────────────────────────
+  // ── Periodic Checks final page ────────────────────────────────────────────
+  doc.addPage()
+  let py = margin
+  if (logoDataURL) {
+    try { doc.addImage(logoDataURL, 'PNG', (pageW - 20) / 2, py, 20, 15); py += 17 } catch {}
+  }
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(...FOREST)
+  doc.text('Weekly & Monthly Checks', pageW / 2, py, { align: 'center' })
+  py += 5
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7)
+  doc.setTextColor(...MID_GREY)
+  doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, py, { align: 'center' })
+  py += 3
+  doc.setDrawColor(...MARMALADE)
+  doc.setLineWidth(0.5)
+  doc.line(margin, py, pageW - margin, py)
+  py += 5
+  drawPeriodicChecks(doc, py, weekData, periodicChecks, margin, pageW)
+
+  // ── Footers ───────────────────────────────────────────────────────────────
   const totalPages = doc.internal.getNumberOfPages()
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i)
@@ -709,7 +911,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     doc.setTextColor(...MID_GREY)
     doc.text(
       `${nursery}  ·  Kitchen Food Safety Diary  ·  ${new Date().toLocaleDateString('en-GB')}  ·  Page ${i} of ${totalPages}`,
-      margin, pageH - 5
+      margin, pageH - 4
     )
   }
 
