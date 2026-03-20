@@ -761,21 +761,33 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
         const ltRows = []
         ltItems.filter(i => LT_LUNCH_IDS.includes(i.id)).forEach(item => {
           const entry = ltData?.lunch?.[item.id]
+          if (entry?.skipped) return  // skip N/A items
           const label = ltData?.itemNames?.[item.id] || item.label
+          const servingEntry = ltData?.lunchServing?.[item.id]
+          const servingTemp = ltData?.lunchTwoHours === 'no'
+            ? (servingEntry?.skipped ? 'N/A' : (servingEntry?.temp ? `${servingEntry.temp}°C` : '-'))
+            : '-'
           ltRows.push([
             label, 'Lunch',
-            entry?.skipped ? 'N/A' : (entry?.temp ? `${entry.temp}°C` : '-'),
-            ltData?.lunchTwoHours === 'yes' ? 'Yes' : (ltData?.lunchTwoHours ? 'No' : '-'),
+            entry?.temp ? `${entry.temp}°C` : '-',
+            ltData?.lunchTwoHours === 'yes' ? 'Yes' : (ltData?.lunchTwoHours === 'no' ? 'No' : '-'),
+            servingTemp,
             ltData?.lunchInitials || sd.littleTums.completedBy || '-',
           ])
         })
         ltItems.filter(i => LT_TEA_IDS.includes(i.id)).forEach(item => {
           const entry = ltData?.tea?.[item.id]
+          if (entry?.skipped) return  // skip N/A items
           const label = ltData?.itemNames?.[item.id] || item.label
+          const servingEntry = ltData?.teaServing?.[item.id]
+          const servingTemp = ltData?.teaTwoHours === 'no'
+            ? (servingEntry?.skipped ? 'N/A' : (servingEntry?.temp ? `${servingEntry.temp}°C` : '-'))
+            : '-'
           ltRows.push([
             label, 'Tea',
-            entry?.skipped ? 'N/A' : (entry?.temp ? `${entry.temp}°C` : '-'),
-            ltData?.teaTwoHours === 'yes' ? 'Yes' : (ltData?.teaTwoHours ? 'No' : '-'),
+            entry?.temp ? `${entry.temp}°C` : '-',
+            ltData?.teaTwoHours === 'yes' ? 'Yes' : (ltData?.teaTwoHours === 'no' ? 'No' : '-'),
+            servingTemp,
             ltData?.teaInitials || sd.littleTums.completedBy || '-',
           ])
         })
@@ -783,15 +795,16 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
           autoTable(doc, {
             startY: y,
             margin: { left: margin, right: margin },
-            head: [['Little Tums — Food Item', 'Meal', 'Temp', 'Within 2 hrs', 'Initials']],
+            head: [['Little Tums — Food Item', 'Meal', 'Arrival Temp', 'Within 2 hrs', 'Serving Temp', 'Initials']],
             body: ltRows,
             headStyles: cHead, styles: cStyles,
             columnStyles: {
-              0: { cellWidth: 115 },
-              1: { cellWidth: 14, halign: 'center' },
-              2: { cellWidth: 14, halign: 'center' },
-              3: { cellWidth: 22, halign: 'center' },
-              4: { cellWidth: 25, halign: 'center' },
+              0: { cellWidth: 86 },
+              1: { cellWidth: 12, halign: 'center' },
+              2: { cellWidth: 18, halign: 'center' },
+              3: { cellWidth: 20, halign: 'center' },
+              4: { cellWidth: 20, halign: 'center' },
+              5: { cellWidth: 20, halign: 'center' },
             },
             theme: 'grid',
           })
@@ -875,29 +888,29 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       })
       y = Math.max(commentsEnd, doc.lastAutoTable.finalY) + 3
     }
-  }
 
-  // ── Periodic Checks final page ────────────────────────────────────────────
-  doc.addPage()
-  let py = margin
-  if (logoDataURL) {
-    try { doc.addImage(logoDataURL, 'PNG', (pageW - logoW) / 2, py, logoW, logoH); py += logoH + 2 } catch {}
+    // ── Periodic Checks page — end of this room's section ─────────────────
+    doc.addPage()
+    let py = margin
+    if (logoDataURL) {
+      try { doc.addImage(logoDataURL, 'PNG', (pageW - logoW) / 2, py, logoW, logoH); py += logoH + 2 } catch {}
+    }
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(...FOREST)
+    doc.text(`Weekly & Monthly Checks — ${room}`, pageW / 2, py, { align: 'center' })
+    py += 5
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7)
+    doc.setTextColor(...MID_GREY)
+    doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, py, { align: 'center' })
+    py += 3
+    doc.setDrawColor(...MARMALADE)
+    doc.setLineWidth(0.5)
+    doc.line(margin, py, pageW - margin, py)
+    py += 5
+    drawPeriodicChecks(doc, py, weekData, periodicChecks, margin, pageW)
   }
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(11)
-  doc.setTextColor(...FOREST)
-  doc.text('Weekly & Monthly Checks', pageW / 2, py, { align: 'center' })
-  py += 5
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7)
-  doc.setTextColor(...MID_GREY)
-  doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, py, { align: 'center' })
-  py += 3
-  doc.setDrawColor(...MARMALADE)
-  doc.setLineWidth(0.5)
-  doc.line(margin, py, pageW - margin, py)
-  py += 5
-  drawPeriodicChecks(doc, py, weekData, periodicChecks, margin, pageW)
 
   // ── Footers ───────────────────────────────────────────────────────────────
   const totalPages = doc.internal.getNumberOfPages()
