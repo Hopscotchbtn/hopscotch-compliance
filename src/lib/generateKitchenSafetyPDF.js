@@ -590,6 +590,17 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
   const W = pageW - margin * 2  // 190mm
 
   const logoDataURL = await fetchDataURL('/hopscotch-logo.png')
+  let logoW = 40, logoH = 15
+  if (logoDataURL) {
+    try {
+      await new Promise(resolve => {
+        const img = new Image()
+        img.onload = () => { const a = img.naturalWidth / img.naturalHeight; logoH = 15; logoW = Math.min(Math.round(logoH * a), 70); resolve() }
+        img.onerror = resolve
+        img.src = logoDataURL
+      })
+    } catch {}
+  }
   const weekRange = formatWeekRange(weekStart, weekEnd)
   const dates = getDatesInRange(weekStart, weekEnd)
 
@@ -647,7 +658,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
 
       // Logo
       if (logoDataURL) {
-        try { doc.addImage(logoDataURL, 'PNG', (pageW - 20) / 2, y, 20, 15); y += 17 } catch {}
+        try { doc.addImage(logoDataURL, 'PNG', (pageW - logoW) / 2, y, logoW, logoH); y += logoH + 2 } catch {}
       }
 
       // Page header
@@ -690,39 +701,38 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       }
 
       // ── Opening checks + fridge temps (left column) ───────────────────────
+      const openInitials = sd.opening?.completedBy || sd.opening?.signedBy || '-'
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: pageW - (margin + colW) },
-        head: [['Opening Kitchen Checks', 'Result']],
+        head: [['Opening Kitchen Checks', 'Result', 'Initials']],
         body: [
-          ['All checks completed', sd.opening?.completedBy || sd.opening?.signedBy ? 'Yes' : '-'],
-          ['Time', fmtTime(sd.opening?.completedAt)],
-          ['Initials', sd.opening?.completedBy || sd.opening?.signedBy || '-'],
-          ['Fridge 1', fridgeResultCell('opening', 1)],
-          ['Fridge 2', fridgeResultCell('opening', 2)],
-          ['Fridge 3', fridgeResultCell('opening', 3)],
+          ['All checks completed', sd.opening?.completedBy || sd.opening?.signedBy ? 'Yes' : '-', openInitials],
+          ['Time', fmtTime(sd.opening?.completedAt), ''],
+          ['Fridge 1', fridgeResultCell('opening', 1), ''],
+          ['Fridge 2', fridgeResultCell('opening', 2), ''],
+          ['Fridge 3', fridgeResultCell('opening', 3), ''],
         ],
         headStyles: cHead, styles: cStyles,
-        columnStyles: { 1: { cellWidth: 20, halign: 'center' } },
+        columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 18, halign: 'center' }, 2: { cellWidth: 17, halign: 'center' } },
         theme: 'grid',
       })
       const col1EndY = doc.lastAutoTable.finalY
 
       // ── Closing checks + fridge temps (middle column) ─────────────────────
+      const closeInitials = sd.closing?.completedBy || sd.closing?.signedBy || '-'
       autoTable(doc, {
         startY: y,
         margin: { left: col2Start, right: pageW - (col2Start + colW) },
-        head: [['Closing Kitchen Check', 'Result']],
+        head: [['Closing Kitchen Check', 'Result', 'Initials']],
         body: [
-          ['All checks completed', sd.closing?.completedBy || sd.closing?.signedBy ? 'Yes' : '-'],
-          ['Time', fmtTime(sd.closing?.completedAt)],
-          ['Initials', sd.closing?.completedBy || sd.closing?.signedBy || '-'],
-          ['Fridge 1', fridgeResultCell('closing', 1)],
-          ['Fridge 2', fridgeResultCell('closing', 2)],
-          ['Fridge 3', fridgeResultCell('closing', 3)],
+          ['All checks completed', sd.closing?.completedBy || sd.closing?.signedBy ? 'Yes' : '-', closeInitials],
+          ['Fridge 1', fridgeResultCell('closing', 1), ''],
+          ['Fridge 2', fridgeResultCell('closing', 2), ''],
+          ['Fridge 3', fridgeResultCell('closing', 3), ''],
         ],
         headStyles: cHead, styles: cStyles,
-        columnStyles: { 1: { cellWidth: 20, halign: 'center' } },
+        columnStyles: { 0: { cellWidth: 26 }, 1: { cellWidth: 18, halign: 'center' }, 2: { cellWidth: 17, halign: 'center' } },
         theme: 'grid',
       })
       const col2EndY = doc.lastAutoTable.finalY
@@ -845,21 +855,22 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       // ── Comments & Sign-off (side by side) ────────────────────────────────
       const commentsW = W * 0.62
       const signoffX  = margin + commentsW + 4
+      const signHeadStyles = { ...cHead, fontSize: 6.5, cellPadding: 1.5 }
       autoTable(doc, {
         startY: y,
         margin: { left: margin, right: pageW - (margin + commentsW) },
         head: [['Comments']],
         body: [[sd.signoff?.responses?.managerComments || '']],
-        headStyles: cHead, styles: { ...cStyles, minCellHeight: 16 },
+        headStyles: signHeadStyles, styles: { ...cStyles, minCellHeight: 14 },
         theme: 'grid',
       })
       const commentsEnd = doc.lastAutoTable.finalY
       autoTable(doc, {
         startY: y,
         margin: { left: signoffX, right: margin },
-        head: [['Manager / Room Lead']],
+        head: [['Manager/Room Lead Sign Off']],
         body: [[sd.signoff?.responses?.managerName || '']],
-        headStyles: cHead, styles: { ...cStyles, minCellHeight: 16 },
+        headStyles: signHeadStyles, styles: { ...cStyles, minCellHeight: 14 },
         theme: 'grid',
       })
       y = Math.max(commentsEnd, doc.lastAutoTable.finalY) + 3
@@ -870,7 +881,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
   doc.addPage()
   let py = margin
   if (logoDataURL) {
-    try { doc.addImage(logoDataURL, 'PNG', (pageW - 20) / 2, py, 20, 15); py += 17 } catch {}
+    try { doc.addImage(logoDataURL, 'PNG', (pageW - logoW) / 2, py, logoW, logoH); py += logoH + 2 } catch {}
   }
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
