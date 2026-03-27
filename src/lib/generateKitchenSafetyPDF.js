@@ -639,7 +639,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
   const rooms = allRooms ? allRooms.filter(r => byRoom[r] !== undefined) : Object.keys(byRoom)
   // Ensure every room has an entry in weekDataByRoom (rooms with no checks get nulls)
   for (const room of rooms) {
-    if (!weekDataByRoom[room]) weekDataByRoom[room] = { probeCheck: null, supermarketTemp: null, probeCalibration: null }
+    if (!weekDataByRoom[room]) weekDataByRoom[room] = { probeCheck: null, probeCheckDate: null, supermarketTemp: null, supermarketTempDate: null, probeCalibration: null }
   }
 
   if (rooms.length === 0) {
