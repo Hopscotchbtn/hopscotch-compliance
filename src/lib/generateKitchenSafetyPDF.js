@@ -475,11 +475,10 @@ function drawChecklistReference(doc, y, margin, pageW) {
 }
 
 function roomLabel(doc, room, y, margin) {
-  if (!room) return y
   doc.setFont('helvetica', 'italic')
   doc.setFontSize(7.5)
   doc.setTextColor(...MID_GREY)
-  doc.text(`Room: ${room}`, margin, y)
+  doc.text(`Room: ${room || '—'}`, margin, y)
   return y + 4
 }
 
