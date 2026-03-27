@@ -153,6 +153,7 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
       head: [['', 'Unit name', 'Temp']],
       body: [
         ...rows,
+        [{ content: 'Time', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: fmtTime(sd.closing.completedAt), colSpan: 2 }],
         [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.closing.completedBy || sd.closing.signedBy || '-', colSpan: 2 }],
       ],
       columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 22 } },
@@ -394,6 +395,7 @@ function buildRoomTable(dates, history) {
   // ── Closing Kitchen Check ─────────────────────────────────────────────
   body2.push(sectionHeaderRow('Closing Kitchen Check', colCount))
   body2.push(['All closing checks completed', ...dates.map(d => tick(sd(d).closing))])
+  body2.push(['Time', ...dates.map(d => fmtTime(sd(d).closing?.completedAt))])
   closeFridges.forEach(n => {
     body2.push([
       `Fridge ${n} temperature`,
@@ -728,6 +730,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
         head: [['Closing Kitchen Check', 'Result', 'Initials']],
         body: [
           ['All checks completed', sd.closing?.completedBy || sd.closing?.signedBy ? 'Yes' : '-', closeInitials],
+          ['Time', fmtTime(sd.closing?.completedAt), ''],
           ['Fridge 1', fridgeResultCell('closing', 1), closeInitials],
           ['Fridge 2', fridgeResultCell('closing', 2), closeInitials],
           ['Fridge 3', fridgeResultCell('closing', 3), closeInitials],
