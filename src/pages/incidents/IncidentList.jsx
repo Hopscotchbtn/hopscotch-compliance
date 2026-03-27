@@ -6,7 +6,7 @@ import { Select } from '../../components/ui/Select'
 import { StatusBadge, SeverityBadge } from '../../components/ui/StatusBadge'
 import { getRecentIncidents, deleteIncident } from '../../lib/incidentDb'
 import { incidentTypes } from '../../data/incident/incidentTypes'
-import { nurseries } from '../../data/nurseries'
+import { nurserySites as nurseries } from '../../data/nurseries'
 
 const STATUSES = ['all', 'draft', 'open', 'investigating', 'awaiting_approval', 'pending-review', 'approved', 'signed-off', 'closed']
 

@@ -4,7 +4,7 @@ import { Select } from '../components/ui/Select'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { getTodayChecks } from '../lib/supabase'
-import { nurseries } from '../data/nurseries'
+import { nurserySites as nurseries } from '../data/nurseries'
 import { checkTypes } from '../data/checklists'
 import { formatDate } from '../lib/utils'
 

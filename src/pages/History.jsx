@@ -4,7 +4,7 @@ import { Header } from '../components/Header'
 import { Select } from '../components/ui/Select'
 import { Card } from '../components/ui/Card'
 import { getChecksHistory } from '../lib/supabase'
-import { nurseries } from '../data/nurseries'
+import { nurserySites as nurseries } from '../data/nurseries'
 import { storage } from '../lib/storage'
 import { SummaryEntry, RoomSafetyGroupEntry, KitchenSafetySummaryEntry, GlueGunSummaryEntry } from '../components/SummaryEntry'
 

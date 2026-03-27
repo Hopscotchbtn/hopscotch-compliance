@@ -4,7 +4,7 @@ import { Header } from '../components/Header'
 import { Select } from '../components/ui/Select'
 import { SummaryEntry, RoomSafetyGroupEntry, KitchenSafetySummaryEntry, GlueGunSummaryEntry } from '../components/SummaryEntry'
 import { getTodayChecks } from '../lib/supabase'
-import { nurseries } from '../data/nurseries'
+import { nurserySites as nurseries } from '../data/nurseries'
 import { formatDate } from '../lib/utils'
 import { storage } from '../lib/storage'
 

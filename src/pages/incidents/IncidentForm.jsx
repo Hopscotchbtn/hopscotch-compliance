@@ -19,7 +19,7 @@ import { injuryTypes, injuryCauses, bodyAreas, severityLevels, childAges, gender
 import { incidentLocations } from '../../data/incident/locations'
 import { rootCauseCategories } from '../../data/incident/rootCauses'
 import { contextPrompts, ofstedGuidance, riddorGuidance, footerReminder } from '../../data/incident/prompts'
-import { nurseries } from '../../data/nurseries'
+import { nurserySites as nurseries } from '../../data/nurseries'
 import { rooms } from '../../data/rooms'
 import { storage } from '../../lib/storage'
 import { saveIncident } from '../../lib/incidentDb'
