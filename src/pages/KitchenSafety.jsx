@@ -132,6 +132,13 @@ export function KitchenSafety() {
   const [showOtherInput, setShowOtherInput] = useState(false)
   const [otherRoomName, setOtherRoomName] = useState('')
 
+  // Load custom rooms on mount when setup is skipped (returning from a section)
+  useEffect(() => {
+    if (!showSetup && nursery) {
+      getCustomRooms(nursery, 'kitchenSafety').then(setCustomRooms).catch(() => {})
+    }
+  }, [])
+
   const [weeklyCheckDates, setWeeklyCheckDates] = useState({})
 
   const processedSection = useRef(null)

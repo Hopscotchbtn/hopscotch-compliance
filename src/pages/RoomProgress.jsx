@@ -129,7 +129,7 @@ export function RoomProgress() {
   }, [checkType, showSetup, nursery, name, checkTypeId, navigate])
 
   useEffect(() => {
-    if (location.state?.skipSetup && nursery) {
+    if (!showSetup && nursery) {
       getCustomRooms(nursery, checkTypeId).then(setCustomRooms).catch(() => {})
     }
   }, [])
