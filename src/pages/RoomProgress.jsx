@@ -236,8 +236,8 @@ export function RoomProgress() {
 
           <Card className="space-y-5">
             <p className="text-gray-600 text-sm">
-              {isNurseryRoomSafety
-                ? 'Select your nursery to begin. You\'ll enter your initials on each room check.'
+              {isNurseryRoomSafety || checkTypeId === 'firstAidBox'
+                ? 'Select your location to begin. You\'ll enter your initials on the checklist.'
                 : 'Select your nursery and enter your initials to begin. These will be remembered for future checks.'}
             </p>
 
