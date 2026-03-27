@@ -5,7 +5,7 @@ import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Select } from '../../components/ui/Select'
 import { getRecentAssessments, getRiskAssessmentStats, getDraftAssessments } from '../../lib/riskAssessmentDb'
-import { nurseries } from '../../data/nurseries'
+import { nurseries, nurserySites } from '../../data/nurseries'
 import { FileText, Plus, Clock, CheckCircle, AlertCircle } from 'lucide-react'
 
 export function RiskAssessmentDashboard() {
@@ -208,7 +208,11 @@ export function RiskAssessmentDashboard() {
             </Card>
           ) : (
             <div>
-              {recentAssessments.filter(a => !locationFilter || a.nursery === locationFilter).map((assessment) => (
+              {recentAssessments.filter(a =>
+  !locationFilter ||
+  a.nursery === locationFilter ||
+  (nurserySites.includes(locationFilter) && a.nursery === 'All Nurseries')
+).map((assessment) => (
                 <Link key={assessment.id} to={`/risk-assessment/${assessment.id}`} className="block mb-4">
                   <Card padding="small" className="cursor-pointer hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-start">

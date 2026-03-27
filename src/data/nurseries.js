@@ -1,4 +1,4 @@
-export const nurseries = [
+export const nurserySites = [
   'Preston Park',
   'Hove Station',
   'Seven Dials',
@@ -6,6 +6,11 @@ export const nurseries = [
   'Peacehaven',
   'Seaford',
   'Worthing',
+]
+
+export const nurseries = [
+  ...nurserySites,
+  'All Nurseries',
   'Head Office',
   'Holiday Club',
 ]
