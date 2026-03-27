@@ -660,7 +660,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
 
       // Logo
       if (logoDataURL) {
-        try { doc.addImage(logoDataURL, 'PNG', (pageW - logoW) / 2, y, logoW, logoH); y += logoH + 2 } catch {}
+        try { doc.addImage(logoDataURL, 'PNG', (pageW - logoW) / 2, y, logoW, logoH); y += logoH + 6 } catch {}
       }
 
       // Page header
@@ -757,6 +757,37 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       })
       y = Math.max(col1EndY, col2EndY, doc.lastAutoTable.finalY) + 3
 
+      // ── Sterilising Equipment & Feeding Bottle Checks (Blue/Yellow only) ──
+      if (isSteriRoom) {
+        const stData = sd.sterilisation?.deliveryData
+        const stRows = []
+        stRows.push([{ content: 'Morning', colSpan: 4, styles: { fillColor: N_BLUE, textColor: FOREST, fontStyle: 'bold', fontSize: 7 } }])
+        STERIL_MORNING_ITEMS.forEach(item => {
+          const d = stData?.morning?.[item.id]
+          stRows.push([item.text, d?.yn === 'yes' ? 'Yes' : (d?.yn === 'no' ? 'No' : '-'), fmtTime(d?.time), d?.initials || '-'])
+        })
+        stRows.push([{ content: 'Afternoon', colSpan: 4, styles: { fillColor: N_BLUE, textColor: FOREST, fontStyle: 'bold', fontSize: 7 } }])
+        STERIL_AFTERNOON_ITEMS.forEach(item => {
+          const d = stData?.afternoon?.[item.id]
+          stRows.push([item.text, d?.yn === 'yes' ? 'Yes' : (d?.yn === 'no' ? 'No' : '-'), fmtTime(d?.time), d?.initials || '-'])
+        })
+        autoTable(doc, {
+          startY: y,
+          margin: { left: margin, right: margin },
+          head: [['Sterilising Equipment & Feeding Bottle Checks', 'Completed', 'Time', 'Initials']],
+          body: stRows,
+          headStyles: cHead, styles: cStyles,
+          columnStyles: {
+            0: { cellWidth: 120 },
+            1: { cellWidth: 22, halign: 'center' },
+            2: { cellWidth: 22, halign: 'center' },
+            3: { cellWidth: 26, halign: 'center' },
+          },
+          theme: 'grid',
+        })
+        y = doc.lastAutoTable.finalY + 3
+      }
+
       // ── Little Tums ───────────────────────────────────────────────────────
       if (sd.littleTums) {
         const ltItems = kitchenSafety.littleTumsItems || []
@@ -787,7 +818,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
             ? (servingEntry?.skipped ? 'N/A' : (servingEntry?.temp ? `${servingEntry.temp}°C` : '-'))
             : '-'
           ltRows.push([
-            label, 'Tea',
+            label, item.type === 'hot' ? 'Hot Tea' : 'Cold Tea',
             entry?.temp ? `${entry.temp}°C` : '-',
             ltData?.teaTwoHours === 'yes' ? 'Yes' : (ltData?.teaTwoHours === 'no' ? 'No' : '-'),
             servingTemp,
@@ -831,37 +862,6 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
             1: { cellWidth: 28, halign: 'center' },
             2: { cellWidth: 20, halign: 'center' },
             3: { cellWidth: 32, halign: 'center' },
-          },
-          theme: 'grid',
-        })
-        y = doc.lastAutoTable.finalY + 3
-      }
-
-      // ── Sterilising Equipment & Feeding Bottle Checks (Blue/Yellow only) ──
-      if (isSteriRoom) {
-        const stData = sd.sterilisation?.deliveryData
-        const stRows = []
-        stRows.push([{ content: 'Morning', colSpan: 4, styles: { fillColor: N_BLUE, textColor: FOREST, fontStyle: 'bold', fontSize: 7 } }])
-        STERIL_MORNING_ITEMS.forEach(item => {
-          const d = stData?.morning?.[item.id]
-          stRows.push([item.text, d?.yn === 'yes' ? 'Yes' : (d?.yn === 'no' ? 'No' : '-'), fmtTime(d?.time), d?.initials || '-'])
-        })
-        stRows.push([{ content: 'Afternoon', colSpan: 4, styles: { fillColor: N_BLUE, textColor: FOREST, fontStyle: 'bold', fontSize: 7 } }])
-        STERIL_AFTERNOON_ITEMS.forEach(item => {
-          const d = stData?.afternoon?.[item.id]
-          stRows.push([item.text, d?.yn === 'yes' ? 'Yes' : (d?.yn === 'no' ? 'No' : '-'), fmtTime(d?.time), d?.initials || '-'])
-        })
-        autoTable(doc, {
-          startY: y,
-          margin: { left: margin, right: margin },
-          head: [['Sterilising Equipment & Feeding Bottle Checks', 'Completed', 'Time', 'Initials']],
-          body: stRows,
-          headStyles: cHead, styles: cStyles,
-          columnStyles: {
-            0: { cellWidth: 120 },
-            1: { cellWidth: 22, halign: 'center' },
-            2: { cellWidth: 22, halign: 'center' },
-            3: { cellWidth: 26, halign: 'center' },
           },
           theme: 'grid',
         })
