@@ -27,17 +27,19 @@ export function RiskValidationScreen() {
   const [error, setError] = useState(null)
   const [expandedHazard, setExpandedHazard] = useState(1)
   const [editingField, setEditingField] = useState(null)
+  const [saved, setSaved] = useState(false)
 
   // Warn user before leaving with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e) => {
+      if (saved) return
       e.preventDefault()
       e.returnValue = ''
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [])
+  }, [saved])
 
   // Redirect if no draft data
   if (!initialDraft) {
@@ -58,7 +60,7 @@ export function RiskValidationScreen() {
   }
 
   const getRatingBadge = (rating) => {
-    const ratingConfig = RISK_RATINGS.find(r => r.value === rating) || RISK_RATINGS[1]
+    const ratingConfig = RISK_RATINGS.find(r => r.value === rating) || RISK_RATINGS.find(r => r.value === 'M')
     return (
       <span className={`px-2 py-1 text-xs font-medium rounded border ${ratingConfig.color}`}>
         {ratingConfig.label}
@@ -76,6 +78,7 @@ export function RiskValidationScreen() {
       const fileName = `Risk Assessment - ${draft.activity_description || formData.activityName} - ${draft.assessment_date}.docx`
 
       await generateDocx(docxData, fileName)
+      setSaved(true)
 
       // Save to database as completed
       let saveError = null
@@ -119,6 +122,7 @@ export function RiskValidationScreen() {
         status: 'draft'
       }, draftId)
       if (data && data[0] && !draftId) setDraftId(data[0].id)
+      setSaved(true)
       navigate('/risk-assessment')
     } catch (err) {
       console.error('Save draft error:', err)

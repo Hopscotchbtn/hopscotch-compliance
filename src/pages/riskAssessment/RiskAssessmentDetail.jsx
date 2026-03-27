@@ -60,7 +60,7 @@ export function RiskAssessmentDetail() {
         location: assessment.location,
         people_at_risk: Array.isArray(assessment.people_at_risk)
           ? assessment.people_at_risk.join(', ')
-          : assessment.people_at_risk,
+          : (assessment.people_at_risk || ''),
         review_date: assessment.review_date,
         safe_system_of_work: assessment.safe_system_of_work || ''
       }
