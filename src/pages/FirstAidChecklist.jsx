@@ -163,6 +163,13 @@ export function FirstAidChecklist() {
           </div>
         )}
 
+        {/* Data notice */}
+        <div className="rounded-xl p-3 bg-gray-50 border border-gray-200">
+          <p className="text-xs text-gray-500 leading-relaxed">
+            <span className="font-medium text-gray-600">Data notice:</span> Your initials are recorded for health, safety, and compliance purposes under legitimate interest (UK GDPR Article 6(1)(f)). Records are held securely and retained in line with Hopscotch's data retention policy.
+          </p>
+        </div>
+
         {/* Initials */}
         <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <label className="block text-sm font-medium text-hop-forest mb-2">

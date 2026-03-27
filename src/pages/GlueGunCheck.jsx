@@ -154,6 +154,13 @@ export function GlueGunCheck() {
 
         {nursery && (
           <>
+            {/* Data notice */}
+            <div className="rounded-xl p-3 bg-gray-50 border border-gray-200">
+              <p className="text-xs text-gray-500 leading-relaxed">
+                <span className="font-medium text-gray-600">Data notice:</span> Your initials are recorded for health and safety accountability purposes under legitimate interest (UK GDPR Article 6(1)(f)). Records are held securely and retained in line with Hopscotch's data retention policy.
+              </p>
+            </div>
+
             {/* Sign In button + expandable panel */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <button
@@ -373,13 +380,6 @@ export function GlueGunCheck() {
                 {downloadingExcel ? 'Generating…' : 'Download Excel'}
               </Button>
               {downloadError && <p className="mt-2 text-xs text-red-600">{downloadError}</p>}
-            </div>
-
-            {/* GDPR notice */}
-            <div className="rounded-xl p-4 bg-gray-50 border border-gray-200">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                <span className="font-medium text-gray-600">Data notice:</span> Initials are recorded for health and safety accountability purposes under legitimate interest (UK GDPR Article 6(1)(f)). Only the minimum data required is collected. Records are held securely and retained in line with Hopscotch's data retention policy. Access to downloaded records is restricted to authorised staff only.
-              </p>
             </div>
 
             <div className="text-center pt-2">
