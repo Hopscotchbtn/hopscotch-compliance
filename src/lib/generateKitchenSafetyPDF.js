@@ -475,11 +475,11 @@ function drawChecklistReference(doc, y, margin, pageW) {
 }
 
 function roomLabel(doc, room, y, margin) {
-  doc.setFont('helvetica', 'italic')
-  doc.setFontSize(7.5)
-  doc.setTextColor(...MID_GREY)
-  doc.text(`Room: ${room || '—'}`, margin, y)
-  return y + 4
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.setTextColor(...FOREST)
+  doc.text(room || '—', margin, y)
+  return y + 5
 }
 
 function drawPeriodicChecks(doc, y, roomWeekData, periodicChecks, margin, pageW) {
