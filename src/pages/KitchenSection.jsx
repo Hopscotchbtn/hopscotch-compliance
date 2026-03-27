@@ -519,6 +519,12 @@ export function KitchenSection() {
             </p>
           </div>
 
+          <div className="rounded-xl p-3 bg-gray-50 border border-gray-200">
+            <p className="text-xs text-gray-500 leading-relaxed">
+              <span className="font-medium text-gray-600">Data notice:</span> Staff initials and children's initials are recorded as part of our food safety management system under legitimate interest (UK GDPR Article 6(1)(f)). Records are held securely and retained in line with Hopscotch's data retention policy.
+            </p>
+          </div>
+
           {entries.map((entry, index) => (
             <Card key={index} className="space-y-4">
               <p className="font-medium text-hop-forest">Food {index + 1}</p>
