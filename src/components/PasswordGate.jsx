@@ -94,7 +94,7 @@ export function PasswordGate({ children }) {
         </Card>
 
         <p className="text-center text-gray-400 text-xs mt-6 px-2 leading-relaxed">
-          By using this tool, staff acknowledge that their name and signature will be recorded against compliance checks. This data is processed under legal obligation (food safety and Ofsted regulations) and retained for 3 years. For queries contact your manager.
+          By using this tool, staff acknowledge that their name and signature will be recorded against compliance checks. This data is processed under legal obligation (food safety and Ofsted regulations) and retained for 1 year. For queries contact your manager.
         </p>
 
         <p className="text-center text-gray-400 text-xs mt-3">
