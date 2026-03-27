@@ -47,14 +47,6 @@ export function Home() {
           <LogoWithText size="large" />
         </div>
 
-        {/* Prototype warning */}
-        <div className="bg-red-100 border-2 border-red-500 rounded-xl p-4 mb-8">
-          <p className="text-center text-red-700">
-            <strong className="text-lg">PROTOTYPE ONLY</strong><br />
-            <span className="text-sm font-medium">Do not enter any sensitive or personal data into these tools.</span>
-          </p>
-        </div>
-
         {/* Title section */}
         <div className="text-center mb-8">
           <h2 className="font-display text-3xl text-hop-forest font-semibold mb-2">
@@ -89,6 +81,12 @@ export function Home() {
               </Button>
             </Link>
             <div style={{ height: '20px' }} />
+            <div className="bg-red-100 border-2 border-red-500 rounded-xl p-3 mb-2">
+              <p className="text-center text-red-700">
+                <strong>PROTOTYPE ONLY</strong><br />
+                <span className="text-sm font-medium">Do not enter any sensitive or personal data.</span>
+              </p>
+            </div>
             <Link to="/famly-dashboard" className="block">
               <Button color="freshair" size="large" fullWidth className="border border-black">
                 <span className="text-lg">📊 Accident &amp; Incident Dashboard</span>
