@@ -482,13 +482,12 @@ function roomLabel(doc, room, y, margin) {
   return y + 4
 }
 
-function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
+function drawPeriodicChecks(doc, y, roomWeekData, periodicChecks, margin, pageW) {
   const { calibration = null } = periodicChecks || {}
-  const { probeCheck: probeData, probeCheckRoom, supermarketTemp: smData, supermarketTempRoom, probeCalibration: calDetailData, probeCalibrationRoom } = weekData || {}
+  const { probeCheck: probeData, supermarketTemp: smData, probeCalibration: calDetailData } = roomWeekData || {}
   const W = pageW - margin * 2
 
   // ── Weekly: Fridge/Freezer Probe Thermometer Check ──────────────────────
-  y = roomLabel(doc, probeCheckRoom, y, margin)
   const probeBody = probeData
     ? [
         ['Opening temperature', probeData.temperatures?.probeOpening ? `${probeData.temperatures.probeOpening}°C` : '-', probeData.responses?.openingInitials || probeData.completedBy || '-'],
@@ -510,7 +509,6 @@ function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
   y = doc.lastAutoTable.finalY + 3
 
   // ── Weekly: Supermarket Food Temperatures ───────────────────────────────
-  y = roomLabel(doc, supermarketTempRoom, y, margin)
   const entries = (smData?.deliveryData?.supermarketEntries || []).filter(e => e.food || e.temp)
   const smBody = entries.length
     ? entries.map(e => [e.food || '-', e.time || '-', e.temp ? `${e.temp}°C` : '-', e.initials || '-'])
@@ -530,7 +528,6 @@ function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
   y = doc.lastAutoTable.finalY + 3
 
   // ── Monthly: Probe Calibration ──────────────────────────────────────────
-  y = roomLabel(doc, probeCalibrationRoom, y, margin)
   const now = new Date()
   const isOverdue = !calibration || (now - new Date(calibration.created_at)) > 31 * 24 * 60 * 60 * 1000
   const calDate = calibration
@@ -616,19 +613,20 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
   const weekRange = formatWeekRange(weekStart, weekEnd)
   const dates = getDatesInRange(weekStart, weekEnd)
 
-  // Group checks by room then date; extract periodic check data
+  // Group checks by room then date; extract periodic check data per room
   const byRoom = {}
-  const weekData = { probeCheck: null, probeCheckRoom: null, supermarketTemp: null, supermarketTempRoom: null, probeCalibration: null, probeCalibrationRoom: null }
+  const weekDataByRoom = {}
   for (const check of checks) {
     const room = check.room || 'Kitchen'
     if (!byRoom[room]) byRoom[room] = {}
+    if (!weekDataByRoom[room]) weekDataByRoom[room] = { probeCheck: null, supermarketTemp: null, probeCalibration: null }
     const dateStr = toDateStr(new Date(check.created_at))
     let sectionData = null
     try { sectionData = JSON.parse(check.overall_notes || '{}').sectionData } catch {}
     byRoom[room][dateStr] = { sectionData }
-    if (sectionData?.probeCheck)       { weekData.probeCheck       = sectionData.probeCheck;       weekData.probeCheckRoom       = room }
-    if (sectionData?.supermarketTemp)  { weekData.supermarketTemp  = sectionData.supermarketTemp;  weekData.supermarketTempRoom  = room }
-    if (sectionData?.probeCalibration) { weekData.probeCalibration = sectionData.probeCalibration; weekData.probeCalibrationRoom = room }
+    if (sectionData?.probeCheck)       weekDataByRoom[room].probeCheck       = sectionData.probeCheck
+    if (sectionData?.supermarketTemp)  weekDataByRoom[room].supermarketTemp  = sectionData.supermarketTemp
+    if (sectionData?.probeCalibration) weekDataByRoom[room].probeCalibration = sectionData.probeCalibration
   }
 
   if (allRooms) {
@@ -638,6 +636,10 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
   }
 
   const rooms = allRooms ? allRooms.filter(r => byRoom[r] !== undefined) : Object.keys(byRoom)
+  // Ensure every room has an entry in weekDataByRoom (rooms with no checks get nulls)
+  for (const room of rooms) {
+    if (!weekDataByRoom[room]) weekDataByRoom[room] = { probeCheck: null, supermarketTemp: null, probeCalibration: null }
+  }
 
   if (rooms.length === 0) {
     doc.setFont('helvetica', 'bold')
@@ -924,7 +926,12 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
   doc.setLineWidth(0.5)
   doc.line(margin, py, pageW - margin, py)
   py += 5
-  drawPeriodicChecks(doc, py, weekData, periodicChecks, margin, pageW)
+  for (const room of rooms) {
+    if (py > pageH - 70) { doc.addPage(); py = margin }
+    py = roomLabel(doc, room, py, margin)
+    py = drawPeriodicChecks(doc, py, weekDataByRoom[room] || {}, periodicChecks, margin, pageW)
+    py += 6
+  }
 
   // ── Footers ───────────────────────────────────────────────────────────────
   const totalPages = doc.internal.getNumberOfPages()
