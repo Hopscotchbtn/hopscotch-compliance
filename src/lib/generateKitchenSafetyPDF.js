@@ -649,7 +649,6 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
   for (const room of rooms) {
     const history = byRoom[room]
     const isSteriRoom = STERILISATION_ROOMS.includes(room)
-    let periodicRenderedInline = false
 
     for (const dateStr of dates) {
       if (!firstPage) doc.addPage()
@@ -833,8 +832,8 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
             body: ltRows,
             headStyles: cHead, styles: cStyles,
             columnStyles: {
-              0: { cellWidth: 100 },
-              1: { cellWidth: 12, halign: 'center' },
+              0: { cellWidth: 92 },
+              1: { cellWidth: 20, halign: 'center' },
               2: { cellWidth: 18, halign: 'center' },
               3: { cellWidth: 20, halign: 'center' },
               4: { cellWidth: 20, halign: 'center' },
@@ -891,47 +890,30 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
       })
       y = Math.max(commentsEnd, doc.lastAutoTable.finalY) + 3
 
-      // Try to fit periodic checks inline on Friday if there's room
-      if (new Date(dateStr + 'T12:00:00').getDay() === 5 && pageH - y - 6 >= 70) {
-        y += 3
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(8)
-        doc.setTextColor(...FOREST)
-        doc.text('Weekly & Monthly Checks', margin, y)
-        y += 4
-        doc.setDrawColor(...MARMALADE)
-        doc.setLineWidth(0.4)
-        doc.line(margin, y, pageW - margin, y)
-        y += 4
-        drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW)
-        periodicRenderedInline = true
-      }
-    }
-
-    // ── Periodic Checks page (if didn't fit inline on Friday) ─────────────
-    if (!periodicRenderedInline) {
-      doc.addPage()
-      let py = margin
-      if (logoDataURL) {
-        try { doc.addImage(logoDataURL, 'PNG', (pageW - logoW) / 2, py, logoW, logoH); py += logoH + 2 } catch {}
-      }
-      doc.setFont('helvetica', 'bold')
-      doc.setFontSize(11)
-      doc.setTextColor(...FOREST)
-      doc.text(`Weekly & Monthly Checks — ${room}`, pageW / 2, py, { align: 'center' })
-      py += 5
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(7)
-      doc.setTextColor(...MID_GREY)
-      doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, py, { align: 'center' })
-      py += 3
-      doc.setDrawColor(...MARMALADE)
-      doc.setLineWidth(0.5)
-      doc.line(margin, py, pageW - margin, py)
-      py += 5
-      drawPeriodicChecks(doc, py, weekData, periodicChecks, margin, pageW)
     }
   }
+
+  // ── Weekly & Monthly Checks — once at the end ──────────────────────────
+  doc.addPage()
+  let py = margin
+  if (logoDataURL) {
+    try { doc.addImage(logoDataURL, 'PNG', (pageW - logoW) / 2, py, logoW, logoH); py += logoH + 6 } catch {}
+  }
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(...FOREST)
+  doc.text('Weekly & Monthly Checks', pageW / 2, py, { align: 'center' })
+  py += 5
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7)
+  doc.setTextColor(...MID_GREY)
+  doc.text(`${nursery}  ·  Week: ${weekRange}`, pageW / 2, py, { align: 'center' })
+  py += 3
+  doc.setDrawColor(...MARMALADE)
+  doc.setLineWidth(0.5)
+  doc.line(margin, py, pageW - margin, py)
+  py += 5
+  drawPeriodicChecks(doc, py, weekData, periodicChecks, margin, pageW)
 
   // ── Footers ───────────────────────────────────────────────────────────────
   const totalPages = doc.internal.getNumberOfPages()
