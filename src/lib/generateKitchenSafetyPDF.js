@@ -474,12 +474,22 @@ function drawChecklistReference(doc, y, margin, pageW) {
   return Math.max(panelBottomY, doc.lastAutoTable.finalY) + 3
 }
 
+function roomLabel(doc, room, y, margin) {
+  if (!room) return y
+  doc.setFont('helvetica', 'italic')
+  doc.setFontSize(7.5)
+  doc.setTextColor(...MID_GREY)
+  doc.text(`Room: ${room}`, margin, y)
+  return y + 4
+}
+
 function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
   const { calibration = null } = periodicChecks || {}
-  const { probeCheck: probeData, supermarketTemp: smData, probeCalibration: calDetailData } = weekData || {}
+  const { probeCheck: probeData, probeCheckRoom, supermarketTemp: smData, supermarketTempRoom, probeCalibration: calDetailData, probeCalibrationRoom } = weekData || {}
   const W = pageW - margin * 2
 
   // ── Weekly: Fridge/Freezer Probe Thermometer Check ──────────────────────
+  y = roomLabel(doc, probeCheckRoom, y, margin)
   const probeBody = probeData
     ? [
         ['Opening temperature', probeData.temperatures?.probeOpening ? `${probeData.temperatures.probeOpening}°C` : '-', probeData.responses?.openingInitials || probeData.completedBy || '-'],
@@ -501,6 +511,7 @@ function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
   y = doc.lastAutoTable.finalY + 3
 
   // ── Weekly: Supermarket Food Temperatures ───────────────────────────────
+  y = roomLabel(doc, supermarketTempRoom, y, margin)
   const entries = (smData?.deliveryData?.supermarketEntries || []).filter(e => e.food || e.temp)
   const smBody = entries.length
     ? entries.map(e => [e.food || '-', e.time || '-', e.temp ? `${e.temp}°C` : '-', e.initials || '-'])
@@ -520,6 +531,7 @@ function drawPeriodicChecks(doc, y, weekData, periodicChecks, margin, pageW) {
   y = doc.lastAutoTable.finalY + 3
 
   // ── Monthly: Probe Calibration ──────────────────────────────────────────
+  y = roomLabel(doc, probeCalibrationRoom, y, margin)
   const now = new Date()
   const isOverdue = !calibration || (now - new Date(calibration.created_at)) > 31 * 24 * 60 * 60 * 1000
   const calDate = calibration
@@ -607,7 +619,7 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
 
   // Group checks by room then date; extract periodic check data
   const byRoom = {}
-  const weekData = { probeCheck: null, supermarketTemp: null, probeCalibration: null }
+  const weekData = { probeCheck: null, probeCheckRoom: null, supermarketTemp: null, supermarketTempRoom: null, probeCalibration: null, probeCalibrationRoom: null }
   for (const check of checks) {
     const room = check.room || 'Kitchen'
     if (!byRoom[room]) byRoom[room] = {}
@@ -615,9 +627,9 @@ export async function generateAllRoomsKitchenSafetyPDF(nursery, checks, weekStar
     let sectionData = null
     try { sectionData = JSON.parse(check.overall_notes || '{}').sectionData } catch {}
     byRoom[room][dateStr] = { sectionData }
-    if (sectionData?.probeCheck)       weekData.probeCheck       = sectionData.probeCheck
-    if (sectionData?.supermarketTemp)  weekData.supermarketTemp  = sectionData.supermarketTemp
-    if (sectionData?.probeCalibration) weekData.probeCalibration = sectionData.probeCalibration
+    if (sectionData?.probeCheck)       { weekData.probeCheck       = sectionData.probeCheck;       weekData.probeCheckRoom       = room }
+    if (sectionData?.supermarketTemp)  { weekData.supermarketTemp  = sectionData.supermarketTemp;  weekData.supermarketTempRoom  = room }
+    if (sectionData?.probeCalibration) { weekData.probeCalibration = sectionData.probeCalibration; weekData.probeCalibrationRoom = room }
   }
 
   if (allRooms) {
