@@ -106,7 +106,7 @@ export function RoomProgress() {
 
   // For autoRoom checks (like Garden), skip straight to swipe cards after setup
   useEffect(() => {
-    if (checkType?.autoRoom && !showSetup && nursery && name) {
+    if (checkType?.autoRoom && !showSetup && nursery && (name || checkTypeId === 'firstAidBox')) {
       if (checkTypeId === 'firstAidBox') {
         navigate('/check/firstAidBox/first-aid', {
           state: { nursery, completedBy: name.trim(), section: location.state?.section },
@@ -174,7 +174,7 @@ export function RoomProgress() {
   const isNurseryRoomSafety = isNursery && checkTypeId === 'roomSafety'
 
   const handleSetupComplete = async () => {
-    if (!nursery || (!isNurseryRoomSafety && !name.trim())) return
+    if (!nursery || (!isNurseryRoomSafety && checkTypeId !== 'firstAidBox' && !name.trim())) return
     storage.setLastNursery(nursery)
     const rooms = await getCustomRooms(nursery, checkTypeId).catch(() => [])
     setCustomRooms(rooms)
@@ -265,7 +265,7 @@ export function RoomProgress() {
               disabled={!isHolidayClub && !isNursery && !locationType}
             />
 
-            {!isNurseryRoomSafety && (
+            {!isNurseryRoomSafety && checkTypeId !== 'firstAidBox' && (
               <Input
                 label="Your initials"
                 value={name}
@@ -280,7 +280,7 @@ export function RoomProgress() {
                 color="forest"
                 size="large"
                 fullWidth
-                disabled={!nursery || (!isNurseryRoomSafety && !name.trim())}
+                disabled={!nursery || (!isNurseryRoomSafety && checkTypeId !== 'firstAidBox' && !name.trim())}
                 onClick={handleSetupComplete}
               >
                 Continue
