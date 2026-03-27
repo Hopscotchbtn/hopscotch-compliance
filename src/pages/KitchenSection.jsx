@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { SwipeCard } from '../components/SwipeCard'
@@ -95,49 +95,7 @@ const getSectionConfig = (sectionId) => {
 }
 
 function SignoffSection({ config, responses, setResponses, onBack, onComplete }) {
-  const canvasRef = useRef(null)
-  const drawing = useRef(false)
-  const [hasSig, setHasSig] = useState(false)
-
-  const getPos = (e, canvas) => {
-    const rect = canvas.getBoundingClientRect()
-    const src = e.touches ? e.touches[0] : e
-    return { x: src.clientX - rect.left, y: src.clientY - rect.top }
-  }
-
-  const startDraw = (e) => {
-    e.preventDefault()
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    const pos = getPos(e, canvas)
-    ctx.beginPath()
-    ctx.moveTo(pos.x, pos.y)
-    drawing.current = true
-  }
-
-  const draw = (e) => {
-    e.preventDefault()
-    if (!drawing.current) return
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    ctx.strokeStyle = '#1a3a2a'
-    ctx.lineWidth = 2.5
-    ctx.lineCap = 'round'
-    const pos = getPos(e, canvas)
-    ctx.lineTo(pos.x, pos.y)
-    ctx.stroke()
-    setHasSig(true)
-  }
-
-  const endDraw = () => { drawing.current = false }
-
-  const clearSig = () => {
-    const canvas = canvasRef.current
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
-    setHasSig(false)
-  }
-
-  const isValid = responses.managerName?.trim() && hasSig
+  const isValid = !!responses.managerName?.trim()
 
   return (
     <div className="min-h-screen bg-hop-pebble">
@@ -174,46 +132,13 @@ function SignoffSection({ config, responses, setResponses, onBack, onComplete })
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-hop-forest text-base font-body focus:outline-none focus:border-hop-forest"
             />
           </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-hop-forest">
-                Signature <span className="text-hop-marmalade-dark">*</span>
-              </label>
-              {hasSig && (
-                <button onClick={clearSig} className="text-xs text-gray-400 hover:text-hop-marmalade-dark underline">
-                  Clear
-                </button>
-              )}
-            </div>
-            <canvas
-              ref={canvasRef}
-              width={340}
-              height={120}
-              onMouseDown={startDraw}
-              onMouseMove={draw}
-              onMouseUp={endDraw}
-              onMouseLeave={endDraw}
-              onTouchStart={startDraw}
-              onTouchMove={draw}
-              onTouchEnd={endDraw}
-              className="w-full border-2 border-gray-200 rounded-lg bg-white touch-none"
-              style={{ height: '120px' }}
-            />
-            {!hasSig && (
-              <p className="text-xs text-gray-400 mt-1">Sign above with your finger or mouse</p>
-            )}
-          </div>
         </Card>
 
         <Button
           color="marmalade"
           size="large"
           fullWidth
-          onClick={() => {
-            const sig = canvasRef.current.toDataURL('image/png')
-            onComplete({ managerSignature: sig })
-          }}
+          onClick={() => onComplete({})}
           disabled={!isValid}
         >
           Sign Off & Complete
