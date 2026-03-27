@@ -521,7 +521,7 @@ export function KitchenSection() {
 
           <div className="rounded-xl p-3 bg-gray-50 border border-gray-200">
             <p className="text-xs text-gray-500 leading-relaxed">
-              <span className="font-medium text-gray-600">Data notice:</span> Staff initials and children's initials are recorded as part of our food safety management system under legitimate interest (UK GDPR Article 6(1)(f)). Records are held securely and retained in line with Hopscotch's data retention policy.
+              <span className="font-medium text-gray-600">Data notice:</span> Your initials are recorded for health, safety, and compliance purposes under legitimate interest (UK GDPR Article 6(1)(f)). Children's initials are recorded as part of our food safety management system. Records are held securely and retained in line with Hopscotch's data retention policy.
             </p>
           </div>
 
