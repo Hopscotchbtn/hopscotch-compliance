@@ -153,7 +153,6 @@ function renderDayContent(doc, sd, completedSections, y, margin, pageW) {
       head: [['', 'Unit name', 'Temp']],
       body: [
         ...rows,
-        [{ content: 'Time', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: fmtTime(sd.closing.completedAt), colSpan: 2 }],
         [{ content: 'Initials', styles: { fontStyle: 'bold', textColor: MID_GREY } }, { content: sd.closing.completedBy || sd.closing.signedBy || '-', colSpan: 2 }],
       ],
       columnStyles: { 0: { cellWidth: 22 }, 2: { cellWidth: 22 } },
