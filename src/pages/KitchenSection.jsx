@@ -1353,7 +1353,7 @@ export function KitchenSection() {
                   disabled={skipped}
                   onChange={(e) => setDeliveryData(prev => ({
                     ...prev,
-                    [dataKey]: { ...prev[dataKey], [item.id]: { temp: e.target.value } }
+                    [dataKey]: { ...prev[dataKey], [item.id]: { ...prev[dataKey]?.[item.id], temp: e.target.value } }
                   }))}
                   placeholder={item.type === 'hot' ? '≥63' : '≤8'}
                   className={`w-full px-3 py-2 pr-10 rounded-lg border-2 text-sm ${
@@ -1368,7 +1368,7 @@ export function KitchenSection() {
               <button
                 onClick={() => setDeliveryData(prev => ({
                   ...prev,
-                  [dataKey]: { ...prev[dataKey], [item.id]: { skipped: !skipped } }
+                  [dataKey]: { ...prev[dataKey], [item.id]: { ...prev[dataKey]?.[item.id], skipped: !skipped } }
                 }))}
                 className={`px-3 py-2 border-2 rounded-lg text-sm ${skipped ? 'border-hop-marmalade bg-hop-marmalade/20 text-hop-marmalade-dark font-medium' : 'border-gray-200 text-gray-500'}`}
               >
