@@ -297,13 +297,23 @@ ${existingAssessments}
     const message = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1000,
-      system: systemPrompt,
+      system: [
+        {
+          type: 'text',
+          text: systemPrompt,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
       messages: [
         {
           role: 'user',
           content: userPrompt,
         },
       ],
+    }, {
+      headers: {
+        'anthropic-beta': 'prompt-caching-2024-07-31',
+      },
     })
 
     const responseText = message.content[0].text
