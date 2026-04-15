@@ -1,7 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { classifyAll } from '../../lib/famly/dataHelpers'
-import { generateMonthlyReportPDF } from '../../lib/famly/generateMonthlyReportPDF'
+import { useState, useEffect, useMemo } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 // ─── period helpers ──
 
@@ -53,15 +51,6 @@ function buildPeriod(type, monthKey) {
   return { type: '12month', from, to, label: `${fromLabel} – ${toLabel}` }
 }
 
-function fetchRangeForPeriod(period) {
-  // For month reports we want the prior year same month too, so fetch ~13 months ending at period.to
-  if (period.type === 'month') {
-    const from = new Date(period.from.getFullYear() - 1, period.from.getMonth(), 1)
-    return { from, to: period.to }
-  }
-  return { from: period.from, to: period.to }
-}
-
 // ─── UI ──
 
 const REPORT_TYPES = [
@@ -71,12 +60,13 @@ const REPORT_TYPES = [
 ]
 
 export function FamlyDashboard() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [sites, setSites] = useState([])
-  const [selectedSiteId, setSelectedSiteId] = useState('')
-  const [reportType, setReportType] = useState('month')
-  const [selectedMonth, setSelectedMonth] = useState(() => previousMonthKey())
+  const [selectedSiteId, setSelectedSiteId] = useState(() => searchParams.get('site') ?? '')
+  const [reportType, setReportType] = useState(() => searchParams.get('type') ?? 'month')
+  const [selectedMonth, setSelectedMonth] = useState(() => searchParams.get('month') ?? previousMonthKey())
   const [loading, setLoading] = useState(true)
-  const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState(null)
 
   const monthOptions = useMemo(() => getMonthOptions(), [])
@@ -91,7 +81,7 @@ export function FamlyDashboard() {
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           setSites(data)
-          setSelectedSiteId(data[0].id)
+          setSelectedSiteId(prev => prev || data[0].id)
         }
         setLoading(false)
       })
@@ -101,35 +91,17 @@ export function FamlyDashboard() {
       })
   }, [])
 
-  const handleDownload = useCallback(async () => {
+  const handleViewReport = () => {
     if (!selectedSiteId) return
-    setDownloading(true)
-    setError(null)
-    try {
-      const period = buildPeriod(reportType, selectedMonth)
-      const range = fetchRangeForPeriod(period)
-      const fromStr = range.from.toISOString().slice(0, 10)
-      const toStr = range.to.toISOString().slice(0, 10)
-
-      const res = await fetch(`/api/famly-incidents?siteId=${selectedSiteId}&from=${fromStr}&to=${toStr}`)
-      if (!res.ok) throw new Error('Failed to load incidents')
-      const incidents = await res.json()
-
-      const classified = classifyAll(incidents)
-      const siteName = sites.find(s => s.id === selectedSiteId)?.name ?? 'Site'
-      generateMonthlyReportPDF(classified, siteName, period)
-    } catch (err) {
-      setError(err.message ?? 'Failed to generate report')
-    } finally {
-      setDownloading(false)
-    }
-  }, [selectedSiteId, reportType, selectedMonth, sites])
+    const params = new URLSearchParams({ site: selectedSiteId, type: reportType, month: selectedMonth })
+    navigate(`/famly-dashboard/report?${params.toString()}`)
+  }
 
   const buttonLabel = reportType === 'month'
-    ? `Download ${monthLabel(selectedMonth)} report`
+    ? `View ${monthLabel(selectedMonth)} report`
     : reportType === '12month'
-      ? 'Download 12-month report'
-      : 'Download year-to-date report'
+      ? 'View 12-month report'
+      : 'View year-to-date report'
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -138,7 +110,7 @@ export function FamlyDashboard() {
           <Link to="/" className="text-slate-400 hover:text-slate-600 text-sm">← Back</Link>
           <h1 className="text-lg font-semibold text-slate-800 mt-2">Accident Review</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Download accident reports from Famly for any site and time window
+            View accident reports from Famly for any site and time window
           </p>
         </div>
       </header>
@@ -211,26 +183,21 @@ export function FamlyDashboard() {
               </p>
             </div>
 
-            {/* Download button */}
+            {/* View report button */}
             <button
-              onClick={handleDownload}
-              disabled={downloading || !selectedSiteId}
+              onClick={handleViewReport}
+              disabled={!selectedSiteId}
               className="w-full text-base font-semibold bg-amber-600 text-white rounded-lg px-4 py-4 hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
             >
-              {downloading ? (
-                <>
-                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  {buttonLabel}
-                </>
-              )}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {buttonLabel}
             </button>
+            <p className="text-center text-xs text-slate-400 -mt-1">
+              Opens the report in your browser. Print or download as PDF from there.
+            </p>
 
             {error && sites.length > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">

@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf'
-import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, childDisplayName, formatDate } from './dataHelpers'
+import { childDisplayName, formatDate } from './dataHelpers'
+import { computeAccidentReport } from './computeAccidentReport'
 
 // ─── period helpers ──────────────────────────────────────────────────────────
 
@@ -60,8 +61,22 @@ function setColor(doc, rgb, method = 'setTextColor') {
 
 // ─── main generator ──────────────────────────────────────────────────────────
 
-export function generateMonthlyReportPDF(incidents, siteName, period) {
-  if (!period) period = defaultPreviousMonthPeriod()
+export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePeriod) {
+  // Back-compat: accept either a precomputed report or raw incidents + period
+  const report = Array.isArray(reportOrIncidents)
+    ? computeAccidentReport(reportOrIncidents, maybePeriod ?? defaultPreviousMonthPeriod())
+    : reportOrIncidents
+  const period = report.period
+  const {
+    totalReports, onArrival, atNursery,
+    ofstedCount, riddorCount, ladoCount,
+    acknowledged, ackRate,
+    high, medium,
+    homeLoc, siteLocs,
+    dowOrder, dowCounts,
+    yoyDiff, repeats, repeatWindowLabel,
+  } = report
+  const dowMax = Math.max(1, ...Object.values(dowCounts))
 
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -76,54 +91,6 @@ export function generateMonthlyReportPDF(incidents, siteName, period) {
       y = 20
     }
   }
-
-  // ─── compute everything from the period ──
-
-  const periodIncs = filterByRange(incidents, period.from, period.to)
-  const totalReports = periodIncs.length
-
-  const onArrival = periodIncs.filter(x => x.onArrival).length
-  const atNursery = totalReports - onArrival
-
-  const ofstedCount = periodIncs.filter(x => x.ofsted).length
-  const riddorCount = periodIncs.filter(x => x.riddor).length
-  const ladoCount = periodIncs.filter(x => x.lado).length
-
-  const acknowledged = periodIncs.filter(x => x.acknowledgedAt).length
-  const ackRate = totalReports > 0 ? Math.round((acknowledged / totalReports) * 100) : 100
-
-  const high = periodIncs.filter(x => x.severity === 'high')
-  const medium = periodIncs.filter(x => x.severity === 'medium')
-
-  // Top locations — break out "Home" if present
-  const allLocs = locationCounts(periodIncs)
-  const homeLoc = allLocs.find(l => l.location.toLowerCase() === 'home')
-  const siteLocs = allLocs.filter(l => l.location.toLowerCase() !== 'home').slice(0, 5)
-
-  // Day-of-week breakdown
-  const dowOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-  const dowCounts = Object.fromEntries(dowOrder.map(d => [d, 0]))
-  for (const inc of periodIncs) {
-    const d = new Date(inc.happenedAt)
-    if (!isNaN(d)) dowCounts[dowOrder[(d.getDay() + 6) % 7]]++
-  }
-  const dowMax = Math.max(1, ...Object.values(dowCounts))
-
-  // YoY only for single-month periods
-  let yoyDiff = null
-  if (period.type === 'month' && period.monthKey) {
-    const [y0, m0] = period.monthKey.split('-').map(Number)
-    const lastYearKey = `${y0 - 1}-${String(m0).padStart(2, '0')}`
-    const lastYearIncs = filterByMonth(incidents, lastYearKey)
-    if (lastYearIncs.length > 0) {
-      yoyDiff = totalReports - lastYearIncs.length
-    }
-  }
-
-  // Repeat children — period-based, top 8 ranked
-  const repeatPool = period.type === 'month' ? rollingWindow(incidents, 3) : periodIncs
-  const repeatWindowLabel = period.type === 'month' ? 'rolling 3 months' : period.label
-  const repeats = repeatChildren(repeatPool, 2).slice(0, 8)
 
   // ─── HEADER ──
 
