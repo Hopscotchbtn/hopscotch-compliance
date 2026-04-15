@@ -94,6 +94,18 @@ export function Home() {
                 <span className="text-lg">📊 Accident &amp; Incident Dashboard</span>
               </Button>
             </Link>
+            <div style={{ height: '20px' }} />
+            <a
+              href="https://hopscotch-investigator.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Button color="marmalade" size="large" fullWidth className="border border-black">
+                <span className="text-lg">🔍 Hopscotch Investigator</span>
+              </Button>
+            </a>
+            <p className="text-center text-xs text-gray-400 mt-2 italic">Prototype · opens in new tab</p>
           </div>
         </div>
         <div className="text-center mt-4">
