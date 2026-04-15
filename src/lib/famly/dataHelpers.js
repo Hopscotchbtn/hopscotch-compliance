@@ -27,6 +27,15 @@ export function rollingWindow(incidents, months) {
   return incidents.filter(inc => new Date(inc.happenedAt) >= cutoff)
 }
 
+export function filterByRange(incidents, from, to) {
+  const fromMs = from instanceof Date ? from.getTime() : new Date(from).getTime()
+  const toMs = to instanceof Date ? to.getTime() : new Date(to).getTime()
+  return incidents.filter(inc => {
+    const t = new Date(inc.happenedAt).getTime()
+    return t >= fromMs && t <= toMs
+  })
+}
+
 export function repeatChildren(incidents, minCount = 2) {
   const map = new Map()
   for (const inc of incidents) {
