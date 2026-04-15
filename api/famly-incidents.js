@@ -1,9 +1,9 @@
 const FAMLY_API = 'https://famlyapi.famly.co/v1/graphql'
 
-const QUERY = `
-  query AccidentReports($siteIds: [SiteId!]!) {
+const REPORTS_QUERY = `
+  query AccidentReports($siteIds: [SiteId!]!, $dateRange: ClosedLocalDateRange, $cursor: AccidentReportCursor, $pageSize: Int) {
     accidentReports {
-      listBySiteIds(siteIds: $siteIds) {
+      listBySiteIds(siteIds: $siteIds, dateRange: $dateRange, nextToken: $cursor, pageSize: $pageSize) {
         result {
           reportId kind date time createdAt status location description note firstAid
           parentsNotified lado ofsted riddor onArrival
@@ -53,6 +53,49 @@ function normalise(r) {
   }
 }
 
+async function fetchGraphQL(token, query, variables) {
+  const response = await fetch(FAMLY_API, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Famly-Accesstoken': token,
+    },
+    body: JSON.stringify({ query, variables }),
+  })
+  if (!response.ok) {
+    throw new Error(`Famly API HTTP error: ${response.status}`)
+  }
+  const json = await response.json()
+  if (json.errors) {
+    throw new Error(json.errors[0]?.message ?? 'GraphQL error')
+  }
+  return json.data
+}
+
+async function fetchAllReports(token, siteIds, from, to) {
+  const all = []
+  let cursor = null
+  let pages = 0
+  const pageSize = 50
+  const maxPages = 60 // ~3000 records safety cap
+
+  do {
+    const data = await fetchGraphQL(token, REPORTS_QUERY, {
+      siteIds,
+      dateRange: from && to ? { from, to } : null,
+      cursor,
+      pageSize,
+    })
+    const overview = data?.accidentReports?.listBySiteIds
+    if (!overview) break
+    all.push(...(overview.result || []))
+    cursor = overview.next
+    pages++
+  } while (cursor && pages < maxPages)
+
+  return all
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -70,41 +113,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(FAMLY_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Famly-Accesstoken': token,
-      },
-      body: JSON.stringify({
-        query: QUERY,
-        variables: { siteIds: [siteId] },
-      }),
-    })
-
-    if (!response.ok) {
-      return res.status(response.status).json({ error: `Famly API HTTP error: ${response.status}` })
-    }
-
-    const json = await response.json()
-    if (json.errors) {
-      return res.status(400).json({ error: json.errors[0]?.message ?? 'GraphQL error' })
-    }
-
-    const records = json.data?.accidentReports?.listBySiteIds?.result ?? []
-
-    // Filter by date range client-side
-    const fromDate = from ? new Date(from) : null
-    const toDate = to ? new Date(to) : null
-
-    const filtered = records.filter(r => {
-      const d = new Date(r.date ?? r.createdAt)
-      if (fromDate && d < fromDate) return false
-      if (toDate && d > toDate) return false
-      return true
-    })
-
-    return res.status(200).json(filtered.map(normalise))
+    const records = await fetchAllReports(token, [siteId], from, to)
+    return res.status(200).json(records.map(normalise))
   } catch (err) {
     console.error('[famly-incidents] error:', err)
     return res.status(502).json({ error: err.message ?? 'Unknown error' })
