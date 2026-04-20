@@ -267,7 +267,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     doc.text('Child', MARGIN + 10, y)
     doc.text('Count', MARGIN + 70, y)
     doc.text('Most recent', MARGIN + 95, y)
-    doc.text('Location', MARGIN + 130, y)
+    doc.text('Last location', MARGIN + 130, y)
     y += 2
     setColor(doc, COLOURS.rule, 'setDrawColor')
     doc.setLineWidth(0.2)
