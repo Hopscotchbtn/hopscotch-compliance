@@ -415,7 +415,8 @@ Important guidelines:
 - Consider the age group and developmental stage of children
 - Include supervision requirements appropriate to the activity
 - Ensure measures are practical and implementable
-- Pre-ratings should generally be H or M, post-ratings M or L, reassess ratings should be L
+- Pre-ratings should generally be H or M, post-ratings M or L
+- reassess_rating should reflect realistic residual risk after all controls — it should be L only if the additional controls genuinely reduce the hazard to a low level. Some hazards (e.g. road/rail travel, fire, severe allergic reactions) may remain M or even H even after all reasonable measures are in place. Do not default everything to L — use professional judgement based on whether the controls meaningfully eliminate or merely reduce the risk
 
 You MUST return ONLY valid JSON with no additional text, explanations, or markdown code fences.`
 
