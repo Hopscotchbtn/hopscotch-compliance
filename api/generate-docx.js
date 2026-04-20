@@ -3,6 +3,48 @@ import PizZip from 'pizzip'
 import fs from 'fs'
 import path from 'path'
 
+function getRatingFill(rating) {
+  if (rating === 'H') return 'ff0000'
+  if (rating === 'M') return 'ffc000'
+  return '00b050'
+}
+
+// The template has 10 empty green cells (no text) for reassess_rating,
+// one per hazard row. Find them in order and replace with the correct
+// fill color and rating text.
+function injectReassessRatings(xml, data) {
+  let result = xml
+  let hazardIndex = 1
+  let searchFrom = 0
+
+  while (hazardIndex <= 10) {
+    const greenIdx = result.indexOf('w:fill="00b050"', searchFrom)
+    if (greenIdx === -1) break
+
+    const cellStart = result.lastIndexOf('<w:tc>', greenIdx)
+    const cellEnd = result.indexOf('</w:tc>', greenIdx) + '</w:tc>'.length
+    const cell = result.substring(cellStart, cellEnd)
+
+    // Skip cells that already have text (post_rating cells)
+    if (cell.includes('<w:t>') || cell.includes('<w:t ')) {
+      searchFrom = greenIdx + 1
+      continue
+    }
+
+    // This is a reassess_rating cell — replace it
+    const rating = data[`reassess_rating_${hazardIndex}`] || ''
+    const fill = getRatingFill(rating)
+    const textContent = rating ? `<w:t>${rating}</w:t>` : ''
+    const replacement = `<w:tc><w:tcPr><w:shd w:fill="${fill}" w:val="clear"/><w:vAlign w:val="center"/></w:tcPr><w:p w:rsidR="00000000"><w:pPr><w:jc w:val="center"/><w:rPr/></w:pPr><w:r><w:rPr><w:rtl w:val="0"/></w:rPr>${textContent}</w:r></w:p></w:tc>`
+
+    result = result.substring(0, cellStart) + replacement + result.substring(cellEnd)
+    searchFrom = cellStart + replacement.length
+    hazardIndex++
+  }
+
+  return result
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -28,6 +70,12 @@ export default async function handler(req, res) {
 
     // Load the template into PizZip
     const zip = new PizZip(templateContent)
+
+    // Fix reassess_rating cells: template has hardcoded green for all of them
+    // since they were always Low before. Now update color and add rating text.
+    let docXml = zip.files['word/document.xml'].asText()
+    docXml = injectReassessRatings(docXml, data)
+    zip.file('word/document.xml', docXml)
 
     // Create docxtemplater instance
     const doc = new Docxtemplater(zip, {
