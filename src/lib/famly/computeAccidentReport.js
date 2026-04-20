@@ -1,4 +1,4 @@
-import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, categoryCounts } from './dataHelpers'
+import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, categoryCounts, isOutdoor, outdoorMonthlyTrend, detectOutdoorPatterns } from './dataHelpers'
 
 const DOW_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -27,6 +27,11 @@ export function computeAccidentReport(incidents, period) {
   const settingIncs = periodIncs.filter(x => (x.location || '').toLowerCase() !== 'home' && !x.onArrival)
 
   const injuryTypes = categoryCounts(periodIncs)
+
+  const periodOutdoor = periodIncs.filter(isOutdoor)
+  const outdoorMonthly = outdoorMonthlyTrend(incidents)
+  const outdoorPatterns = detectOutdoorPatterns(outdoorMonthly)
+  const outdoorInjuryTypes = categoryCounts(periodOutdoor)
 
   const dowCounts = Object.fromEntries(DOW_ORDER.map(d => [d, 0]))
   for (const inc of periodIncs) {
@@ -65,6 +70,10 @@ export function computeAccidentReport(incidents, period) {
     homeIncs,
     settingIncs,
     injuryTypes,
+    periodOutdoor,
+    outdoorMonthly,
+    outdoorPatterns,
+    outdoorInjuryTypes,
     dowOrder: DOW_ORDER,
     dowCounts,
     yoyDiff,

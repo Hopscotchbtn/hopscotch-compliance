@@ -74,6 +74,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     high, medium,
     homeLoc, siteLocs,
     homeIncs, settingIncs, injuryTypes,
+    periodOutdoor, outdoorMonthly, outdoorPatterns, outdoorInjuryTypes,
     dowOrder, dowCounts,
     yoyDiff, repeats, repeatWindowLabel,
   } = report
@@ -391,6 +392,104 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     })
     setColor(doc, COLOURS.text, 'setTextColor')
     y += 6
+  }
+
+  // ─── OUTDOOR / GARDEN INCIDENTS ──
+
+  {
+    addFooter(doc, pageNumber)
+    doc.addPage()
+    pageNumber++
+    y = 20
+
+    // Section header bar
+    setColor(doc, COLOURS.forest, 'setFillColor')
+    doc.rect(MARGIN, y - 4, CONTENT_WIDTH, 10, 'F')
+    setColor(doc, [255, 255, 255], 'setTextColor')
+    doc.setFontSize(11)
+    doc.setFont(undefined, 'bold')
+    doc.text('Outdoor / Garden Incidents', MARGIN + 3, y + 2)
+    setColor(doc, COLOURS.text, 'setTextColor')
+    y += 14
+
+    // Summary stats
+    const outdoorPct = totalReports > 0 ? Math.round((periodOutdoor.length / totalReports) * 100) : 0
+    doc.setFontSize(9)
+    doc.setFont(undefined, 'normal')
+    doc.text(`${periodOutdoor.length} outdoor incident${periodOutdoor.length !== 1 ? 's' : ''} recorded in this period  (${outdoorPct}% of all reports)`, MARGIN, y)
+    y += 8
+
+    // Pattern flags
+    if (outdoorPatterns.length > 0) {
+      setColor(doc, COLOURS.amberBg, 'setFillColor')
+      setColor(doc, COLOURS.amberRule, 'setDrawColor')
+      const flagH = 6 + outdoorPatterns.length * 5
+      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
+      setColor(doc, COLOURS.amberText, 'setTextColor')
+      doc.setFontSize(8)
+      doc.setFont(undefined, 'bold')
+      doc.text('Patterns detected', MARGIN + 3, y + 5)
+      doc.setFont(undefined, 'normal')
+      outdoorPatterns.forEach((p, i) => {
+        doc.text(`•  ${p}`, MARGIN + 3, y + 10 + i * 5)
+      })
+      setColor(doc, COLOURS.text, 'setTextColor')
+      y += flagH + 8
+    } else {
+      setColor(doc, COLOURS.mute, 'setTextColor')
+      doc.setFontSize(8)
+      doc.setFont(undefined, 'normal')
+      doc.text('No patterns detected in the last 12 months.', MARGIN, y)
+      setColor(doc, COLOURS.text, 'setTextColor')
+      y += 8
+    }
+
+    // 12-month monthly trend bar chart
+    doc.setFontSize(10)
+    doc.setFont(undefined, 'bold')
+    doc.text('Monthly trend  (last 12 months)', MARGIN, y)
+    y += 6
+
+    const outdoorMax = Math.max(1, ...outdoorMonthly.map(m => m.count))
+    const barMaxW = 90
+    const labelX = MARGIN + 2
+    const barX = MARGIN + 22
+    doc.setFontSize(8)
+    doc.setFont(undefined, 'normal')
+    outdoorMonthly.forEach(m => {
+      addPageIfNeeded(6)
+      setColor(doc, COLOURS.text, 'setTextColor')
+      doc.text(m.label, labelX, y)
+      const w = (m.count / outdoorMax) * barMaxW
+      if (w > 0) {
+        setColor(doc, COLOURS.forestLight, 'setFillColor')
+        doc.rect(barX, y - 3, Math.max(w, 0.5), 4, 'F')
+      }
+      setColor(doc, COLOURS.mute, 'setTextColor')
+      doc.text(String(m.count), barX + barMaxW + 3, y)
+      y += 5
+    })
+    setColor(doc, COLOURS.text, 'setTextColor')
+    y += 6
+
+    // Injury type breakdown for outdoor incidents
+    if (outdoorInjuryTypes.length > 0) {
+      addPageIfNeeded(20 + outdoorInjuryTypes.length * 5)
+      doc.setFontSize(10)
+      doc.setFont(undefined, 'bold')
+      doc.text('Injury types (outdoor)', MARGIN, y)
+      y += 6
+      doc.setFontSize(9)
+      doc.setFont(undefined, 'normal')
+      outdoorInjuryTypes.forEach(({ category, count }) => {
+        addPageIfNeeded(6)
+        const pct = periodOutdoor.length > 0 ? Math.round((count / periodOutdoor.length) * 100) : 0
+        doc.text(`•  ${category}`, MARGIN + 4, y)
+        doc.text(`${count}   (${pct}%)`, MARGIN + 90, y)
+        y += 5
+      })
+      y += 6
+    }
   }
 
   // ─── REVIEWED BY signature line ──

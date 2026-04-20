@@ -110,6 +110,65 @@ export function lastYearYearMonth() {
   return `${now.getFullYear() - 1}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
+const OUTDOOR_KEYWORDS = ['garden', 'outdoor', 'outside', 'playground', 'yard', 'external', 'park', 'field', 'patio']
+
+export function isOutdoor(inc) {
+  const loc = (inc.location || '').toLowerCase()
+  return OUTDOOR_KEYWORDS.some(kw => loc.includes(kw))
+}
+
+// Returns monthly outdoor incident counts for the last 12 months (all incidents, not just period)
+export function outdoorMonthlyTrend(allIncidents) {
+  const now = new Date()
+  const months = []
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const label = d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
+    const count = allIncidents.filter(inc => inc.happenedAt.startsWith(yearMonth) && isOutdoor(inc)).length
+    months.push({ yearMonth, label, count })
+  }
+  return months
+}
+
+// Detects patterns in the 12-month outdoor trend: high months, consecutive streaks
+export function detectOutdoorPatterns(monthlyTrend) {
+  const patterns = []
+  const total = monthlyTrend.reduce((a, m) => a + m.count, 0)
+  if (total === 0) return patterns
+
+  const avg = total / monthlyTrend.length
+  const threshold = Math.max(3, avg * 2)
+
+  const highMonths = monthlyTrend.filter(m => m.count >= threshold)
+  if (highMonths.length > 0) {
+    patterns.push(`Notably high months: ${highMonths.map(m => `${m.label} (${m.count})`).join(', ')}`)
+  }
+
+  let maxStreak = 0, currentStreak = 0, streakStart = '', streakEnd = ''
+  let bestStart = '', bestEnd = ''
+  for (const m of monthlyTrend) {
+    if (m.count > 0) {
+      if (currentStreak === 0) streakStart = m.label
+      currentStreak++
+      streakEnd = m.label
+      if (currentStreak > maxStreak) {
+        maxStreak = currentStreak
+        bestStart = streakStart
+        bestEnd = streakEnd
+      }
+    } else {
+      currentStreak = 0
+    }
+  }
+  if (maxStreak >= 3) {
+    const range = bestStart === bestEnd ? bestStart : `${bestStart} – ${bestEnd}`
+    patterns.push(`${maxStreak} consecutive months with outdoor incidents (${range})`)
+  }
+
+  return patterns
+}
+
 export function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
