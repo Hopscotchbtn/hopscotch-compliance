@@ -1,4 +1,4 @@
-import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts } from './dataHelpers'
+import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, categoryCounts } from './dataHelpers'
 
 const DOW_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -22,6 +22,11 @@ export function computeAccidentReport(incidents, period) {
   const allLocs = locationCounts(periodIncs)
   const homeLoc = allLocs.find(l => l.location.toLowerCase() === 'home') ?? null
   const siteLocs = allLocs.filter(l => l.location.toLowerCase() !== 'home').slice(0, 5)
+
+  const homeIncs = periodIncs.filter(x => (x.location || '').toLowerCase() === 'home' || x.onArrival)
+  const settingIncs = periodIncs.filter(x => (x.location || '').toLowerCase() !== 'home' && !x.onArrival)
+
+  const injuryTypes = categoryCounts(periodIncs)
 
   const dowCounts = Object.fromEntries(DOW_ORDER.map(d => [d, 0]))
   for (const inc of periodIncs) {
@@ -57,6 +62,9 @@ export function computeAccidentReport(incidents, period) {
     medium,
     homeLoc,
     siteLocs,
+    homeIncs,
+    settingIncs,
+    injuryTypes,
     dowOrder: DOW_ORDER,
     dowCounts,
     yoyDiff,

@@ -8,7 +8,7 @@ const RULES = [
   { category: 'Splinter', keywords: ['splinter'] },
   { category: 'Puncture', keywords: ['puncture', ' stabbed', ' pierced', 'poked with'] },
   { category: 'Sprain / Strain', keywords: ['sprain', 'strain', 'twisted ankle', 'twisted wrist', 'twisted their'] },
-  { category: 'Eye Injury', keywords: ['eye ', 'eyes ', 'eyelid', 'cornea', 'in their eye', 'into their eye'] },
+  { category: 'Eye Injury', keywords: ['eye injury', 'in their eye', 'into their eye', 'hit their eye', 'poked in the eye', 'hurt their eye', 'scratched their eye', 'something in their eye', 'object in eye', 'eyelid', 'cornea'] },
   { category: 'Dental Injury', keywords: ['tooth', 'teeth', 'dental', 'molar', 'knocked out a tooth'] },
   { category: 'Nose Injury', keywords: ['nose', 'nosebleed', 'nostril', 'nasal', 'nose bleed'] },
   { category: 'Lips', keywords: ['upper lip', 'lower lip', ' lip ', ' lips', 'split lip', 'bitten lip', 'cut their lip'] },

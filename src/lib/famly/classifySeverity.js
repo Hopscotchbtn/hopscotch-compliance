@@ -23,7 +23,7 @@ const MEDIUM_KEYWORDS = [
   'head injury', 'hit their head', 'bumped their head', 'bang to the head',
   'parent notified same day', 'parent called', 'parents came in', 'parent collected early',
   'monitored closely', 'monitored for', 'kept under observation',
-  'eye injury', 'eye ', 'into their eye',
+  'eye injury', 'into their eye', 'in their eye', 'hit their eye',
   'nose bleed', 'nosebleed', 'significant bleed',
   'winded', 'difficulty breathing',
   'swelling', 'swollen',

@@ -73,6 +73,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     acknowledged, ackRate,
     high, medium,
     homeLoc, siteLocs,
+    homeIncs, settingIncs, injuryTypes,
     dowOrder, dowCounts,
     yoyDiff, repeats, repeatWindowLabel,
   } = report
@@ -253,7 +254,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     setColor(doc, COLOURS.mute, 'setTextColor')
     doc.setFontSize(7)
     doc.setFont(undefined, 'normal')
-    doc.text('Ranked by count. Context matters — some children may have medical or developmental factors.', MARGIN, y + 4)
+    doc.text('Ranked by count within this period. Check individual Family accounts for full history. Context matters — some children may have medical or developmental factors.', MARGIN, y + 4)
     y += 8
     setColor(doc, COLOURS.text, 'setTextColor')
 
@@ -287,35 +288,36 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     y += 6
   }
 
-  // ─── LOCATION BREAKDOWN ──
+  // ─── HOME VS SETTING BREAKDOWN ──
 
-  if (siteLocs.length > 0 || homeLoc) {
-    addPageIfNeeded(30)
+  if (totalReports > 0) {
+    addPageIfNeeded(35)
     doc.setFontSize(11)
     doc.setFont(undefined, 'bold')
-    doc.text('Where reports happen', MARGIN, y)
+    setColor(doc, COLOURS.text, 'setTextColor')
+    doc.text('Home vs. setting', MARGIN, y)
     y += 7
 
-    if (homeLoc) {
-      setColor(doc, COLOURS.amberText, 'setTextColor')
-      doc.setFontSize(9)
-      doc.setFont(undefined, 'bold')
-      doc.text(`Location field "Home": ${homeLoc.count}`, MARGIN + 2, y)
-      y += 4
-      setColor(doc, COLOURS.mute, 'setTextColor')
-      doc.setFontSize(7)
-      doc.setFont(undefined, 'normal')
-      doc.text('Managers are typing "Home" into the location field. This may be data entry inconsistency — compare with the', MARGIN + 2, y)
-      y += 3
-      doc.text('"arrived with injury" number at the top. Consider standardising how these reports are recorded.', MARGIN + 2, y)
-      y += 6
-      setColor(doc, COLOURS.text, 'setTextColor')
-    }
+    const homePct = Math.round((homeIncs.length / totalReports) * 100)
+    const settingPct = Math.round((settingIncs.length / totalReports) * 100)
+
+    doc.setFontSize(9)
+    doc.setFont(undefined, 'bold')
+    doc.text('At the setting:', MARGIN + 2, y)
+    doc.setFont(undefined, 'normal')
+    doc.text(`${settingIncs.length}   (${settingPct}%)`, MARGIN + 50, y)
+    y += 5
+
+    doc.setFont(undefined, 'bold')
+    doc.text('At home / on arrival:', MARGIN + 2, y)
+    doc.setFont(undefined, 'normal')
+    doc.text(`${homeIncs.length}   (${homePct}%)`, MARGIN + 50, y)
+    y += 5
 
     if (siteLocs.length > 0) {
-      doc.setFontSize(9)
+      y += 2
       doc.setFont(undefined, 'bold')
-      doc.text('Top locations in the nursery:', MARGIN + 2, y)
+      doc.text('Top locations (setting):', MARGIN + 2, y)
       y += 5
       doc.setFont(undefined, 'normal')
       siteLocs.forEach(loc => {
@@ -325,8 +327,36 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
         doc.text(`${loc.count}   (${pct}%)`, MARGIN + 90, y)
         y += 5
       })
-      y += 6
     }
+    y += 6
+  }
+
+  // ─── INJURY TYPE BREAKDOWN ──
+
+  if (injuryTypes.length > 0) {
+    addPageIfNeeded(20 + injuryTypes.length * 5)
+    doc.setFontSize(11)
+    doc.setFont(undefined, 'bold')
+    setColor(doc, COLOURS.text, 'setTextColor')
+    doc.text('Injury type breakdown', MARGIN, y)
+    y += 2
+    setColor(doc, COLOURS.mute, 'setTextColor')
+    doc.setFontSize(7)
+    doc.setFont(undefined, 'normal')
+    doc.text('As a percentage of all reports in this period.', MARGIN, y + 4)
+    y += 8
+    setColor(doc, COLOURS.text, 'setTextColor')
+
+    doc.setFontSize(9)
+    doc.setFont(undefined, 'normal')
+    injuryTypes.forEach(({ category, count }) => {
+      addPageIfNeeded(6)
+      const pct = totalReports > 0 ? Math.round((count / totalReports) * 100) : 0
+      doc.text(`•  ${category}`, MARGIN + 4, y)
+      doc.text(`${count}   (${pct}%)`, MARGIN + 90, y)
+      y += 5
+    })
+    y += 6
   }
 
   // ─── DAY OF WEEK ──
