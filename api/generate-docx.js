@@ -9,11 +9,40 @@ function getRatingFill(rating) {
   return '00b050'
 }
 
-// The template has 10 empty green cells (no text) for reassess_rating,
-// one per hazard row. Find them in order and replace with the correct
-// fill color and rating text.
-function injectReassessRatings(xml, data) {
+// Fix the fill color of a cell that contains a text placeholder like {pre_rating_1}.
+// The template hardcodes colors regardless of the actual rating value.
+function fixRatingCellColor(xml, fieldName, n, rating) {
+  const tag = `{${fieldName}_${n}}`
+  const idx = xml.indexOf(tag)
+  if (idx === -1) return xml
+
+  const cellStart = xml.lastIndexOf('<w:tc>', idx)
+  const cellXml = xml.substring(cellStart, idx)
+  const shdMatch = cellXml.match(/w:fill="([^"]+)"/)
+  if (!shdMatch) return xml
+
+  const oldColor = shdMatch[1]
+  const newColor = getRatingFill(rating)
+  if (oldColor === newColor) return xml
+
+  // Replace only the fill in this cell's shd element
+  const shdPos = cellStart + cellXml.lastIndexOf(`w:fill="${oldColor}"`)
+  return xml.substring(0, shdPos) + `w:fill="${newColor}"` + xml.substring(shdPos + `w:fill="${oldColor}"`.length)
+}
+
+// The template has 10 empty green cells (no text) for reassess_rating — one per
+// hazard row. Find them in document order and replace with the correct fill color
+// and rating text. pre_rating / post_rating cells are handled by fixRatingCellColor.
+function injectRatingColors(xml, data) {
   let result = xml
+
+  // Fix pre_rating and post_rating cells (they have text placeholders)
+  for (let i = 1; i <= 10; i++) {
+    result = fixRatingCellColor(result, 'pre_rating', i, data[`pre_rating_${i}`] || '')
+    result = fixRatingCellColor(result, 'post_rating', i, data[`post_rating_${i}`] || '')
+  }
+
+  // Fix reassess_rating cells (no text placeholder — replace the whole cell)
   let hazardIndex = 1
   let searchFrom = 0
 
@@ -25,13 +54,12 @@ function injectReassessRatings(xml, data) {
     const cellEnd = result.indexOf('</w:tc>', greenIdx) + '</w:tc>'.length
     const cell = result.substring(cellStart, cellEnd)
 
-    // Skip cells that already have text (post_rating cells)
+    // Skip cells that already have text (post_rating cells after color fix may now differ)
     if (cell.includes('<w:t>') || cell.includes('<w:t ')) {
       searchFrom = greenIdx + 1
       continue
     }
 
-    // This is a reassess_rating cell — replace it
     const rating = data[`reassess_rating_${hazardIndex}`] || ''
     const fill = getRatingFill(rating)
     const textContent = rating ? `<w:t>${rating}</w:t>` : ''
@@ -74,7 +102,7 @@ export default async function handler(req, res) {
     // Fix reassess_rating cells: template has hardcoded green for all of them
     // since they were always Low before. Now update color and add rating text.
     let docXml = zip.files['word/document.xml'].asText()
-    docXml = injectReassessRatings(docXml, data)
+    docXml = injectRatingColors(docXml, data)
     zip.file('word/document.xml', docXml)
 
     // Create docxtemplater instance
