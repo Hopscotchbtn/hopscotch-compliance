@@ -131,8 +131,9 @@ export function outdoorMonthlyTrend(allIncidents) {
   return months
 }
 
-// Detects patterns in the 12-month outdoor trend: high months, consecutive streaks
-export function detectOutdoorPatterns(monthlyTrend) {
+// Detects patterns in a 12-month trend: high months, consecutive streaks.
+// incidentLabel is used in the streak message, e.g. 'outdoor' or 'home/on-arrival'.
+export function detectMonthlyPatterns(monthlyTrend, incidentLabel = 'incidents') {
   const patterns = []
   const total = monthlyTrend.reduce((a, m) => a + m.count, 0)
   if (total === 0) return patterns
@@ -145,17 +146,16 @@ export function detectOutdoorPatterns(monthlyTrend) {
     patterns.push(`Notably high months: ${highMonths.map(m => `${m.label} (${m.count})`).join(', ')}`)
   }
 
-  let maxStreak = 0, currentStreak = 0, streakStart = '', streakEnd = ''
+  let maxStreak = 0, currentStreak = 0, streakStart = ''
   let bestStart = '', bestEnd = ''
   for (const m of monthlyTrend) {
     if (m.count > 0) {
       if (currentStreak === 0) streakStart = m.label
       currentStreak++
-      streakEnd = m.label
       if (currentStreak > maxStreak) {
         maxStreak = currentStreak
         bestStart = streakStart
-        bestEnd = streakEnd
+        bestEnd = m.label
       }
     } else {
       currentStreak = 0
@@ -163,10 +163,31 @@ export function detectOutdoorPatterns(monthlyTrend) {
   }
   if (maxStreak >= 3) {
     const range = bestStart === bestEnd ? bestStart : `${bestStart} – ${bestEnd}`
-    patterns.push(`${maxStreak} consecutive months with outdoor incidents (${range})`)
+    patterns.push(`${maxStreak} consecutive months with ${incidentLabel} incidents (${range})`)
   }
 
   return patterns
+}
+
+// Keep old name as alias so existing imports don't break
+export const detectOutdoorPatterns = (t) => detectMonthlyPatterns(t, 'outdoor')
+
+export function isHome(inc) {
+  return (inc.location || '').toLowerCase() === 'home' || !!inc.onArrival
+}
+
+// Returns monthly home/on-arrival incident counts for the last 12 months
+export function homeMonthlyTrend(allIncidents) {
+  const now = new Date()
+  const months = []
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const label = d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
+    const count = allIncidents.filter(inc => inc.happenedAt.startsWith(yearMonth) && isHome(inc)).length
+    months.push({ yearMonth, label, count })
+  }
+  return months
 }
 
 export function formatDate(iso) {
