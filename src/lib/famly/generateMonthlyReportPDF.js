@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import { childDisplayName, formatDate } from './dataHelpers'
 import { computeAccidentReport } from './computeAccidentReport'
+import { generateReportSummary } from './reportSummary'
 
 // ─── period helpers ──────────────────────────────────────────────────────────
 
@@ -132,6 +133,23 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
   doc.setFontSize(10)
   doc.text(period.label, pageWidth / 2, y, { align: 'center' })
   y += 10
+
+  // ─── SUMMARY ──
+
+  const summaryText = generateReportSummary(report)
+  fill(doc, 'forestLight')
+  stroke(doc, 'forestLight')
+  const summaryLines = doc.splitTextToSize(summaryText, CONTENT_WIDTH - 8)
+  const summaryH = 6 + summaryLines.length * 5
+  doc.roundedRect(MARGIN, y, CONTENT_WIDTH, summaryH, 1.5, 1.5, 'FD')
+  text(doc, 'forest')
+  doc.setFontSize(9)
+  doc.setFont(undefined, 'normal')
+  summaryLines.forEach((line, i) => {
+    doc.text(line, MARGIN + 4, y + 5 + i * 5)
+  })
+  text(doc, 'text')
+  y += summaryH + 8
 
   // ─── KPI CARDS ──
 

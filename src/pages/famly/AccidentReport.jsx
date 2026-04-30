@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { classifyAll, childDisplayName, formatDate } from '../../lib/famly/dataHelpers'
 import { computeAccidentReport } from '../../lib/famly/computeAccidentReport'
 import { generateMonthlyReportPDF } from '../../lib/famly/generateMonthlyReportPDF'
+import { generateReportSummary } from '../../lib/famly/reportSummary'
 
 const FOREST = '#1f4435'
 const FOREST_T1 = '#e8ecea'
@@ -209,6 +210,8 @@ export function AccidentReport() {
             <p className="text-sm mt-1" style={{ color: FOREST_T3 }}>{period.label}</p>
           </header>
 
+          <SummarySection report={report} />
+
           <KpiStrip report={report} />
 
           <RegulatoryFlagsBar report={report} />
@@ -240,6 +243,18 @@ export function AccidentReport() {
 }
 
 // ─── sections ──
+
+function SummarySection({ report }) {
+  const summary = generateReportSummary(report)
+  return (
+    <div
+      className="rounded-lg border px-4 py-3 mb-6 text-sm leading-relaxed"
+      style={{ backgroundColor: FOREST_T1, borderColor: FOREST_T3, color: FOREST }}
+    >
+      {summary}
+    </div>
+  )
+}
 
 function KpiStrip({ report }) {
   const { totalReports, onArrival, atNursery, acknowledged, ackRate, high, medium, yoyDiff, period } = report
