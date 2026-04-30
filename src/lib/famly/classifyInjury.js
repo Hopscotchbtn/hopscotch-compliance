@@ -19,7 +19,7 @@ const RULES = [
   { category: 'Medical Issue', keywords: ['allerg', 'reaction', 'seizure', 'fit ', 'vomit', 'unwell', 'fever', 'rash', 'medication', 'illness', ' ill ', 'temperature'] },
 ]
 
-export function classifyInjury(incidentId, nature) {
+export function classifyInjury(nature) {
   const lower = nature.toLowerCase()
   for (const rule of RULES) {
     if (rule.keywords.some(kw => lower.includes(kw))) {

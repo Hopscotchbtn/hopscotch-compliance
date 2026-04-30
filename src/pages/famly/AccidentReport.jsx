@@ -49,11 +49,12 @@ function buildPeriod(type, monthKey) {
 }
 
 function fetchRangeForPeriod(period) {
-  if (period.type === 'month') {
-    const from = new Date(period.from.getFullYear() - 1, period.from.getMonth(), 1)
-    return { from, to: period.to }
-  }
-  return { from: period.from, to: period.to }
+  // Always fetch at least 12 months back so outdoor/home trend charts have full data
+  const twelveMonthsAgo = new Date()
+  twelveMonthsAgo.setFullYear(twelveMonthsAgo.getFullYear() - 1)
+  twelveMonthsAgo.setDate(1)
+  const from = new Date(Math.min(period.from.getTime(), twelveMonthsAgo.getTime()))
+  return { from, to: period.to }
 }
 
 function titleForPeriod(period) {

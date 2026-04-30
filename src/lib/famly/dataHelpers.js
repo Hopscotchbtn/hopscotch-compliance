@@ -10,8 +10,8 @@ export function childDisplayName(fullName) {
 export function classifyAll(incidents) {
   return incidents.map(inc => ({
     ...inc,
-    injuryCategory: classifyInjury(inc.id, inc.nature),
-    severity: classifySeverity(inc.id, inc.nature, inc.firstAid),
+    injuryCategory: classifyInjury(inc.nature),
+    severity: classifySeverity(inc.nature, inc.firstAid),
   }))
 }
 

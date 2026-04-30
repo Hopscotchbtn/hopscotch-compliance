@@ -30,7 +30,7 @@ const MEDIUM_KEYWORDS = [
   'tooth knocked', 'dental',
 ]
 
-export function classifySeverity(incidentId, nature, firstAid = '') {
+export function classifySeverity(nature, firstAid = '') {
   const text = (nature + ' ' + firstAid).toLowerCase()
 
   for (const kw of HIGH_KEYWORDS) {
