@@ -30,28 +30,17 @@ const MEDIUM_KEYWORDS = [
   'tooth knocked', 'dental',
 ]
 
-const severityCache = new Map()
-
 export function classifySeverity(incidentId, nature, firstAid = '') {
-  if (severityCache.has(incidentId)) return severityCache.get(incidentId)
-
   const text = (nature + ' ' + firstAid).toLowerCase()
 
   for (const kw of HIGH_KEYWORDS) {
-    if (text.includes(kw)) {
-      severityCache.set(incidentId, 'high')
-      return 'high'
-    }
+    if (text.includes(kw)) return 'high'
   }
 
   for (const kw of MEDIUM_KEYWORDS) {
-    if (text.includes(kw)) {
-      severityCache.set(incidentId, 'medium')
-      return 'medium'
-    }
+    if (text.includes(kw)) return 'medium'
   }
 
-  severityCache.set(incidentId, 'low')
   return 'low'
 }
 

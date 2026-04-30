@@ -38,7 +38,7 @@ function buildPeriod(type, monthKey) {
   }
   if (type === 'ytd') {
     const from = new Date(now.getFullYear(), 0, 1)
-    const to = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+    const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
     const firstLabel = from.toLocaleDateString('en-GB', { month: 'short' })
     const lastLabel = to.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
     return { type: 'ytd', from, to, label: `${firstLabel} – ${lastLabel}` }

@@ -63,7 +63,7 @@ export function repeatChildren(incidents, minCount = 2) {
 export function locationCounts(incidents) {
   const map = new Map()
   for (const inc of incidents) {
-    const loc = inc.location.trim()
+    const loc = (inc.location || '').trim()
     map.set(loc, (map.get(loc) ?? 0) + 1)
   }
   return Array.from(map.entries())

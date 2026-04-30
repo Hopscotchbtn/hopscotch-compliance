@@ -19,19 +19,12 @@ const RULES = [
   { category: 'Medical Issue', keywords: ['allerg', 'reaction', 'seizure', 'fit ', 'vomit', 'unwell', 'fever', 'rash', 'medication', 'illness', ' ill ', 'temperature'] },
 ]
 
-const cache = new Map()
-
 export function classifyInjury(incidentId, nature) {
-  if (cache.has(incidentId)) return cache.get(incidentId)
-
   const lower = nature.toLowerCase()
   for (const rule of RULES) {
     if (rule.keywords.some(kw => lower.includes(kw))) {
-      cache.set(incidentId, rule.category)
       return rule.category
     }
   }
-
-  cache.set(incidentId, 'Other')
   return 'Other'
 }
