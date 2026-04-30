@@ -37,32 +37,47 @@ function defaultPreviousMonthPeriod() {
 
 const PAGE_BOTTOM = 275
 const MARGIN = 14
-const CONTENT_WIDTH = 210 - MARGIN * 2 // A4 portrait = 210mm wide
+const CONTENT_WIDTH = 210 - MARGIN * 2
 
-const COLOURS = {
-  forest: [31, 68, 53],       // Hopscotch deep green
-  forestLight: [230, 238, 233],
-  text: [30, 30, 30],
-  mute: [120, 120, 120],
-  rule: [220, 220, 215],
-  panelBg: [250, 250, 248],
-  warningBg: [254, 242, 242],
-  warningRule: [252, 165, 165],
-  warningText: [153, 27, 27],
-  amberBg: [255, 247, 237],
-  amberRule: [251, 191, 36],
-  amberText: [180, 83, 9],
-  accentBg: [255, 248, 240],
+const C = {
+  forest:         [31,  68,  53],
+  forestLight:    [230, 238, 233],
+  forestMid:      [76,  105, 93],
+  text:           [30,  30,  30],
+  mute:           [120, 120, 120],
+  rule:           [215, 208, 205],
+  pebble:         [242, 238, 237],
+  pebbleT2:       [251, 250, 249],
+  marmalade:      [253, 136, 74],
+  marmaladeT1:    [255, 243, 236],
+  marmaladeShade: [220, 70,  20],
+  warningBg:      [254, 242, 242],
+  warningRule:    [252, 165, 165],
+  warningText:    [153, 27,  27],
+  white:          [255, 255, 255],
 }
 
-function setColor(doc, rgb, method = 'setTextColor') {
-  doc[method](rgb[0], rgb[1], rgb[2])
+function fill(doc, key)   { doc.setFillColor(  C[key][0], C[key][1], C[key][2]) }
+function stroke(doc, key) { doc.setDrawColor(  C[key][0], C[key][1], C[key][2]) }
+function text(doc, key)   { doc.setTextColor(  C[key][0], C[key][1], C[key][2]) }
+
+// Section heading with pebble strip and forest green left rule
+function sectionHeading(doc, label, y) {
+  fill(doc, 'pebble')
+  stroke(doc, 'pebble')
+  doc.rect(MARGIN, y - 4, CONTENT_WIDTH, 8, 'F')
+  fill(doc, 'forest')
+  doc.rect(MARGIN, y - 4, 2.5, 8, 'F')
+  text(doc, 'forest')
+  doc.setFontSize(11)
+  doc.setFont(undefined, 'bold')
+  doc.text(label, MARGIN + 6, y + 1)
+  text(doc, 'text')
 }
 
 // ─── main generator ──────────────────────────────────────────────────────────
 
 export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePeriod) {
-  // Back-compat: accept either a precomputed report or raw incidents + period
   const report = Array.isArray(reportOrIncidents)
     ? computeAccidentReport(reportOrIncidents, maybePeriod ?? defaultPreviousMonthPeriod())
     : reportOrIncidents
@@ -97,29 +112,28 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
   // ─── HEADER ──
 
-  // Colour bar top
-  setColor(doc, COLOURS.forest, 'setFillColor')
-  doc.rect(0, 0, pageWidth, 4, 'F')
+  fill(doc, 'forest')
+  doc.rect(0, 0, pageWidth, 5, 'F')
 
-  y = 16
-  setColor(doc, COLOURS.forest, 'setTextColor')
+  y = 18
+  text(doc, 'forest')
   doc.setFontSize(18)
   doc.setFont(undefined, 'bold')
   doc.text(titleForPeriod(period), pageWidth / 2, y, { align: 'center' })
   y += 7
 
-  setColor(doc, COLOURS.text, 'setTextColor')
+  text(doc, 'text')
   doc.setFontSize(13)
   doc.setFont(undefined, 'normal')
   doc.text(siteName, pageWidth / 2, y, { align: 'center' })
   y += 6
 
-  setColor(doc, COLOURS.mute, 'setTextColor')
+  text(doc, 'mute')
   doc.setFontSize(10)
   doc.text(period.label, pageWidth / 2, y, { align: 'center' })
   y += 10
 
-  // ─── AT-A-GLANCE SUMMARY STRIP (4 KPI cards) ──
+  // ─── KPI CARDS ──
 
   const cardY = y
   const cardH = 24
@@ -154,36 +168,47 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
   cards.forEach((card, i) => {
     const x = MARGIN + (cardW + cardGap) * i
-    setColor(doc, card.warn ? COLOURS.warningBg : COLOURS.panelBg, 'setFillColor')
-    setColor(doc, card.warn ? COLOURS.warningRule : COLOURS.rule, 'setDrawColor')
+    if (card.warn) {
+      fill(doc, 'warningBg')
+      stroke(doc, 'warningRule')
+    } else {
+      fill(doc, 'pebble')
+      stroke(doc, 'rule')
+    }
     doc.roundedRect(x, cardY, cardW, cardH, 1.5, 1.5, 'FD')
 
-    setColor(doc, COLOURS.mute, 'setTextColor')
+    // Coloured top edge
+    if (!card.warn) {
+      fill(doc, 'forest')
+      doc.rect(x, cardY, cardW, 1.5, 'F')
+    }
+
+    text(doc, 'mute')
     doc.setFontSize(7)
     doc.setFont(undefined, 'normal')
-    doc.text(card.label.toUpperCase(), x + 3, cardY + 5)
+    doc.text(card.label.toUpperCase(), x + 3, cardY + 6)
 
-    setColor(doc, card.warn ? COLOURS.warningText : COLOURS.forest, 'setTextColor')
+    text(doc, card.warn ? 'warningText' : 'forest')
     doc.setFontSize(18)
     doc.setFont(undefined, 'bold')
-    doc.text(card.value, x + 3, cardY + 14)
+    doc.text(card.value, x + 3, cardY + 15)
 
-    setColor(doc, COLOURS.mute, 'setTextColor')
+    text(doc, 'mute')
     doc.setFontSize(7)
     doc.setFont(undefined, 'normal')
-    doc.text(card.sub, x + 3, cardY + 20, { maxWidth: cardW - 6 })
+    doc.text(card.sub, x + 3, cardY + 21, { maxWidth: cardW - 6 })
   })
   y = cardY + cardH + 8
-  setColor(doc, COLOURS.text, 'setTextColor')
+  text(doc, 'text')
 
-  // ─── REGULATORY FLAGS BAR (only if any are non-zero) ──
+  // ─── REGULATORY FLAGS BAR ──
 
   if (riddorCount + ofstedCount + ladoCount > 0) {
     addPageIfNeeded(14)
-    setColor(doc, COLOURS.amberBg, 'setFillColor')
-    setColor(doc, COLOURS.amberRule, 'setDrawColor')
+    fill(doc, 'marmaladeT1')
+    stroke(doc, 'marmalade')
     doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 11, 1.5, 1.5, 'FD')
-    setColor(doc, COLOURS.amberText, 'setTextColor')
+    text(doc, 'marmaladeShade')
     doc.setFontSize(9)
     doc.setFont(undefined, 'bold')
     const parts = []
@@ -191,27 +216,25 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     if (ofstedCount > 0) parts.push(`Ofsted: ${ofstedCount}`)
     if (ladoCount > 0) parts.push(`LADO: ${ladoCount}`)
     doc.text(`Regulatory flags  —  ${parts.join('   ·   ')}`, MARGIN + 4, y + 7)
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
     y += 16
   }
 
-  // ─── NEEDS FORMAL REVIEW (split HIGH / MEDIUM) ──
+  // ─── NEEDS FORMAL REVIEW ──
 
   if (high.length > 0 || medium.length > 0) {
     addPageIfNeeded(20 + (high.length + medium.length) * 5)
-    doc.setFontSize(11)
-    doc.setFont(undefined, 'bold')
-    doc.text('Needs formal review', MARGIN, y)
-    y += 2
-    setColor(doc, COLOURS.mute, 'setTextColor')
+    sectionHeading(doc, 'Needs formal review', y)
+    y += 6
+    text(doc, 'mute')
     doc.setFontSize(7)
     doc.setFont(undefined, 'normal')
-    doc.text('Auto-flagged by keyword match — please review each for context.', MARGIN, y + 4)
+    doc.text('Auto-flagged by keyword match — please review each for context.', MARGIN, y + 3)
     y += 8
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
 
     if (high.length > 0) {
-      setColor(doc, COLOURS.warningText, 'setTextColor')
+      text(doc, 'warningText')
       doc.setFontSize(9)
       doc.setFont(undefined, 'bold')
       doc.text(`High priority  ·  ${high.length}`, MARGIN, y)
@@ -227,7 +250,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     }
 
     if (medium.length > 0) {
-      setColor(doc, COLOURS.amberText, 'setTextColor')
+      text(doc, 'marmaladeShade')
       doc.setFontSize(9)
       doc.setFont(undefined, 'bold')
       doc.text(`Medium priority  ·  ${medium.length}`, MARGIN, y)
@@ -241,120 +264,121 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       })
       y += 3
     }
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
     y += 3
   }
 
-  // ─── REPEAT CHILDREN — top 8 ranked table ──
+  // ─── REPEAT CHILDREN ──
 
   if (repeats.length > 0) {
     addPageIfNeeded(20 + repeats.length * 6)
-    doc.setFontSize(11)
-    doc.setFont(undefined, 'bold')
-    doc.text(`Top repeat children  (${repeatWindowLabel})`, MARGIN, y)
-    y += 2
-    setColor(doc, COLOURS.mute, 'setTextColor')
+    sectionHeading(doc, `Top repeat children  (${repeatWindowLabel})`, y)
+    y += 6
+    text(doc, 'mute')
     doc.setFontSize(7)
     doc.setFont(undefined, 'normal')
-    doc.text('Ranked by count within this period. Check individual Family accounts for full history. Context matters — some children may have medical or developmental factors.', MARGIN, y + 4)
+    doc.text('Ranked by count within this period. Check individual Family accounts for full history. Context matters — some children may have medical or developmental factors.', MARGIN, y + 3)
     y += 8
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
 
-    // Table header
-    setColor(doc, COLOURS.mute, 'setTextColor')
+    text(doc, 'mute')
     doc.setFontSize(8)
     doc.setFont(undefined, 'bold')
-    doc.text('#', MARGIN + 2, y)
-    doc.text('Child', MARGIN + 10, y)
-    doc.text('Count', MARGIN + 70, y)
-    doc.text('Most recent', MARGIN + 95, y)
+    doc.text('#',             MARGIN + 2,   y)
+    doc.text('Child',         MARGIN + 10,  y)
+    doc.text('Count',         MARGIN + 70,  y)
+    doc.text('Most recent',   MARGIN + 95,  y)
     doc.text('Last location', MARGIN + 130, y)
     y += 2
-    setColor(doc, COLOURS.rule, 'setDrawColor')
+    stroke(doc, 'rule')
     doc.setLineWidth(0.2)
     doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y)
     y += 4
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
 
     doc.setFont(undefined, 'normal')
     doc.setFontSize(9)
     repeats.forEach((child, i) => {
       addPageIfNeeded(6)
-      doc.text(String(i + 1), MARGIN + 2, y)
-      doc.text(child.displayName, MARGIN + 10, y)
-      doc.text(String(child.count), MARGIN + 70, y)
-      doc.text(formatDate(child.mostRecentDate), MARGIN + 95, y)
+      doc.text(String(i + 1),                              MARGIN + 2,   y)
+      doc.text(child.displayName,                          MARGIN + 10,  y)
+      doc.text(String(child.count),                        MARGIN + 70,  y)
+      doc.text(formatDate(child.mostRecentDate),           MARGIN + 95,  y)
       doc.text((child.mostRecentLocation || '').slice(0, 26), MARGIN + 130, y)
       y += 5
     })
     y += 6
   }
 
-  // ─── HOME VS SETTING BREAKDOWN ──
+  // ─── HOME VS SETTING ──
 
   if (totalReports > 0) {
     addPageIfNeeded(35)
-    doc.setFontSize(11)
-    doc.setFont(undefined, 'bold')
-    setColor(doc, COLOURS.text, 'setTextColor')
-    doc.text('Home vs. setting', MARGIN, y)
-    y += 7
+    sectionHeading(doc, 'Home vs. setting', y)
+    y += 10
 
-    const homePct = Math.round((homeIncs.length / totalReports) * 100)
+    const homePct    = Math.round((homeIncs.length   / totalReports) * 100)
     const settingPct = Math.round((settingIncs.length / totalReports) * 100)
 
     doc.setFontSize(9)
     doc.setFont(undefined, 'bold')
-    doc.text('At the setting:', MARGIN + 2, y)
+    text(doc, 'text')
+    doc.text('At the setting:',       MARGIN + 2, y)
     doc.setFont(undefined, 'normal')
+    text(doc, 'forestMid')
     doc.text(`${settingIncs.length}   (${settingPct}%)`, MARGIN + 50, y)
     y += 5
 
     doc.setFont(undefined, 'bold')
+    text(doc, 'text')
     doc.text('At home / on arrival:', MARGIN + 2, y)
     doc.setFont(undefined, 'normal')
+    text(doc, 'forestMid')
     doc.text(`${homeIncs.length}   (${homePct}%)`, MARGIN + 50, y)
     y += 5
 
     if (siteLocs.length > 0) {
       y += 2
+      text(doc, 'text')
       doc.setFont(undefined, 'bold')
       doc.text('Top locations (setting):', MARGIN + 2, y)
       y += 5
       doc.setFont(undefined, 'normal')
       siteLocs.forEach(loc => {
         addPageIfNeeded(6)
-        const pct = totalReports > 0 ? Math.round((loc.count / totalReports) * 100) : 0
+        const pct = Math.round((loc.count / totalReports) * 100)
+        text(doc, 'text')
         doc.text(`•  ${loc.location}`, MARGIN + 4, y)
+        text(doc, 'mute')
         doc.text(`${loc.count}   (${pct}%)`, MARGIN + 90, y)
         y += 5
       })
     }
     y += 6
+    text(doc, 'text')
   }
 
   // ─── INJURY TYPE BREAKDOWN ──
 
   if (injuryTypes.length > 0) {
     addPageIfNeeded(20 + injuryTypes.length * 5)
-    doc.setFontSize(11)
-    doc.setFont(undefined, 'bold')
-    setColor(doc, COLOURS.text, 'setTextColor')
-    doc.text('Injury type breakdown', MARGIN, y)
-    y += 2
-    setColor(doc, COLOURS.mute, 'setTextColor')
+    sectionHeading(doc, 'Injury type breakdown', y)
+    y += 6
+    text(doc, 'mute')
     doc.setFontSize(7)
     doc.setFont(undefined, 'normal')
-    doc.text('As a percentage of all reports in this period.', MARGIN, y + 4)
+    doc.text('As a percentage of all reports in this period.', MARGIN, y + 3)
     y += 8
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
 
     doc.setFontSize(9)
     doc.setFont(undefined, 'normal')
     injuryTypes.forEach(({ category, count }) => {
       addPageIfNeeded(6)
       const pct = totalReports > 0 ? Math.round((count / totalReports) * 100) : 0
+      text(doc, 'text')
       doc.text(`•  ${category}`, MARGIN + 4, y)
+      text(doc, 'mute')
       doc.text(`${count}   (${pct}%)`, MARGIN + 90, y)
       y += 5
     })
@@ -365,10 +389,8 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
   if (totalReports > 0) {
     addPageIfNeeded(45)
-    doc.setFontSize(11)
-    doc.setFont(undefined, 'bold')
-    doc.text('When reports happen', MARGIN, y)
-    y += 7
+    sectionHeading(doc, 'When reports happen', y)
+    y += 10
 
     doc.setFontSize(9)
     doc.setFont(undefined, 'normal')
@@ -376,22 +398,24 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     const barX = MARGIN + 30
     dowOrder.forEach(day => {
       const count = dowCounts[day]
-      if (day === 'Saturday' || day === 'Sunday') {
-        if (count === 0) return // skip empty weekend rows
-      }
+      if ((day === 'Saturday' || day === 'Sunday') && count === 0) return
       const w = (count / dowMax) * barMaxW
       addPageIfNeeded(6)
-      setColor(doc, COLOURS.text, 'setTextColor')
+      text(doc, 'text')
       doc.text(day, MARGIN + 2, y)
       if (w > 0) {
-        setColor(doc, COLOURS.forestLight, 'setFillColor')
+        fill(doc, 'forestLight')
+        stroke(doc, 'forestLight')
         doc.rect(barX, y - 3, Math.max(w, 0.5), 4, 'F')
+        // Marmalade accent on bar end
+        fill(doc, 'marmalade')
+        doc.rect(barX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
       }
-      setColor(doc, COLOURS.mute, 'setTextColor')
+      text(doc, 'mute')
       doc.text(String(count), barX + barMaxW + 3, y)
       y += 5
     })
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
     y += 6
   }
 
@@ -403,30 +427,32 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     pageNumber++
     y = 20
 
-    // Section header bar
-    setColor(doc, COLOURS.forest, 'setFillColor')
-    doc.rect(MARGIN, y - 4, CONTENT_WIDTH, 10, 'F')
-    setColor(doc, [255, 255, 255], 'setTextColor')
-    doc.setFontSize(11)
+    fill(doc, 'forest')
+    doc.rect(MARGIN, y - 4, CONTENT_WIDTH, 12, 'F')
+    fill(doc, 'marmalade')
+    doc.rect(MARGIN, y + 8, CONTENT_WIDTH, 1.5, 'F')
+    text(doc, 'white')
+    doc.setFontSize(12)
     doc.setFont(undefined, 'bold')
-    doc.text('Outdoor / Garden Incidents', MARGIN + 3, y + 2)
-    setColor(doc, COLOURS.text, 'setTextColor')
-    y += 14
+    doc.text('Outdoor / Garden Incidents', MARGIN + 4, y + 4)
+    text(doc, 'text')
+    y += 18
 
-    // Summary stats
     const outdoorPct = totalReports > 0 ? Math.round((periodOutdoor.length / totalReports) * 100) : 0
     doc.setFontSize(9)
     doc.setFont(undefined, 'normal')
-    doc.text(`${periodOutdoor.length} outdoor incident${periodOutdoor.length !== 1 ? 's' : ''} recorded in this period  (${outdoorPct}% of all reports)`, MARGIN, y)
+    text(doc, 'text')
+    doc.text(`${periodOutdoor.length} outdoor incident${periodOutdoor.length !== 1 ? 's' : ''} recorded in this period`, MARGIN, y)
+    text(doc, 'mute')
+    doc.text(`(${outdoorPct}% of all reports)`, MARGIN + 80, y)
     y += 8
 
-    // Pattern flags
     if (outdoorPatterns.length > 0) {
-      setColor(doc, COLOURS.amberBg, 'setFillColor')
-      setColor(doc, COLOURS.amberRule, 'setDrawColor')
+      fill(doc, 'marmaladeT1')
+      stroke(doc, 'marmalade')
       const flagH = 6 + outdoorPatterns.length * 5
       doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
-      setColor(doc, COLOURS.amberText, 'setTextColor')
+      text(doc, 'marmaladeShade')
       doc.setFontSize(8)
       doc.setFont(undefined, 'bold')
       doc.text('Patterns detected', MARGIN + 3, y + 5)
@@ -434,21 +460,22 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       outdoorPatterns.forEach((p, i) => {
         doc.text(`•  ${p}`, MARGIN + 3, y + 10 + i * 5)
       })
-      setColor(doc, COLOURS.text, 'setTextColor')
+      text(doc, 'text')
       y += flagH + 8
     } else {
-      setColor(doc, COLOURS.mute, 'setTextColor')
+      text(doc, 'mute')
       doc.setFontSize(8)
       doc.setFont(undefined, 'normal')
       doc.text('No patterns detected in the last 12 months.', MARGIN, y)
-      setColor(doc, COLOURS.text, 'setTextColor')
+      text(doc, 'text')
       y += 8
     }
 
-    // 12-month monthly trend bar chart
     doc.setFontSize(10)
     doc.setFont(undefined, 'bold')
+    text(doc, 'forest')
     doc.text('Monthly trend  (last 12 months)', MARGIN, y)
+    text(doc, 'text')
     y += 6
 
     const outdoorMax = Math.max(1, ...outdoorMonthly.map(m => m.count))
@@ -459,33 +486,39 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     doc.setFont(undefined, 'normal')
     outdoorMonthly.forEach(m => {
       addPageIfNeeded(6)
-      setColor(doc, COLOURS.text, 'setTextColor')
+      text(doc, 'text')
       doc.text(m.label, labelX, y)
       const w = (m.count / outdoorMax) * barMaxW
       if (w > 0) {
-        setColor(doc, COLOURS.forestLight, 'setFillColor')
+        fill(doc, 'forestLight')
+        stroke(doc, 'forestLight')
         doc.rect(barX, y - 3, Math.max(w, 0.5), 4, 'F')
+        fill(doc, 'marmalade')
+        doc.rect(barX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
       }
-      setColor(doc, COLOURS.mute, 'setTextColor')
+      text(doc, 'mute')
       doc.text(String(m.count), barX + barMaxW + 3, y)
       y += 5
     })
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
     y += 6
 
-    // Injury type breakdown for outdoor incidents
     if (outdoorInjuryTypes.length > 0) {
       addPageIfNeeded(20 + outdoorInjuryTypes.length * 5)
       doc.setFontSize(10)
       doc.setFont(undefined, 'bold')
+      text(doc, 'forest')
       doc.text('Injury types (outdoor)', MARGIN, y)
+      text(doc, 'text')
       y += 6
       doc.setFontSize(9)
       doc.setFont(undefined, 'normal')
       outdoorInjuryTypes.forEach(({ category, count }) => {
         addPageIfNeeded(6)
         const pct = periodOutdoor.length > 0 ? Math.round((count / periodOutdoor.length) * 100) : 0
+        text(doc, 'text')
         doc.text(`•  ${category}`, MARGIN + 4, y)
+        text(doc, 'mute')
         doc.text(`${count}   (${pct}%)`, MARGIN + 90, y)
         y += 5
       })
@@ -501,33 +534,37 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     pageNumber++
     y = 20
 
-    setColor(doc, COLOURS.forest, 'setFillColor')
-    doc.rect(MARGIN, y - 4, CONTENT_WIDTH, 10, 'F')
-    setColor(doc, [255, 255, 255], 'setTextColor')
-    doc.setFontSize(11)
+    fill(doc, 'forest')
+    doc.rect(MARGIN, y - 4, CONTENT_WIDTH, 12, 'F')
+    fill(doc, 'marmalade')
+    doc.rect(MARGIN, y + 8, CONTENT_WIDTH, 1.5, 'F')
+    text(doc, 'white')
+    doc.setFontSize(12)
     doc.setFont(undefined, 'bold')
-    doc.text('Home / On-Arrival Incidents', MARGIN + 3, y + 2)
-    setColor(doc, COLOURS.text, 'setTextColor')
-    y += 14
+    doc.text('Home / On-Arrival Incidents', MARGIN + 4, y + 4)
+    text(doc, 'text')
+    y += 18
 
     const homePctOfTotal = totalReports > 0 ? Math.round((periodHome.length / totalReports) * 100) : 0
     doc.setFontSize(9)
     doc.setFont(undefined, 'normal')
-    doc.text(`${periodHome.length} home / on-arrival incident${periodHome.length !== 1 ? 's' : ''} recorded in this period  (${homePctOfTotal}% of all reports)`, MARGIN, y)
+    text(doc, 'text')
+    doc.text(`${periodHome.length} home / on-arrival incident${periodHome.length !== 1 ? 's' : ''} recorded in this period`, MARGIN, y)
+    text(doc, 'mute')
+    doc.text(`(${homePctOfTotal}% of all reports)`, MARGIN + 100, y)
     y += 5
-    setColor(doc, COLOURS.mute, 'setTextColor')
     doc.setFontSize(7)
-    doc.text('These are injuries where the child arrived at the setting already hurt, or where the location field records "Home".', MARGIN, y)
+    doc.text('Injuries where the child arrived at the setting already hurt, or where the location field records "Home".', MARGIN, y)
     doc.text('Recurring patterns may warrant a safeguarding conversation.', MARGIN, y + 3)
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
     y += 10
 
     if (homePatterns.length > 0) {
-      setColor(doc, COLOURS.amberBg, 'setFillColor')
-      setColor(doc, COLOURS.amberRule, 'setDrawColor')
+      fill(doc, 'marmaladeT1')
+      stroke(doc, 'marmalade')
       const flagH = 6 + homePatterns.length * 5
       doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
-      setColor(doc, COLOURS.amberText, 'setTextColor')
+      text(doc, 'marmaladeShade')
       doc.setFontSize(8)
       doc.setFont(undefined, 'bold')
       doc.text('Patterns detected', MARGIN + 3, y + 5)
@@ -535,20 +572,22 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       homePatterns.forEach((p, i) => {
         doc.text(`•  ${p}`, MARGIN + 3, y + 10 + i * 5)
       })
-      setColor(doc, COLOURS.text, 'setTextColor')
+      text(doc, 'text')
       y += flagH + 8
     } else {
-      setColor(doc, COLOURS.mute, 'setTextColor')
+      text(doc, 'mute')
       doc.setFontSize(8)
       doc.setFont(undefined, 'normal')
       doc.text('No patterns detected in the last 12 months.', MARGIN, y)
-      setColor(doc, COLOURS.text, 'setTextColor')
+      text(doc, 'text')
       y += 8
     }
 
     doc.setFontSize(10)
     doc.setFont(undefined, 'bold')
+    text(doc, 'forest')
     doc.text('Monthly trend  (last 12 months)', MARGIN, y)
+    text(doc, 'text')
     y += 6
 
     const homeMax = Math.max(1, ...homeMonthly.map(m => m.count))
@@ -558,32 +597,39 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     doc.setFont(undefined, 'normal')
     homeMonthly.forEach(m => {
       addPageIfNeeded(6)
-      setColor(doc, COLOURS.text, 'setTextColor')
+      text(doc, 'text')
       doc.text(m.label, MARGIN + 2, y)
       const w = (m.count / homeMax) * barMaxW
       if (w > 0) {
-        setColor(doc, COLOURS.forestLight, 'setFillColor')
+        fill(doc, 'forestLight')
+        stroke(doc, 'forestLight')
         doc.rect(barX, y - 3, Math.max(w, 0.5), 4, 'F')
+        fill(doc, 'marmalade')
+        doc.rect(barX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
       }
-      setColor(doc, COLOURS.mute, 'setTextColor')
+      text(doc, 'mute')
       doc.text(String(m.count), barX + barMaxW + 3, y)
       y += 5
     })
-    setColor(doc, COLOURS.text, 'setTextColor')
+    text(doc, 'text')
     y += 6
 
     if (homeInjuryTypes.length > 0) {
       addPageIfNeeded(20 + homeInjuryTypes.length * 5)
       doc.setFontSize(10)
       doc.setFont(undefined, 'bold')
+      text(doc, 'forest')
       doc.text('Injury types (home / on-arrival)', MARGIN, y)
+      text(doc, 'text')
       y += 6
       doc.setFontSize(9)
       doc.setFont(undefined, 'normal')
       homeInjuryTypes.forEach(({ category, count }) => {
         addPageIfNeeded(6)
         const pct = periodHome.length > 0 ? Math.round((count / periodHome.length) * 100) : 0
+        text(doc, 'text')
         doc.text(`•  ${category}`, MARGIN + 4, y)
+        text(doc, 'mute')
         doc.text(`${count}   (${pct}%)`, MARGIN + 90, y)
         y += 5
       })
@@ -591,29 +637,28 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     }
   }
 
-  // ─── REVIEWED BY signature line ──
+  // ─── REVIEWED BY ──
 
   addPageIfNeeded(30)
   y = Math.max(y, PAGE_BOTTOM - 40)
-  setColor(doc, COLOURS.rule, 'setDrawColor')
+  stroke(doc, 'rule')
   doc.setLineWidth(0.2)
   doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y)
   y += 5
   doc.setFontSize(9)
   doc.setFont(undefined, 'bold')
-  setColor(doc, COLOURS.text, 'setTextColor')
+  text(doc, 'text')
   doc.text('Reviewed by', MARGIN, y)
   y += 7
   doc.setFont(undefined, 'normal')
   doc.setFontSize(8)
-  setColor(doc, COLOURS.mute, 'setTextColor')
+  text(doc, 'mute')
   doc.text('Name: ________________________________     Role: ________________     Date: ____________', MARGIN, y)
   y += 6
   doc.text('Comments: _____________________________________________________________________', MARGIN, y)
   y += 6
   doc.text('Actions: ______________________________________________________________________', MARGIN, y)
 
-  // ─── FOOTER on final page ──
   addFooter(doc, pageNumber)
 
   const filename = `accident-review-${siteName.replace(/\s+/g, '-').toLowerCase()}-${filenameSlugForPeriod(period)}.pdf`
@@ -623,14 +668,10 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 function addFooter(doc, pageNumber) {
   const pageWidth = doc.internal.pageSize.getWidth()
   const y = 287
-  setColor(doc, COLOURS.mute, 'setTextColor')
+  doc.setTextColor(C.mute[0], C.mute[1], C.mute[2])
   doc.setFontSize(7)
   doc.setFont(undefined, 'normal')
-  doc.text(
-    'For internal management review only. Not a safeguarding record.',
-    MARGIN,
-    y,
-  )
+  doc.text('For internal management review only. Not a safeguarding record.', MARGIN, y)
   doc.text(
     `Generated ${new Date().toLocaleString('en-GB')}  ·  Page ${pageNumber}`,
     pageWidth - MARGIN,
