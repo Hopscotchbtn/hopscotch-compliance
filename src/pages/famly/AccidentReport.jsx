@@ -217,9 +217,15 @@ export function AccidentReport() {
 
           <RepeatChildrenSection report={report} />
 
+          <InjuryTypeSection report={report} />
+
           <LocationSection report={report} />
 
           <DayOfWeekSection report={report} />
+
+          <OutdoorSection report={report} />
+
+          <HomeOnArrivalSection report={report} />
 
           <ReviewedBySection />
 
@@ -371,7 +377,7 @@ function RepeatChildrenSection({ report }) {
             <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Child</th>
             <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Count</th>
             <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Most recent</th>
-            <th className="text-left py-1.5 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Location</th>
+            <th className="text-left py-1.5 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Last location</th>
           </tr>
         </thead>
         <tbody>
@@ -462,6 +468,159 @@ function DayOfWeekSection({ report }) {
           )
         })}
       </div>
+    </section>
+  )
+}
+
+function InjuryTypeSection({ report }) {
+  const { injuryTypes, totalReports } = report
+  if (!injuryTypes || injuryTypes.length === 0) return null
+  return (
+    <section className="mb-8">
+      <h2 className="text-base font-bold mb-1" style={{ color: FOREST, fontFamily: "'Ivar Display', Georgia, serif" }}>
+        Injury type breakdown
+      </h2>
+      <p className="text-xs mt-0.5 mb-3" style={{ color: FOREST_T3 }}>
+        As a percentage of all reports in this period.
+      </p>
+      <ul className="space-y-1 text-sm">
+        {injuryTypes.map(({ category, count }, i) => {
+          const pct = totalReports > 0 ? Math.round((count / totalReports) * 100) : 0
+          return (
+            <li key={i} className="flex items-baseline justify-between" style={{ color: FOREST }}>
+              <span>• {category}</span>
+              <span style={{ color: FOREST_T3 }}>{count} ({pct}%)</span>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+function TrendBars({ monthly, max }) {
+  return (
+    <div className="space-y-1.5">
+      {monthly.map(m => {
+        const pct = max > 0 ? (m.count / max) * 100 : 0
+        return (
+          <div key={m.yearMonth} className="flex items-center gap-3 text-sm">
+            <div className="w-14 text-xs shrink-0" style={{ color: FOREST }}>{m.label}</div>
+            <div className="flex-1 h-4 rounded" style={{ backgroundColor: PEBBLE }}>
+              {m.count > 0 && (
+                <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: FOREST_T1, border: `1px solid ${FOREST_T3}` }} />
+              )}
+            </div>
+            <div className="w-6 text-right text-xs" style={{ color: FOREST_T3 }}>{m.count}</div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function PatternFlags({ patterns, label }) {
+  if (patterns.length === 0) {
+    return <p className="text-xs mb-4" style={{ color: FOREST_T3 }}>No patterns detected in the last 12 months.</p>
+  }
+  return (
+    <div className="rounded-md border px-4 py-3 mb-4" style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}>
+      <div className="text-sm font-bold mb-1" style={{ color: MARMALADE_SHADE }}>Patterns detected</div>
+      <ul className="text-xs space-y-0.5" style={{ color: FOREST }}>
+        {patterns.map((p, i) => <li key={i}>• {p}</li>)}
+      </ul>
+    </div>
+  )
+}
+
+function SectionHeader({ title }) {
+  return (
+    <div className="rounded-md px-3 py-2.5 mb-4" style={{ backgroundColor: FOREST }}>
+      <h2 className="text-base font-bold text-white" style={{ fontFamily: "'Ivar Display', Georgia, serif" }}>
+        {title}
+      </h2>
+    </div>
+  )
+}
+
+function InjuryTypeList({ types, total }) {
+  if (types.length === 0) return null
+  return (
+    <ul className="space-y-1 text-sm">
+      {types.map(({ category, count }, i) => {
+        const pct = total > 0 ? Math.round((count / total) * 100) : 0
+        return (
+          <li key={i} className="flex items-baseline justify-between" style={{ color: FOREST }}>
+            <span>• {category}</span>
+            <span style={{ color: FOREST_T3 }}>{count} ({pct}%)</span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+function OutdoorSection({ report }) {
+  const { periodOutdoor, outdoorMonthly, outdoorPatterns, outdoorInjuryTypes, totalReports } = report
+  const outdoorPct = totalReports > 0 ? Math.round((periodOutdoor.length / totalReports) * 100) : 0
+  const outdoorMax = Math.max(1, ...outdoorMonthly.map(m => m.count))
+
+  return (
+    <section className="mb-8">
+      <SectionHeader title="Outdoor / Garden Incidents" />
+      <p className="text-sm mb-4" style={{ color: FOREST }}>
+        {periodOutdoor.length} outdoor incident{periodOutdoor.length !== 1 ? 's' : ''} in this period
+        <span style={{ color: FOREST_T3 }}> · {outdoorPct}% of all reports</span>
+      </p>
+      <PatternFlags patterns={outdoorPatterns} />
+      <div className="mb-4">
+        <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Monthly trend (last 12 months)</div>
+        <TrendBars monthly={outdoorMonthly} max={outdoorMax} />
+      </div>
+      {outdoorInjuryTypes.length > 0 && (
+        <div>
+          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Injury types (outdoor)</div>
+          <InjuryTypeList types={outdoorInjuryTypes} total={periodOutdoor.length} />
+        </div>
+      )}
+    </section>
+  )
+}
+
+function HomeOnArrivalSection({ report }) {
+  const { periodHome, homeMonthly, homePatterns, homeInjuryTypes, homeIncs, settingIncs, totalReports } = report
+  const homePct = totalReports > 0 ? Math.round((homeIncs.length / totalReports) * 100) : 0
+  const settingPct = totalReports > 0 ? Math.round((settingIncs.length / totalReports) * 100) : 0
+  const homeMax = Math.max(1, ...homeMonthly.map(m => m.count))
+
+  return (
+    <section className="mb-8">
+      <SectionHeader title="Home / On-Arrival Incidents" />
+      <div className="flex gap-6 mb-3 text-sm">
+        <span style={{ color: FOREST }}>
+          At setting: <strong>{settingIncs.length}</strong>
+          <span style={{ color: FOREST_T3 }}> ({settingPct}%)</span>
+        </span>
+        <span style={{ color: FOREST }}>
+          Home / on arrival: <strong>{homeIncs.length}</strong>
+          <span style={{ color: FOREST_T3 }}> ({homePct}%)</span>
+        </span>
+      </div>
+      <p className="text-xs mb-4" style={{ color: FOREST_T3 }}>
+        Injuries where the child arrived already hurt, or where the location field records "Home".
+        Recurring patterns may warrant a safeguarding conversation.
+      </p>
+      <PatternFlags patterns={homePatterns} />
+      <div className="mb-4">
+        <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Monthly trend (last 12 months)</div>
+        <TrendBars monthly={homeMonthly} max={homeMax} />
+      </div>
+      {homeInjuryTypes.length > 0 && (
+        <div>
+          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Injury types (home / on-arrival)</div>
+          <InjuryTypeList types={homeInjuryTypes} total={periodHome.length} />
+        </div>
+      )}
     </section>
   )
 }
