@@ -618,30 +618,6 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     })
     text(doc, 'text'); y += 6
 
-    // ── All incidents list ──
-    if (nurserySortedIncs.length > 0) {
-      addPageIfNeeded(20 + nurserySortedIncs.length * 5)
-      doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
-      doc.text('All incidents this period', MARGIN, y); text(doc, 'text'); y += 4
-      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-      doc.text('Child',        MARGIN + 2,   y)
-      doc.text('Date',         MARGIN + 50,  y)
-      doc.text('Injury',       MARGIN + 85,  y)
-      doc.text('Location',     MARGIN + 130, y)
-      doc.text('Ack',          MARGIN + 168, y)
-      y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
-      doc.setFont(undefined, 'normal'); doc.setFontSize(9)
-      nurserySortedIncs.forEach(inc => {
-        addPageIfNeeded(6); text(doc, 'text')
-        doc.text(childDisplayName(inc.childName),          MARGIN + 2,   y)
-        doc.text(formatDate(inc.happenedAt),                MARGIN + 50,  y)
-        doc.text(inc.injuryCategory,                        MARGIN + 85,  y, { maxWidth: 42 })
-        doc.text((inc.location || '').slice(0, 20),         MARGIN + 130, y)
-        text(doc, inc.acknowledgedAt ? 'forest' : 'marmaladeShade')
-        doc.text(inc.acknowledgedAt ? 'Yes' : 'No',         MARGIN + 168, y)
-        y += 5
-      }); y += 6
-    }
   }
 
   // ─── HOME / ON-ARRIVAL INCIDENTS ──

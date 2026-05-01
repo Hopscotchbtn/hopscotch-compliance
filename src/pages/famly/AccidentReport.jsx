@@ -743,36 +743,6 @@ function AtNurserySection({ report }) {
         <TrendBars monthly={nurseryMonthly} max={nurseryMax} />
       </div>
 
-      {/* Full incident list */}
-      {nurserySortedIncs.length > 0 && (
-        <div>
-          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>All incidents this period</div>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${PEBBLE_SHADE}` }}>
-                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Child</th>
-                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Date</th>
-                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Injury</th>
-                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Location</th>
-                <th className="text-left py-1.5 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Acknowledged</th>
-              </tr>
-            </thead>
-            <tbody>
-              {nurserySortedIncs.map((inc, i) => (
-                <tr key={i} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
-                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{childDisplayName(inc.childName)}</td>
-                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{formatDate(inc.happenedAt)}</td>
-                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{inc.injuryCategory}</td>
-                  <td className="py-1.5 pr-2 text-xs" style={{ color: FOREST_T3 }}>{(inc.location || '').slice(0, 30)}</td>
-                  <td className="py-1.5" style={{ color: inc.acknowledgedAt ? APPLE : MARMALADE_SHADE }}>
-                    {inc.acknowledgedAt ? 'Yes' : 'No'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </section>
   )
 }
