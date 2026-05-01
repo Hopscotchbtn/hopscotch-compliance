@@ -529,24 +529,26 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
     // ── Repeat children ──
     if (nurseryRepeats.length > 0) {
-      const flagH = 10 + nurseryRepeats.reduce((sum, child) => sum + 6 + child.incidents.length * 5, 0)
-      addPageIfNeeded(flagH + 10)
-      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
-      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
-      text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-      doc.text('Children with repeated nursery reports this period', MARGIN + 3, y + 6)
-      y += 11
+      addPageIfNeeded(12)
+      text(doc, 'marmaladeShade'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+      doc.text('Children with repeated nursery reports this period', MARGIN, y)
+      text(doc, 'text'); y += 5
       nurseryRepeats.forEach(child => {
-        addPageIfNeeded(6 + child.incidents.length * 5)
+        const cardH = 5 + 5 + child.incidents.length * 5 + 3
+        addPageIfNeeded(cardH + 2)
+        fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
+        doc.roundedRect(MARGIN, y, CONTENT_WIDTH, cardH, 1.5, 1.5, 'FD')
         text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y); y += 5
+        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y + 5)
         doc.setFont(undefined, 'normal')
-        child.incidents.forEach(inc => {
-          addPageIfNeeded(5); text(doc, 'text')
-          const loc = inc.location ? `  ·  ${inc.location.slice(0, 30)}` : ''
-          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 6, y); y += 5
-        }); y += 2
-      }); y += 4
+        child.incidents.forEach((inc, j) => {
+          text(doc, 'text')
+          const loc = inc.location ? `  ·  ${inc.location.slice(0, 28)}` : ''
+          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 5, y + 10 + j * 5)
+        })
+        y += cardH + 2
+      })
+      y += 4
     }
 
     // ── Injury types ──
