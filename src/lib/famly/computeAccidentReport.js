@@ -122,6 +122,14 @@ export function computeAccidentReport(incidents, period) {
     if (!isNaN(d)) dowCounts[DOW_ORDER[(d.getDay() + 6) % 7]]++
   }
 
+  const hourCounts = Array.from({ length: 24 }, (_, h) => ({
+    hour: h,
+    count: periodIncs.filter(inc => {
+      const d = new Date(inc.happenedAt)
+      return !isNaN(d) && d.getHours() === h
+    }).length,
+  }))
+
   let yoyDiff = null
   if (period.type === 'month' && period.monthKey) {
     const [y0, m0] = period.monthKey.split('-').map(Number)
@@ -181,6 +189,7 @@ export function computeAccidentReport(incidents, period) {
     nurseryRepeats,
     dowOrder: DOW_ORDER,
     dowCounts,
+    hourCounts,
     yoyDiff,
     repeats,
     repeatWindowLabel,

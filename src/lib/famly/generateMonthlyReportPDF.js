@@ -95,7 +95,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     nurseryAcknowledged, nurseryAckRate, nurseryHigh, nurseryMedium,
     nurseryDowCounts, nurserySortedIncs, nurseryInjuryTypes, nurseryLocs,
     nurseryMonthly, nurseryPatterns, nurseryRepeats,
-    dowOrder, dowCounts,
+    dowOrder, dowCounts, hourCounts,
     yoyDiff, repeats, repeatWindowLabel,
   } = report
   const dowMax = Math.max(1, ...Object.values(dowCounts))
@@ -362,21 +362,82 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       y += 2
       text(doc, 'text')
       doc.setFont(undefined, 'bold')
-      doc.text('Top locations (setting):', MARGIN + 2, y)
+      doc.text('Top rooms / locations (setting):', MARGIN + 2, y)
       y += 5
       doc.setFont(undefined, 'normal')
-      siteLocs.forEach(loc => {
-        addPageIfNeeded(6)
-        const pct = Math.round((loc.count / totalReports) * 100)
-        text(doc, 'text')
-        doc.text(`•  ${loc.location}`, MARGIN + 4, y)
-        text(doc, 'mute')
-        doc.text(`${loc.count}   (${pct}%)`, MARGIN + 90, y)
-        y += 5
-      })
+      if (period.type !== 'month') {
+        const locMax = Math.max(1, ...siteLocs.map(l => l.count))
+        const locBarMaxW = 65; const locBarX = MARGIN + 52
+        doc.setFontSize(8)
+        siteLocs.forEach(loc => {
+          addPageIfNeeded(6)
+          const w = (loc.count / locMax) * locBarMaxW
+          text(doc, 'text'); doc.text(loc.location.slice(0, 18), MARGIN + 2, y)
+          if (w > 0) {
+            fill(doc, 'forestLight'); stroke(doc, 'forestLight')
+            doc.rect(locBarX, y - 3, Math.max(w, 0.5), 4, 'F')
+            fill(doc, 'marmalade'); doc.rect(locBarX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
+          }
+          text(doc, 'mute'); doc.text(String(loc.count), locBarX + locBarMaxW + 3, y)
+          y += 5
+        })
+        doc.setFontSize(9)
+      } else {
+        siteLocs.forEach(loc => {
+          addPageIfNeeded(6)
+          const pct = Math.round((loc.count / totalReports) * 100)
+          text(doc, 'text')
+          doc.text(`•  ${loc.location}`, MARGIN + 4, y)
+          text(doc, 'mute')
+          doc.text(`${loc.count}   (${pct}%)`, MARGIN + 90, y)
+          y += 5
+        })
+      }
     }
     y += 6
     text(doc, 'text')
+  }
+
+  // ─── HOME HIGHLIGHTS (non-monthly) ──
+
+  if (period.type !== 'month' && homeIncs.length > 0) {
+    addPageIfNeeded(20 + Math.min(homeRepeats.length, 8) * 5)
+    sectionHeading(doc, 'Home / on-arrival highlights', y)
+    y += 10
+
+    const homePctOverview = totalReports > 0 ? Math.round((homeIncs.length / totalReports) * 100) : 0
+    text(doc, 'text'); doc.setFontSize(9); doc.setFont(undefined, 'normal')
+    doc.text(`${homeIncs.length} home / on-arrival reports this period  (${homePctOverview}% of total)`, MARGIN + 2, y)
+    y += 6
+
+    if (homePatterns.length > 0) {
+      homePatterns.forEach(p => {
+        addPageIfNeeded(5)
+        text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'normal')
+        doc.text(`⚑  ${p}`, MARGIN + 2, y); y += 5
+      })
+      y += 3
+    }
+
+    if (homeRepeats.length > 0) {
+      text(doc, 'text'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+      doc.text('Children with repeated home / on-arrival reports:', MARGIN + 2, y)
+      y += 5
+      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+      doc.text('Child', MARGIN + 4, y); doc.text('Reports', MARGIN + 90, y)
+      y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
+      doc.setFont(undefined, 'normal'); doc.setFontSize(9); text(doc, 'text')
+      homeRepeats.forEach(child => {
+        addPageIfNeeded(5)
+        doc.text(child.displayName, MARGIN + 4, y)
+        text(doc, 'mute'); doc.text(String(child.count), MARGIN + 90, y)
+        text(doc, 'text'); y += 5
+      })
+    } else {
+      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'normal')
+      doc.text('No children with repeated home incidents this period.', MARGIN + 2, y); y += 5
+    }
+    text(doc, 'text'); y += 6
   }
 
   // ─── INJURY TYPE BREAKDOWN ──
@@ -438,6 +499,34 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     })
     text(doc, 'text')
     y += 6
+  }
+
+  // ─── TIME OF DAY (non-monthly) ──
+
+  if (period.type !== 'month' && totalReports > 0) {
+    const activeHours = hourCounts.filter(h => h.count > 0)
+    if (activeHours.length > 0) {
+      addPageIfNeeded(20 + activeHours.length * 5)
+      sectionHeading(doc, 'Time of day', y)
+      y += 10
+      const hourMax = Math.max(1, ...activeHours.map(h => h.count))
+      const hourBarMaxW = 70; const hourBarX = MARGIN + 25
+      doc.setFontSize(8); doc.setFont(undefined, 'normal')
+      activeHours.forEach(({ hour, count }) => {
+        addPageIfNeeded(5)
+        const label = `${String(hour).padStart(2, '0')}:00`
+        text(doc, 'text'); doc.text(label, MARGIN + 2, y)
+        const w = (count / hourMax) * hourBarMaxW
+        if (w > 0) {
+          fill(doc, 'forestLight'); stroke(doc, 'forestLight')
+          doc.rect(hourBarX, y - 3, Math.max(w, 0.5), 4, 'F')
+          fill(doc, 'marmalade'); doc.rect(hourBarX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
+        }
+        text(doc, 'mute'); doc.text(String(count), hourBarX + hourBarMaxW + 3, y)
+        y += 5
+      })
+      text(doc, 'text'); y += 6
+    }
   }
 
   // ─── AT NURSERY ──
@@ -815,8 +904,8 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     })
     text(doc, 'text'); y += 6
 
-    // ── All incidents list ──
-    if (homeSortedIncs.length > 0) {
+    // ── All incidents list (monthly only) ──
+    if (period.type === 'month' && homeSortedIncs.length > 0) {
       addPageIfNeeded(20 + homeSortedIncs.length * 5)
       doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
       doc.text('All incidents this period', MARGIN, y); text(doc, 'text'); y += 4
