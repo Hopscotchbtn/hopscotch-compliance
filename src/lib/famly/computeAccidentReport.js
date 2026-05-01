@@ -1,4 +1,4 @@
-import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, categoryCounts, isOutdoor, outdoorMonthlyTrend, detectMonthlyPatterns, isHome, homeMonthlyTrend } from './dataHelpers'
+import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, categoryCounts, isOutdoor, outdoorMonthlyTrend, detectMonthlyPatterns, isHome, homeMonthlyTrend, childDisplayName } from './dataHelpers'
 
 const DOW_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -37,6 +37,28 @@ export function computeAccidentReport(incidents, period) {
   const homeMonthly = homeMonthlyTrend(incidents)
   const homePatterns = detectMonthlyPatterns(homeMonthly, 'home/on-arrival')
   const homeInjuryTypes = categoryCounts(periodHome)
+
+  const homeRepeatMap = new Map()
+  for (const inc of periodHome) {
+    const list = homeRepeatMap.get(inc.childName) ?? []
+    list.push(inc)
+    homeRepeatMap.set(inc.childName, list)
+  }
+  const homeRepeats = Array.from(homeRepeatMap.entries())
+    .filter(([, incs]) => incs.length >= 2)
+    .map(([name, incs]) => {
+      const sorted = [...incs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
+      return {
+        displayName: childDisplayName(name),
+        count: incs.length,
+        incidents: sorted.map(inc => ({
+          date: inc.happenedAt,
+          injuryCategory: inc.injuryCategory,
+          onArrival: !!inc.onArrival,
+        })),
+      }
+    })
+    .sort((a, b) => b.count - a.count)
 
   const dowCounts = Object.fromEntries(DOW_ORDER.map(d => [d, 0]))
   for (const inc of periodIncs) {
@@ -83,6 +105,7 @@ export function computeAccidentReport(incidents, period) {
     homeMonthly,
     homePatterns,
     homeInjuryTypes,
+    homeRepeats,
     dowOrder: DOW_ORDER,
     dowCounts,
     yoyDiff,

@@ -90,8 +90,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     high, medium,
     homeLoc, siteLocs,
     homeIncs, settingIncs, injuryTypes,
-    periodOutdoor, outdoorMonthly, outdoorPatterns, outdoorInjuryTypes,
-    periodHome, homeMonthly, homePatterns, homeInjuryTypes,
+    periodHome, homeMonthly, homePatterns, homeInjuryTypes, homeRepeats,
     dowOrder, dowCounts,
     yoyDiff, repeats, repeatWindowLabel,
   } = report
@@ -437,113 +436,6 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     y += 6
   }
 
-  // ─── OUTDOOR / GARDEN INCIDENTS ──
-
-  {
-    addFooter(doc, pageNumber)
-    doc.addPage()
-    pageNumber++
-    y = 20
-
-    fill(doc, 'forest')
-    doc.rect(MARGIN, y - 4, CONTENT_WIDTH, 12, 'F')
-    fill(doc, 'marmalade')
-    doc.rect(MARGIN, y + 8, CONTENT_WIDTH, 1.5, 'F')
-    text(doc, 'white')
-    doc.setFontSize(12)
-    doc.setFont(undefined, 'bold')
-    doc.text('Outdoor / Garden Incidents', MARGIN + 4, y + 4)
-    text(doc, 'text')
-    y += 18
-
-    const outdoorPct = totalReports > 0 ? Math.round((periodOutdoor.length / totalReports) * 100) : 0
-    doc.setFontSize(9)
-    doc.setFont(undefined, 'normal')
-    text(doc, 'text')
-    doc.text(`${periodOutdoor.length} outdoor incident${periodOutdoor.length !== 1 ? 's' : ''} recorded in this period`, MARGIN, y)
-    text(doc, 'mute')
-    doc.text(`(${outdoorPct}% of all reports)`, MARGIN + 80, y)
-    y += 8
-
-    if (outdoorPatterns.length > 0) {
-      fill(doc, 'marmaladeT1')
-      stroke(doc, 'marmalade')
-      const flagH = 6 + outdoorPatterns.length * 5
-      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
-      text(doc, 'marmaladeShade')
-      doc.setFontSize(8)
-      doc.setFont(undefined, 'bold')
-      doc.text('Patterns detected', MARGIN + 3, y + 5)
-      doc.setFont(undefined, 'normal')
-      outdoorPatterns.forEach((p, i) => {
-        doc.text(`•  ${p}`, MARGIN + 3, y + 10 + i * 5)
-      })
-      text(doc, 'text')
-      y += flagH + 8
-    } else {
-      text(doc, 'mute')
-      doc.setFontSize(8)
-      doc.setFont(undefined, 'normal')
-      doc.text('No patterns detected in the last 12 months.', MARGIN, y)
-      text(doc, 'text')
-      y += 8
-    }
-
-    doc.setFontSize(10)
-    doc.setFont(undefined, 'bold')
-    text(doc, 'forest')
-    doc.text('Monthly trend  (last 12 months)', MARGIN, y)
-    text(doc, 'text')
-    y += 6
-
-    const outdoorMax = Math.max(1, ...outdoorMonthly.map(m => m.count))
-    const barMaxW = 90
-    const labelX = MARGIN + 2
-    const barX = MARGIN + 22
-    doc.setFontSize(8)
-    doc.setFont(undefined, 'normal')
-    outdoorMonthly.forEach(m => {
-      addPageIfNeeded(6)
-      text(doc, 'text')
-      doc.text(m.label, labelX, y)
-      const w = (m.count / outdoorMax) * barMaxW
-      if (w > 0) {
-        fill(doc, 'forestLight')
-        stroke(doc, 'forestLight')
-        doc.rect(barX, y - 3, Math.max(w, 0.5), 4, 'F')
-        fill(doc, 'marmalade')
-        doc.rect(barX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
-      }
-      text(doc, 'mute')
-      doc.text(String(m.count), barX + barMaxW + 3, y)
-      y += 5
-    })
-    text(doc, 'text')
-    y += 6
-
-    if (outdoorInjuryTypes.length > 0) {
-      addPageIfNeeded(20 + outdoorInjuryTypes.length * 5)
-      doc.setFontSize(10)
-      doc.setFont(undefined, 'bold')
-      text(doc, 'forest')
-      doc.text('Injury types (outdoor)', MARGIN, y)
-      text(doc, 'text')
-      y += 6
-      doc.setFontSize(9)
-      doc.setFont(undefined, 'normal')
-      outdoorInjuryTypes.forEach(({ category, count }) => {
-        addPageIfNeeded(6)
-        const pct = periodOutdoor.length > 0 ? Math.round((count / periodOutdoor.length) * 100) : 0
-        text(doc, 'text')
-        doc.text(`•  ${category}`, MARGIN + 4, y)
-        text(doc, 'mute')
-        doc.text(`${count}   (${pct}%)`, MARGIN + 90, y)
-        y += 5
-      })
-      y += 6
-    }
-  }
-
   // ─── HOME / ON-ARRIVAL INCIDENTS ──
 
   {
@@ -652,6 +544,37 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
         y += 5
       })
       y += 6
+    }
+
+    if (homeRepeats.length > 0) {
+      const flagH = 10 + homeRepeats.reduce((sum, child) => sum + 6 + child.incidents.length * 5, 0)
+      addPageIfNeeded(flagH + 10)
+      fill(doc, 'marmaladeT1')
+      stroke(doc, 'marmalade')
+      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
+      text(doc, 'marmaladeShade')
+      doc.setFontSize(8)
+      doc.setFont(undefined, 'bold')
+      doc.text('Children with repeated home / on-arrival reports this period', MARGIN + 3, y + 6)
+      y += 11
+      homeRepeats.forEach(child => {
+        addPageIfNeeded(6 + child.incidents.length * 5)
+        text(doc, 'forest')
+        doc.setFontSize(8)
+        doc.setFont(undefined, 'bold')
+        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y)
+        y += 5
+        doc.setFont(undefined, 'normal')
+        child.incidents.forEach(inc => {
+          addPageIfNeeded(5)
+          text(doc, 'text')
+          const detail = inc.onArrival ? 'arrived with injury' : 'location: Home'
+          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 6, y)
+          y += 5
+        })
+        y += 2
+      })
+      y += 4
     }
   }
 

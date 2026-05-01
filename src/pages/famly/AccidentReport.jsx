@@ -227,8 +227,6 @@ export function AccidentReport() {
 
           <DayOfWeekSection report={report} />
 
-          <OutdoorSection report={report} />
-
           <HomeOnArrivalSection report={report} />
 
           <ReviewedBySection />
@@ -576,35 +574,8 @@ function InjuryTypeList({ types, total }) {
   )
 }
 
-function OutdoorSection({ report }) {
-  const { periodOutdoor, outdoorMonthly, outdoorPatterns, outdoorInjuryTypes, totalReports } = report
-  const outdoorPct = totalReports > 0 ? Math.round((periodOutdoor.length / totalReports) * 100) : 0
-  const outdoorMax = Math.max(1, ...outdoorMonthly.map(m => m.count))
-
-  return (
-    <section className="mb-8">
-      <SectionHeader title="Outdoor / Garden Incidents" />
-      <p className="text-sm mb-4" style={{ color: FOREST }}>
-        {periodOutdoor.length} outdoor incident{periodOutdoor.length !== 1 ? 's' : ''} in this period
-        <span style={{ color: FOREST_T3 }}> · {outdoorPct}% of all reports</span>
-      </p>
-      <PatternFlags patterns={outdoorPatterns} />
-      <div className="mb-4">
-        <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Monthly trend (last 12 months)</div>
-        <TrendBars monthly={outdoorMonthly} max={outdoorMax} />
-      </div>
-      {outdoorInjuryTypes.length > 0 && (
-        <div>
-          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Injury types (outdoor)</div>
-          <InjuryTypeList types={outdoorInjuryTypes} total={periodOutdoor.length} />
-        </div>
-      )}
-    </section>
-  )
-}
-
 function HomeOnArrivalSection({ report }) {
-  const { periodHome, homeMonthly, homePatterns, homeInjuryTypes, homeIncs, settingIncs, totalReports } = report
+  const { periodHome, homeMonthly, homePatterns, homeInjuryTypes, homeIncs, settingIncs, homeRepeats, totalReports } = report
   const homePct = totalReports > 0 ? Math.round((homeIncs.length / totalReports) * 100) : 0
   const settingPct = totalReports > 0 ? Math.round((settingIncs.length / totalReports) * 100) : 0
   const homeMax = Math.max(1, ...homeMonthly.map(m => m.count))
@@ -627,6 +598,35 @@ function HomeOnArrivalSection({ report }) {
         Recurring patterns may warrant a safeguarding conversation.
       </p>
       <PatternFlags patterns={homePatterns} />
+
+      {homeRepeats.length > 0 && (
+        <div
+          className="rounded-md border px-4 py-3 mb-4"
+          style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}
+        >
+          <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>
+            Children with repeated home / on-arrival reports this period
+          </div>
+          <div className="space-y-3">
+            {homeRepeats.map((child, i) => (
+              <div key={i}>
+                <div className="text-sm font-semibold" style={{ color: FOREST }}>
+                  {child.displayName} — {child.count} reports
+                </div>
+                <ul className="mt-1 space-y-0.5">
+                  {child.incidents.map((inc, j) => (
+                    <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
+                      • {formatDate(inc.date)} · {inc.injuryCategory}
+                      {inc.onArrival ? ' · arrived with injury' : ' · location: Home'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mb-4">
         <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Monthly trend (last 12 months)</div>
         <TrendBars monthly={homeMonthly} max={homeMax} />
