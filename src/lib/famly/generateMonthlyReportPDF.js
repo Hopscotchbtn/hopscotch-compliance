@@ -617,9 +617,10 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     }
 
     // ── Repeat children ──
-    if (nurseryRepeats.length > 0) {
+    const displayedNurseryRepeats = period.type !== 'month' ? nurseryRepeats.filter(c => c.count > 5) : nurseryRepeats
+    if (displayedNurseryRepeats.length > 0) {
       // height: 9 header + per child (4 gap if not first, 6 name, n*5 incidents) + 5 padding
-      const flagH = 9 + nurseryRepeats.reduce((acc, child, ci) =>
+      const flagH = 9 + displayedNurseryRepeats.reduce((acc, child, ci) =>
         acc + (ci > 0 ? 4 : 0) + 6 + child.incidents.length * 5, 0) + 5
       addPageIfNeeded(flagH + 4)
       fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
@@ -627,7 +628,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
       doc.text('Children with repeated nursery reports this period', MARGIN + 4, y + 6)
       y += 9
-      nurseryRepeats.forEach((child, ci) => {
+      displayedNurseryRepeats.forEach((child, ci) => {
         if (ci > 0) {
           stroke(doc, 'rule'); doc.setLineWidth(0.2)
           doc.line(MARGIN + 4, y + 2, MARGIN + CONTENT_WIDTH - 4, y + 2)
