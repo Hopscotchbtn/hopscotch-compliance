@@ -48,6 +48,52 @@ export function computeAccidentReport(incidents, period) {
   }
   const homeSortedIncs = [...homeIncs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
 
+  // Nursery (at-setting) stats
+  const nurseryAcknowledged = settingIncs.filter(x => x.acknowledgedAt).length
+  const nurseryAckRate = settingIncs.length > 0 ? Math.round((nurseryAcknowledged / settingIncs.length) * 100) : 100
+  const nurseryHigh = settingIncs.filter(x => x.severity === 'high')
+  const nurseryMedium = settingIncs.filter(x => x.severity === 'medium')
+  const nurseryDowCounts = Object.fromEntries(DOW_ORDER.map(d => [d, 0]))
+  for (const inc of settingIncs) {
+    const d = new Date(inc.happenedAt)
+    if (!isNaN(d)) nurseryDowCounts[DOW_ORDER[(d.getDay() + 6) % 7]]++
+  }
+  const nurserySortedIncs = [...settingIncs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
+  const nurseryInjuryTypes = categoryCounts(settingIncs)
+  const nurseryLocs = locationCounts(settingIncs).slice(0, 5)
+  const nowN = new Date()
+  const nurseryMonthly = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(nowN.getFullYear(), nowN.getMonth() - (11 - i), 1)
+    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    return {
+      yearMonth,
+      label: d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+      count: incidents.filter(inc => inc.happenedAt.startsWith(yearMonth) && !isHome(inc)).length,
+    }
+  })
+  const nurseryPatterns = detectMonthlyPatterns(nurseryMonthly, 'nursery')
+  const nurseryRepeatMap = new Map()
+  for (const inc of settingIncs) {
+    const list = nurseryRepeatMap.get(inc.childName) ?? []
+    list.push(inc)
+    nurseryRepeatMap.set(inc.childName, list)
+  }
+  const nurseryRepeats = Array.from(nurseryRepeatMap.entries())
+    .filter(([, incs]) => incs.length >= 2)
+    .map(([name, incs]) => {
+      const sorted = [...incs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
+      return {
+        displayName: childDisplayName(name),
+        count: incs.length,
+        incidents: sorted.map(inc => ({
+          date: inc.happenedAt,
+          injuryCategory: inc.injuryCategory,
+          location: inc.location,
+        })),
+      }
+    })
+    .sort((a, b) => b.count - a.count)
+
   const homeRepeatMap = new Map()
   for (const inc of periodHome) {
     const list = homeRepeatMap.get(inc.childName) ?? []
@@ -122,6 +168,17 @@ export function computeAccidentReport(incidents, period) {
     homeMedium,
     homeDowCounts,
     homeSortedIncs,
+    nurseryAcknowledged,
+    nurseryAckRate,
+    nurseryHigh,
+    nurseryMedium,
+    nurseryDowCounts,
+    nurserySortedIncs,
+    nurseryInjuryTypes,
+    nurseryLocs,
+    nurseryMonthly,
+    nurseryPatterns,
+    nurseryRepeats,
     dowOrder: DOW_ORDER,
     dowCounts,
     yoyDiff,

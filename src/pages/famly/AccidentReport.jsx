@@ -211,6 +211,8 @@ export function AccidentReport() {
             <p className="text-sm mt-1" style={{ color: FOREST_T3 }}>{period.label}</p>
           </header>
 
+          <SectionHeader title="Overall" />
+
           <SummarySection report={report} />
 
           <KpiStrip report={report} />
@@ -226,6 +228,8 @@ export function AccidentReport() {
           <LocationSection report={report} />
 
           <DayOfWeekSection report={report} />
+
+          <AtNurserySection report={report} />
 
           <HomeOnArrivalSection report={report} />
 
@@ -571,6 +575,205 @@ function InjuryTypeList({ types, total }) {
         )
       })}
     </ul>
+  )
+}
+
+function AtNurserySection({ report }) {
+  const {
+    settingIncs, nurseryRepeats, totalReports,
+    nurseryAcknowledged, nurseryAckRate, nurseryHigh, nurseryMedium,
+    nurseryDowCounts, nurserySortedIncs, nurseryInjuryTypes, nurseryLocs,
+    nurseryMonthly, nurseryPatterns,
+    dowOrder,
+  } = report
+  const nurseryPct = totalReports > 0 ? Math.round((settingIncs.length / totalReports) * 100) : 0
+  const nurseryMax = Math.max(1, ...nurseryMonthly.map(m => m.count))
+  const nurseryDowMax = Math.max(1, ...Object.values(nurseryDowCounts))
+
+  const kpiCards = [
+    {
+      label: 'At nursery',
+      value: String(settingIncs.length),
+      sub: `${nurseryPct}% of all reports`,
+    },
+    {
+      label: 'Parent acknowledged',
+      value: `${nurseryAckRate}%`,
+      sub: `${nurseryAcknowledged} of ${settingIncs.length}`,
+    },
+    {
+      label: 'Needs formal review',
+      value: String(nurseryHigh.length + nurseryMedium.length),
+      sub: `${nurseryHigh.length} high · ${nurseryMedium.length} medium`,
+      warn: nurseryHigh.length + nurseryMedium.length > 0,
+    },
+  ]
+
+  const nurseryDowRows = dowOrder.filter(d => {
+    if (d === 'Saturday' || d === 'Sunday') return nurseryDowCounts[d] > 0
+    return true
+  })
+
+  return (
+    <section className="mb-8">
+      <SectionHeader title="At Nursery" />
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
+        {kpiCards.map((card, i) => (
+          <div
+            key={i}
+            className="rounded-lg border p-3"
+            style={{
+              backgroundColor: card.warn ? '#fef2f2' : PEBBLE_T2,
+              borderColor: card.warn ? '#fca5a5' : PEBBLE_SHADE,
+            }}
+          >
+            <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>{card.label}</div>
+            <div className="text-2xl font-bold mt-1" style={{ color: card.warn ? '#991b1b' : FOREST, fontFamily: "'Ivar Display', Georgia, serif" }}>{card.value}</div>
+            <div className="text-[11px] mt-0.5" style={{ color: FOREST_T3 }}>{card.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Formal review */}
+      {(nurseryHigh.length > 0 || nurseryMedium.length > 0) && (
+        <div className="mb-6">
+          <div className="text-sm font-bold mb-1" style={{ color: FOREST }}>Needs formal review</div>
+          <p className="text-xs mb-2" style={{ color: FOREST_T3 }}>Auto-flagged by keyword match — please review each for context.</p>
+          {nurseryHigh.length > 0 && (
+            <div className="mb-2">
+              <div className="text-sm font-bold" style={{ color: '#991b1b' }}>High priority · {nurseryHigh.length}</div>
+              <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
+                {nurseryHigh.map((inc, i) => (
+                  <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {nurseryMedium.length > 0 && (
+            <div>
+              <div className="text-sm font-bold" style={{ color: MARMALADE_SHADE }}>Medium priority · {nurseryMedium.length}</div>
+              <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
+                {nurseryMedium.map((inc, i) => (
+                  <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      <PatternFlags patterns={nurseryPatterns} />
+
+      {/* Repeat children */}
+      {nurseryRepeats.length > 0 && (
+        <div className="rounded-md border px-4 py-3 mb-4" style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}>
+          <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>
+            Children with repeated nursery reports this period
+          </div>
+          <div className="space-y-3">
+            {nurseryRepeats.map((child, i) => (
+              <div key={i}>
+                <div className="text-sm font-semibold" style={{ color: FOREST }}>{child.displayName} — {child.count} reports</div>
+                <ul className="mt-1 space-y-0.5">
+                  {child.incidents.map((inc, j) => (
+                    <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
+                      • {formatDate(inc.date)} · {inc.injuryCategory}{inc.location ? ` · ${inc.location}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Injury types */}
+      {nurseryInjuryTypes.length > 0 && (
+        <div className="mb-6">
+          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Injury types</div>
+          <InjuryTypeList types={nurseryInjuryTypes} total={settingIncs.length} />
+        </div>
+      )}
+
+      {/* Location */}
+      {nurseryLocs.length > 0 && (
+        <div className="mb-6">
+          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Where they happen</div>
+          <ul className="space-y-1 text-sm">
+            {nurseryLocs.map((loc, i) => {
+              const pct = settingIncs.length > 0 ? Math.round((loc.count / settingIncs.length) * 100) : 0
+              return (
+                <li key={i} className="flex items-baseline justify-between" style={{ color: FOREST }}>
+                  <span>• {loc.location}</span>
+                  <span style={{ color: FOREST_T3 }}>{loc.count} ({pct}%)</span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Day of week */}
+      {settingIncs.length > 0 && (
+        <div className="mb-6">
+          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>When they happen</div>
+          <div className="space-y-1.5">
+            {nurseryDowRows.map(day => {
+              const count = nurseryDowCounts[day]
+              const pct = (count / nurseryDowMax) * 100
+              return (
+                <div key={day} className="flex items-center gap-3 text-sm">
+                  <div className="w-20" style={{ color: FOREST }}>{day}</div>
+                  <div className="flex-1 h-4 rounded" style={{ backgroundColor: PEBBLE }}>
+                    <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: FOREST_T1, border: `1px solid ${FOREST_T3}` }} />
+                  </div>
+                  <div className="w-8 text-right" style={{ color: FOREST_T3 }}>{count}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Monthly trend */}
+      <div className="mb-6">
+        <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Monthly trend (last 12 months)</div>
+        <TrendBars monthly={nurseryMonthly} max={nurseryMax} />
+      </div>
+
+      {/* Full incident list */}
+      {nurserySortedIncs.length > 0 && (
+        <div>
+          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>All incidents this period</div>
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${PEBBLE_SHADE}` }}>
+                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Child</th>
+                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Date</th>
+                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Injury</th>
+                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Location</th>
+                <th className="text-left py-1.5 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Acknowledged</th>
+              </tr>
+            </thead>
+            <tbody>
+              {nurserySortedIncs.map((inc, i) => (
+                <tr key={i} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
+                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{childDisplayName(inc.childName)}</td>
+                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{formatDate(inc.happenedAt)}</td>
+                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{inc.injuryCategory}</td>
+                  <td className="py-1.5 pr-2 text-xs" style={{ color: FOREST_T3 }}>{(inc.location || '').slice(0, 30)}</td>
+                  <td className="py-1.5" style={{ color: inc.acknowledgedAt ? APPLE : MARMALADE_SHADE }}>
+                    {inc.acknowledgedAt ? 'Yes' : 'No'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   )
 }
 

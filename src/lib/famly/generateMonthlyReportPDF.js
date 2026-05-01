@@ -92,6 +92,9 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     homeIncs, settingIncs, injuryTypes,
     periodHome, homeMonthly, homePatterns, homeInjuryTypes, homeRepeats,
     homeAcknowledged, homeAckRate, homeHigh, homeMedium, homeDowCounts, homeSortedIncs,
+    nurseryAcknowledged, nurseryAckRate, nurseryHigh, nurseryMedium,
+    nurseryDowCounts, nurserySortedIncs, nurseryInjuryTypes, nurseryLocs,
+    nurseryMonthly, nurseryPatterns, nurseryRepeats,
     dowOrder, dowCounts,
     yoyDiff, repeats, repeatWindowLabel,
   } = report
@@ -435,6 +438,210 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     })
     text(doc, 'text')
     y += 6
+  }
+
+  // ─── AT NURSERY ──
+
+  {
+    addFooter(doc, pageNumber)
+    doc.addPage()
+    pageNumber++
+    y = 20
+
+    fill(doc, 'forest')
+    doc.rect(MARGIN, y - 4, CONTENT_WIDTH, 12, 'F')
+    fill(doc, 'marmalade')
+    doc.rect(MARGIN, y + 8, CONTENT_WIDTH, 1.5, 'F')
+    text(doc, 'white')
+    doc.setFontSize(12)
+    doc.setFont(undefined, 'bold')
+    doc.text('At Nursery', MARGIN + 4, y + 4)
+    text(doc, 'text')
+    y += 18
+
+    // ── KPI cards ──
+    const nurseryPctOfTotal = totalReports > 0 ? Math.round((settingIncs.length / totalReports) * 100) : 0
+    const nCardH = 24; const nCardGap = 3; const nCardW = (CONTENT_WIDTH - nCardGap * 2) / 3
+    const nCards = [
+      { label: 'AT NURSERY',    value: String(settingIncs.length), sub: `${nurseryPctOfTotal}% of all reports` },
+      { label: 'ACKNOWLEDGED',  value: `${nurseryAckRate}%`, sub: `${nurseryAcknowledged} of ${settingIncs.length}` },
+      { label: 'FORMAL REVIEW', value: String(nurseryHigh.length + nurseryMedium.length), sub: `${nurseryHigh.length} high · ${nurseryMedium.length} medium`, warn: nurseryHigh.length + nurseryMedium.length > 0 },
+    ]
+    nCards.forEach((card, i) => {
+      const x = MARGIN + (nCardW + nCardGap) * i
+      if (card.warn) { fill(doc, 'warningBg'); stroke(doc, 'warningRule') }
+      else           { fill(doc, 'pebble');    stroke(doc, 'rule') }
+      doc.roundedRect(x, y, nCardW, nCardH, 1.5, 1.5, 'FD')
+      if (!card.warn) { fill(doc, 'forest'); doc.rect(x, y, nCardW, 1.5, 'F') }
+      text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'normal')
+      doc.text(card.label, x + 3, y + 6)
+      text(doc, card.warn ? 'warningText' : 'forest'); doc.setFontSize(18); doc.setFont(undefined, 'bold')
+      doc.text(card.value, x + 3, y + 15)
+      text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'normal')
+      doc.text(card.sub, x + 3, y + 21, { maxWidth: nCardW - 6 })
+    })
+    y += nCardH + 8
+    text(doc, 'text')
+
+    // ── Formal review ──
+    if (nurseryHigh.length > 0 || nurseryMedium.length > 0) {
+      addPageIfNeeded(16 + (nurseryHigh.length + nurseryMedium.length) * 5)
+      sectionHeading(doc, 'Needs formal review', y); y += 6
+      text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'normal')
+      doc.text('Auto-flagged by keyword match — please review each for context.', MARGIN, y + 3)
+      y += 8; text(doc, 'text')
+      if (nurseryHigh.length > 0) {
+        text(doc, 'warningText'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+        doc.text(`High priority  ·  ${nurseryHigh.length}`, MARGIN, y); y += 5
+        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+        nurseryHigh.forEach(inc => {
+          addPageIfNeeded(6); text(doc, 'text')
+          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y); y += 5
+        }); y += 3
+      }
+      if (nurseryMedium.length > 0) {
+        text(doc, 'marmaladeShade'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+        doc.text(`Medium priority  ·  ${nurseryMedium.length}`, MARGIN, y); y += 5
+        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+        nurseryMedium.forEach(inc => {
+          addPageIfNeeded(6); text(doc, 'text')
+          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y); y += 5
+        }); y += 3
+      }
+      text(doc, 'text'); y += 3
+    }
+
+    // ── Patterns ──
+    if (nurseryPatterns.length > 0) {
+      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
+      const flagH = 6 + nurseryPatterns.length * 5
+      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
+      text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+      doc.text('Patterns detected', MARGIN + 3, y + 5)
+      doc.setFont(undefined, 'normal')
+      nurseryPatterns.forEach((p, i) => { doc.text(`•  ${p}`, MARGIN + 3, y + 10 + i * 5) })
+      text(doc, 'text'); y += flagH + 8
+    } else {
+      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'normal')
+      doc.text('No patterns detected in the last 12 months.', MARGIN, y)
+      text(doc, 'text'); y += 8
+    }
+
+    // ── Repeat children ──
+    if (nurseryRepeats.length > 0) {
+      const flagH = 10 + nurseryRepeats.reduce((sum, child) => sum + 6 + child.incidents.length * 5, 0)
+      addPageIfNeeded(flagH + 10)
+      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
+      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
+      text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+      doc.text('Children with repeated nursery reports this period', MARGIN + 3, y + 6)
+      y += 11
+      nurseryRepeats.forEach(child => {
+        addPageIfNeeded(6 + child.incidents.length * 5)
+        text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y); y += 5
+        doc.setFont(undefined, 'normal')
+        child.incidents.forEach(inc => {
+          addPageIfNeeded(5); text(doc, 'text')
+          const loc = inc.location ? `  ·  ${inc.location.slice(0, 30)}` : ''
+          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 6, y); y += 5
+        }); y += 2
+      }); y += 4
+    }
+
+    // ── Injury types ──
+    if (nurseryInjuryTypes.length > 0) {
+      addPageIfNeeded(20 + nurseryInjuryTypes.length * 5)
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+      doc.text('Injury types', MARGIN, y); text(doc, 'text'); y += 6
+      doc.setFontSize(9); doc.setFont(undefined, 'normal')
+      nurseryInjuryTypes.forEach(({ category, count }) => {
+        addPageIfNeeded(6)
+        const pct = settingIncs.length > 0 ? Math.round((count / settingIncs.length) * 100) : 0
+        text(doc, 'text'); doc.text(`•  ${category}`, MARGIN + 4, y)
+        text(doc, 'mute'); doc.text(`${count}   (${pct}%)`, MARGIN + 90, y); y += 5
+      }); y += 6
+    }
+
+    // ── Location ──
+    if (nurseryLocs.length > 0) {
+      addPageIfNeeded(20 + nurseryLocs.length * 5)
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+      doc.text('Where they happen', MARGIN, y); text(doc, 'text'); y += 6
+      doc.setFontSize(9); doc.setFont(undefined, 'normal')
+      nurseryLocs.forEach(({ location, count }) => {
+        addPageIfNeeded(6)
+        const pct = settingIncs.length > 0 ? Math.round((count / settingIncs.length) * 100) : 0
+        text(doc, 'text'); doc.text(`•  ${location}`, MARGIN + 4, y)
+        text(doc, 'mute'); doc.text(`${count}   (${pct}%)`, MARGIN + 90, y); y += 5
+      }); y += 6
+    }
+
+    // ── Day of week ──
+    if (settingIncs.length > 0) {
+      addPageIfNeeded(45)
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+      doc.text('When they happen', MARGIN, y); text(doc, 'text'); y += 6
+      const nDowMax = Math.max(1, ...Object.values(nurseryDowCounts))
+      const barMaxW = 70; const barX = MARGIN + 30
+      doc.setFontSize(9); doc.setFont(undefined, 'normal')
+      dowOrder.forEach(day => {
+        const count = nurseryDowCounts[day]
+        if ((day === 'Saturday' || day === 'Sunday') && count === 0) return
+        addPageIfNeeded(6); text(doc, 'text'); doc.text(day, MARGIN + 2, y)
+        const w = (count / nDowMax) * barMaxW
+        if (w > 0) {
+          fill(doc, 'forestLight'); stroke(doc, 'forestLight')
+          doc.rect(barX, y - 3, Math.max(w, 0.5), 4, 'F')
+          fill(doc, 'marmalade'); doc.rect(barX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
+        }
+        text(doc, 'mute'); doc.text(String(count), barX + barMaxW + 3, y); y += 5
+      })
+      text(doc, 'text'); y += 6
+    }
+
+    // ── Monthly trend ──
+    doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+    doc.text('Monthly trend  (last 12 months)', MARGIN, y); text(doc, 'text'); y += 6
+    const nMax = Math.max(1, ...nurseryMonthly.map(m => m.count))
+    const nBarW = 90; const nBarX = MARGIN + 22
+    doc.setFontSize(8); doc.setFont(undefined, 'normal')
+    nurseryMonthly.forEach(m => {
+      addPageIfNeeded(6); text(doc, 'text'); doc.text(m.label, MARGIN + 2, y)
+      const w = (m.count / nMax) * nBarW
+      if (w > 0) {
+        fill(doc, 'forestLight'); stroke(doc, 'forestLight')
+        doc.rect(nBarX, y - 3, Math.max(w, 0.5), 4, 'F')
+        fill(doc, 'marmalade'); doc.rect(nBarX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
+      }
+      text(doc, 'mute'); doc.text(String(m.count), nBarX + nBarW + 3, y); y += 5
+    })
+    text(doc, 'text'); y += 6
+
+    // ── All incidents list ──
+    if (nurserySortedIncs.length > 0) {
+      addPageIfNeeded(20 + nurserySortedIncs.length * 5)
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+      doc.text('All incidents this period', MARGIN, y); text(doc, 'text'); y += 4
+      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+      doc.text('Child',        MARGIN + 2,   y)
+      doc.text('Date',         MARGIN + 50,  y)
+      doc.text('Injury',       MARGIN + 85,  y)
+      doc.text('Location',     MARGIN + 130, y)
+      doc.text('Ack',          MARGIN + 168, y)
+      y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
+      doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+      nurserySortedIncs.forEach(inc => {
+        addPageIfNeeded(6); text(doc, 'text')
+        doc.text(childDisplayName(inc.childName),          MARGIN + 2,   y)
+        doc.text(formatDate(inc.happenedAt),                MARGIN + 50,  y)
+        doc.text(inc.injuryCategory,                        MARGIN + 85,  y, { maxWidth: 42 })
+        doc.text((inc.location || '').slice(0, 20),         MARGIN + 130, y)
+        text(doc, inc.acknowledgedAt ? 'forest' : 'marmaladeShade')
+        doc.text(inc.acknowledgedAt ? 'Yes' : 'No',         MARGIN + 168, y)
+        y += 5
+      }); y += 6
+    }
   }
 
   // ─── HOME / ON-ARRIVAL INCIDENTS ──
