@@ -529,40 +529,33 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
     // ── Repeat children ──
     if (nurseryRepeats.length > 0) {
-      addPageIfNeeded(18)
-      // Header strip
+      // height: 9 header + per child (4 gap if not first, 6 name, n*5 incidents) + 5 padding
+      const flagH = 9 + nurseryRepeats.reduce((acc, child, ci) =>
+        acc + (ci > 0 ? 4 : 0) + 6 + child.incidents.length * 5, 0) + 5
+      addPageIfNeeded(flagH + 4)
       fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
-      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 9, 1.5, 1.5, 'FD')
+      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
       text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-      doc.text('Children with repeated nursery reports this period', MARGIN + 3, y + 6)
+      doc.text('Children with repeated nursery reports this period', MARGIN + 4, y + 6)
       y += 9
-      // Each child drawn row-by-row so page breaks work without a pre-drawn rect
       nurseryRepeats.forEach((child, ci) => {
-        const rowH = 10 + child.incidents.length * 5
-        addPageIfNeeded(rowH)
-        fill(doc, 'marmaladeT1')
-        doc.rect(MARGIN, y, CONTENT_WIDTH, rowH, 'F')
-        stroke(doc, 'marmalade'); doc.setLineWidth(0.4)
-        doc.line(MARGIN, y, MARGIN, y + rowH)
-        doc.line(MARGIN + CONTENT_WIDTH, y, MARGIN + CONTENT_WIDTH, y + rowH)
+        if (ci > 0) {
+          stroke(doc, 'rule'); doc.setLineWidth(0.2)
+          doc.line(MARGIN + 4, y + 2, MARGIN + CONTENT_WIDTH - 4, y + 2)
+          y += 4
+        }
         text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y + 6)
+        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 4, y + 5)
+        y += 6
         doc.setFont(undefined, 'normal')
-        child.incidents.forEach((inc, j) => {
+        child.incidents.forEach(inc => {
           text(doc, 'text')
           const loc = inc.location ? `  ·  ${inc.location.slice(0, 30)}` : ''
-          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 5, y + 11 + j * 5)
+          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 6, y + 4)
+          y += 5
         })
-        y += rowH
-        if (ci < nurseryRepeats.length - 1) {
-          stroke(doc, 'marmalade'); doc.setLineWidth(0.15)
-          doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y)
-        }
       })
-      stroke(doc, 'marmalade'); doc.setLineWidth(0.4)
-      doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y)
-      doc.setLineWidth(0.2)
-      y += 6
+      y += 5
     }
 
     // ── Injury types ──
@@ -739,38 +732,32 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
     // ── Repeat children ──
     if (homeRepeats.length > 0) {
-      addPageIfNeeded(18)
+      const flagH = 9 + homeRepeats.reduce((acc, child, ci) =>
+        acc + (ci > 0 ? 4 : 0) + 6 + child.incidents.length * 5, 0) + 5
+      addPageIfNeeded(flagH + 4)
       fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
-      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 9, 1.5, 1.5, 'FD')
+      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
       text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-      doc.text('Children with repeated home / on-arrival reports this period', MARGIN + 3, y + 6)
+      doc.text('Children with repeated home / on-arrival reports this period', MARGIN + 4, y + 6)
       y += 9
       homeRepeats.forEach((child, ci) => {
-        const rowH = 10 + child.incidents.length * 5
-        addPageIfNeeded(rowH)
-        fill(doc, 'marmaladeT1')
-        doc.rect(MARGIN, y, CONTENT_WIDTH, rowH, 'F')
-        stroke(doc, 'marmalade'); doc.setLineWidth(0.4)
-        doc.line(MARGIN, y, MARGIN, y + rowH)
-        doc.line(MARGIN + CONTENT_WIDTH, y, MARGIN + CONTENT_WIDTH, y + rowH)
+        if (ci > 0) {
+          stroke(doc, 'rule'); doc.setLineWidth(0.2)
+          doc.line(MARGIN + 4, y + 2, MARGIN + CONTENT_WIDTH - 4, y + 2)
+          y += 4
+        }
         text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y + 6)
+        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 4, y + 5)
+        y += 6
         doc.setFont(undefined, 'normal')
-        child.incidents.forEach((inc, j) => {
+        child.incidents.forEach(inc => {
           text(doc, 'text')
           const detail = inc.onArrival ? 'arrived with injury' : 'location: Home'
-          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 5, y + 11 + j * 5)
+          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 6, y + 4)
+          y += 5
         })
-        y += rowH
-        if (ci < homeRepeats.length - 1) {
-          stroke(doc, 'marmalade'); doc.setLineWidth(0.15)
-          doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y)
-        }
       })
-      stroke(doc, 'marmalade'); doc.setLineWidth(0.4)
-      doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y)
-      doc.setLineWidth(0.2)
-      y += 6
+      y += 5
     }
 
     // ── Injury types ──
