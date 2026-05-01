@@ -91,6 +91,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     homeLoc, siteLocs,
     homeIncs, settingIncs, injuryTypes,
     periodHome, homeMonthly, homePatterns, homeInjuryTypes, homeRepeats,
+    homeAcknowledged, homeAckRate, homeHigh, homeMedium, homeDowCounts, homeSortedIncs,
     dowOrder, dowCounts,
     yoyDiff, repeats, repeatWindowLabel,
   } = report
@@ -455,126 +456,186 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     text(doc, 'text')
     y += 18
 
-    const homePctOfTotal = totalReports > 0 ? Math.round((periodHome.length / totalReports) * 100) : 0
-    doc.setFontSize(9)
-    doc.setFont(undefined, 'normal')
-    text(doc, 'text')
-    doc.text(`${periodHome.length} home / on-arrival incident${periodHome.length !== 1 ? 's' : ''} recorded in this period`, MARGIN, y)
-    text(doc, 'mute')
-    doc.text(`(${homePctOfTotal}% of all reports)`, MARGIN + 100, y)
-    y += 5
     doc.setFontSize(7)
+    text(doc, 'mute')
+    doc.setFont(undefined, 'normal')
     doc.text('Injuries where the child arrived at the setting already hurt, or where the location field records "Home".', MARGIN, y)
-    doc.text('Recurring patterns may warrant a safeguarding conversation.', MARGIN, y + 3)
+    doc.text('Recurring patterns may warrant a safeguarding conversation.', MARGIN, y + 4)
     text(doc, 'text')
-    y += 10
+    y += 12
 
+    // ── KPI cards ──
+    const homePctOfTotal = totalReports > 0 ? Math.round((homeIncs.length / totalReports) * 100) : 0
+    const settingPctOfTotal = totalReports > 0 ? Math.round((settingIncs.length / totalReports) * 100) : 0
+    const homeCardH = 24
+    const homeCardGap = 3
+    const homeCardW = (CONTENT_WIDTH - homeCardGap * 3) / 4
+    const homeCards = [
+      { label: 'HOME / ON ARRIVAL', value: String(homeIncs.length), sub: `${homePctOfTotal}% of all reports` },
+      { label: 'AT SETTING',        value: String(settingIncs.length), sub: `${settingPctOfTotal}% of all reports` },
+      { label: 'ACKNOWLEDGED',      value: `${homeAckRate}%`, sub: `${homeAcknowledged} of ${homeIncs.length}` },
+      { label: 'FORMAL REVIEW',     value: String(homeHigh.length + homeMedium.length), sub: `${homeHigh.length} high · ${homeMedium.length} medium`, warn: homeHigh.length + homeMedium.length > 0 },
+    ]
+    homeCards.forEach((card, i) => {
+      const x = MARGIN + (homeCardW + homeCardGap) * i
+      if (card.warn) { fill(doc, 'warningBg'); stroke(doc, 'warningRule') }
+      else           { fill(doc, 'pebble');    stroke(doc, 'rule') }
+      doc.roundedRect(x, y, homeCardW, homeCardH, 1.5, 1.5, 'FD')
+      if (!card.warn) { fill(doc, 'forest'); doc.rect(x, y, homeCardW, 1.5, 'F') }
+      text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'normal')
+      doc.text(card.label, x + 3, y + 6)
+      text(doc, card.warn ? 'warningText' : 'forest'); doc.setFontSize(18); doc.setFont(undefined, 'bold')
+      doc.text(card.value, x + 3, y + 15)
+      text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'normal')
+      doc.text(card.sub, x + 3, y + 21, { maxWidth: homeCardW - 6 })
+    })
+    y += homeCardH + 8
+    text(doc, 'text')
+
+    // ── Formal review ──
+    if (homeHigh.length > 0 || homeMedium.length > 0) {
+      addPageIfNeeded(16 + (homeHigh.length + homeMedium.length) * 5)
+      sectionHeading(doc, 'Needs formal review', y)
+      y += 6
+      text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'normal')
+      doc.text('Auto-flagged by keyword match — please review each for context.', MARGIN, y + 3)
+      y += 8; text(doc, 'text')
+      if (homeHigh.length > 0) {
+        text(doc, 'warningText'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+        doc.text(`High priority  ·  ${homeHigh.length}`, MARGIN, y); y += 5
+        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+        homeHigh.forEach(inc => {
+          addPageIfNeeded(6)
+          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}`, MARGIN + 2, y); y += 5
+        }); y += 3
+      }
+      if (homeMedium.length > 0) {
+        text(doc, 'marmaladeShade'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+        doc.text(`Medium priority  ·  ${homeMedium.length}`, MARGIN, y); y += 5
+        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+        homeMedium.forEach(inc => {
+          addPageIfNeeded(6)
+          text(doc, 'text')
+          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}`, MARGIN + 2, y); y += 5
+        }); y += 3
+      }
+      text(doc, 'text'); y += 3
+    }
+
+    // ── Patterns ──
     if (homePatterns.length > 0) {
-      fill(doc, 'marmaladeT1')
-      stroke(doc, 'marmalade')
+      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
       const flagH = 6 + homePatterns.length * 5
       doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
-      text(doc, 'marmaladeShade')
-      doc.setFontSize(8)
-      doc.setFont(undefined, 'bold')
+      text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
       doc.text('Patterns detected', MARGIN + 3, y + 5)
       doc.setFont(undefined, 'normal')
-      homePatterns.forEach((p, i) => {
-        doc.text(`•  ${p}`, MARGIN + 3, y + 10 + i * 5)
-      })
-      text(doc, 'text')
-      y += flagH + 8
+      homePatterns.forEach((p, i) => { doc.text(`•  ${p}`, MARGIN + 3, y + 10 + i * 5) })
+      text(doc, 'text'); y += flagH + 8
     } else {
-      text(doc, 'mute')
-      doc.setFontSize(8)
-      doc.setFont(undefined, 'normal')
+      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'normal')
       doc.text('No patterns detected in the last 12 months.', MARGIN, y)
-      text(doc, 'text')
-      y += 8
+      text(doc, 'text'); y += 8
     }
 
-    doc.setFontSize(10)
-    doc.setFont(undefined, 'bold')
-    text(doc, 'forest')
-    doc.text('Monthly trend  (last 12 months)', MARGIN, y)
-    text(doc, 'text')
-    y += 6
-
-    const homeMax = Math.max(1, ...homeMonthly.map(m => m.count))
-    const barMaxW = 90
-    const barX = MARGIN + 22
-    doc.setFontSize(8)
-    doc.setFont(undefined, 'normal')
-    homeMonthly.forEach(m => {
-      addPageIfNeeded(6)
-      text(doc, 'text')
-      doc.text(m.label, MARGIN + 2, y)
-      const w = (m.count / homeMax) * barMaxW
-      if (w > 0) {
-        fill(doc, 'forestLight')
-        stroke(doc, 'forestLight')
-        doc.rect(barX, y - 3, Math.max(w, 0.5), 4, 'F')
-        fill(doc, 'marmalade')
-        doc.rect(barX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
-      }
-      text(doc, 'mute')
-      doc.text(String(m.count), barX + barMaxW + 3, y)
-      y += 5
-    })
-    text(doc, 'text')
-    y += 6
-
-    if (homeInjuryTypes.length > 0) {
-      addPageIfNeeded(20 + homeInjuryTypes.length * 5)
-      doc.setFontSize(10)
-      doc.setFont(undefined, 'bold')
-      text(doc, 'forest')
-      doc.text('Injury types (home / on-arrival)', MARGIN, y)
-      text(doc, 'text')
-      y += 6
-      doc.setFontSize(9)
-      doc.setFont(undefined, 'normal')
-      homeInjuryTypes.forEach(({ category, count }) => {
-        addPageIfNeeded(6)
-        const pct = periodHome.length > 0 ? Math.round((count / periodHome.length) * 100) : 0
-        text(doc, 'text')
-        doc.text(`•  ${category}`, MARGIN + 4, y)
-        text(doc, 'mute')
-        doc.text(`${count}   (${pct}%)`, MARGIN + 90, y)
-        y += 5
-      })
-      y += 6
-    }
-
+    // ── Repeat children ──
     if (homeRepeats.length > 0) {
       const flagH = 10 + homeRepeats.reduce((sum, child) => sum + 6 + child.incidents.length * 5, 0)
       addPageIfNeeded(flagH + 10)
-      fill(doc, 'marmaladeT1')
-      stroke(doc, 'marmalade')
+      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
       doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
-      text(doc, 'marmaladeShade')
-      doc.setFontSize(8)
-      doc.setFont(undefined, 'bold')
+      text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
       doc.text('Children with repeated home / on-arrival reports this period', MARGIN + 3, y + 6)
       y += 11
       homeRepeats.forEach(child => {
         addPageIfNeeded(6 + child.incidents.length * 5)
-        text(doc, 'forest')
-        doc.setFontSize(8)
-        doc.setFont(undefined, 'bold')
-        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y)
-        y += 5
+        text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y); y += 5
         doc.setFont(undefined, 'normal')
         child.incidents.forEach(inc => {
-          addPageIfNeeded(5)
-          text(doc, 'text')
+          addPageIfNeeded(5); text(doc, 'text')
           const detail = inc.onArrival ? 'arrived with injury' : 'location: Home'
-          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 6, y)
-          y += 5
-        })
-        y += 2
+          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 6, y); y += 5
+        }); y += 2
+      }); y += 4
+    }
+
+    // ── Injury types ──
+    if (homeInjuryTypes.length > 0) {
+      addPageIfNeeded(20 + homeInjuryTypes.length * 5)
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+      doc.text('Injury types', MARGIN, y); text(doc, 'text'); y += 6
+      doc.setFontSize(9); doc.setFont(undefined, 'normal')
+      homeInjuryTypes.forEach(({ category, count }) => {
+        addPageIfNeeded(6)
+        const pct = periodHome.length > 0 ? Math.round((count / periodHome.length) * 100) : 0
+        text(doc, 'text'); doc.text(`•  ${category}`, MARGIN + 4, y)
+        text(doc, 'mute'); doc.text(`${count}   (${pct}%)`, MARGIN + 90, y); y += 5
+      }); y += 6
+    }
+
+    // ── Day of week ──
+    if (homeIncs.length > 0) {
+      addPageIfNeeded(45)
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+      doc.text('When they happen', MARGIN, y); text(doc, 'text'); y += 6
+      const homeDowMax = Math.max(1, ...Object.values(homeDowCounts))
+      const barMaxW = 70; const barX = MARGIN + 30
+      doc.setFontSize(9); doc.setFont(undefined, 'normal')
+      dowOrder.forEach(day => {
+        const count = homeDowCounts[day]
+        if ((day === 'Saturday' || day === 'Sunday') && count === 0) return
+        addPageIfNeeded(6); text(doc, 'text'); doc.text(day, MARGIN + 2, y)
+        const w = (count / homeDowMax) * barMaxW
+        if (w > 0) {
+          fill(doc, 'forestLight'); stroke(doc, 'forestLight')
+          doc.rect(barX, y - 3, Math.max(w, 0.5), 4, 'F')
+          fill(doc, 'marmalade'); doc.rect(barX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
+        }
+        text(doc, 'mute'); doc.text(String(count), barX + barMaxW + 3, y); y += 5
       })
-      y += 4
+      text(doc, 'text'); y += 6
+    }
+
+    // ── Monthly trend ──
+    doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+    doc.text('Monthly trend  (last 12 months)', MARGIN, y); text(doc, 'text'); y += 6
+    const homeMax = Math.max(1, ...homeMonthly.map(m => m.count))
+    const barMaxW2 = 90; const barX2 = MARGIN + 22
+    doc.setFontSize(8); doc.setFont(undefined, 'normal')
+    homeMonthly.forEach(m => {
+      addPageIfNeeded(6); text(doc, 'text'); doc.text(m.label, MARGIN + 2, y)
+      const w = (m.count / homeMax) * barMaxW2
+      if (w > 0) {
+        fill(doc, 'forestLight'); stroke(doc, 'forestLight')
+        doc.rect(barX2, y - 3, Math.max(w, 0.5), 4, 'F')
+        fill(doc, 'marmalade'); doc.rect(barX2 + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
+      }
+      text(doc, 'mute'); doc.text(String(m.count), barX2 + barMaxW2 + 3, y); y += 5
+    })
+    text(doc, 'text'); y += 6
+
+    // ── All incidents list ──
+    if (homeSortedIncs.length > 0) {
+      addPageIfNeeded(20 + homeSortedIncs.length * 5)
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+      doc.text('All incidents this period', MARGIN, y); text(doc, 'text'); y += 4
+      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+      doc.text('Child',         MARGIN + 2,   y)
+      doc.text('Date',          MARGIN + 55,  y)
+      doc.text('Injury',        MARGIN + 90,  y)
+      doc.text('Acknowledged',  MARGIN + 145, y)
+      y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
+      doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+      homeSortedIncs.forEach(inc => {
+        addPageIfNeeded(6); text(doc, 'text')
+        doc.text(childDisplayName(inc.childName),  MARGIN + 2,   y)
+        doc.text(formatDate(inc.happenedAt),        MARGIN + 55,  y)
+        doc.text(inc.injuryCategory,                MARGIN + 90,  y, { maxWidth: 52 })
+        text(doc, inc.acknowledgedAt ? 'forest' : 'marmaladeShade')
+        doc.text(inc.acknowledgedAt ? 'Yes' : 'No', MARGIN + 145, y)
+        y += 5
+      }); y += 6
     }
   }
 

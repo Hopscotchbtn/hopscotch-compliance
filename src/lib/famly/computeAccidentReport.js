@@ -37,6 +37,16 @@ export function computeAccidentReport(incidents, period) {
   const homeMonthly = homeMonthlyTrend(incidents)
   const homePatterns = detectMonthlyPatterns(homeMonthly, 'home/on-arrival')
   const homeInjuryTypes = categoryCounts(periodHome)
+  const homeAcknowledged = homeIncs.filter(x => x.acknowledgedAt).length
+  const homeAckRate = homeIncs.length > 0 ? Math.round((homeAcknowledged / homeIncs.length) * 100) : 100
+  const homeHigh = homeIncs.filter(x => x.severity === 'high')
+  const homeMedium = homeIncs.filter(x => x.severity === 'medium')
+  const homeDowCounts = Object.fromEntries(DOW_ORDER.map(d => [d, 0]))
+  for (const inc of homeIncs) {
+    const d = new Date(inc.happenedAt)
+    if (!isNaN(d)) homeDowCounts[DOW_ORDER[(d.getDay() + 6) % 7]]++
+  }
+  const homeSortedIncs = [...homeIncs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
 
   const homeRepeatMap = new Map()
   for (const inc of periodHome) {
@@ -106,6 +116,12 @@ export function computeAccidentReport(incidents, period) {
     homePatterns,
     homeInjuryTypes,
     homeRepeats,
+    homeAcknowledged,
+    homeAckRate,
+    homeHigh,
+    homeMedium,
+    homeDowCounts,
+    homeSortedIncs,
     dowOrder: DOW_ORDER,
     dowCounts,
     yoyDiff,
