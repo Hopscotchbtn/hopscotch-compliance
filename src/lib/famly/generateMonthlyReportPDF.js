@@ -555,7 +555,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
           y += 5
         })
       })
-      y += 5
+      y += 11
     }
 
     // ── Injury types ──
@@ -757,7 +757,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
           y += 5
         })
       })
-      y += 5
+      y += 11
     }
 
     // ── Injury types ──
