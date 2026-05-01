@@ -529,24 +529,28 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
     // ── Repeat children ──
     if (nurseryRepeats.length > 0) {
-      addPageIfNeeded(12)
-      text(doc, 'marmaladeShade'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
-      doc.text('Children with repeated nursery reports this period', MARGIN, y)
-      text(doc, 'text'); y += 5
+      // flagH: 11 for header row, then per child: 7 (name + spacing) + incidents*5
+      const flagH = 11 + nurseryRepeats.reduce((sum, child) => sum + 7 + child.incidents.length * 5, 0)
+      // Don't reserve the full height upfront — that causes a massive gap when the box
+      // is large. Just draw at current y and let per-child checks handle page breaks.
+      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
+      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
+      text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+      doc.text('Children with repeated nursery reports this period', MARGIN + 3, y + 6)
+      y += 11
       nurseryRepeats.forEach(child => {
-        const cardH = 5 + 5 + child.incidents.length * 5 + 3
-        addPageIfNeeded(cardH + 2)
-        fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
-        doc.roundedRect(MARGIN, y, CONTENT_WIDTH, cardH, 1.5, 1.5, 'FD')
+        addPageIfNeeded(7 + child.incidents.length * 5)
         text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y + 5)
+        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 3, y)
+        y += 5
         doc.setFont(undefined, 'normal')
-        child.incidents.forEach((inc, j) => {
+        child.incidents.forEach(inc => {
           text(doc, 'text')
-          const loc = inc.location ? `  ·  ${inc.location.slice(0, 28)}` : ''
-          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 5, y + 10 + j * 5)
+          const loc = inc.location ? `  ·  ${inc.location.slice(0, 30)}` : ''
+          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 6, y)
+          y += 5
         })
-        y += cardH + 2
+        y += 2
       })
       y += 4
     }
