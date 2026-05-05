@@ -183,7 +183,7 @@ const INCIDENTS_QUERY = `
 `
 
 function normalise(r) {
-  if (!normalise._logged) { normalise._logged = true; console.log('[Famly normalise sample] date:', r.date, 'time:', r.time, 'createdAt:', r.createdAt) }
+  if (!normalise._logged) { normalise._logged = true; console.warn('[Famly normalise sample] date:', r.date, 'time:', r.time, 'createdAt:', r.createdAt) }
   return {
     id: r.reportId ?? r.id,
     childName: r.child?.name?.fullName ?? 'Unknown',
