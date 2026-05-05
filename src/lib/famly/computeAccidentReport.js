@@ -125,6 +125,7 @@ export function computeAccidentReport(incidents, period) {
   const hourCounts = Array.from({ length: 24 }, (_, h) => ({
     hour: h,
     count: periodIncs.filter(inc => {
+      if (inc.time) return parseInt(inc.time.split(':')[0], 10) === h
       const d = new Date(inc.happenedAt)
       return !isNaN(d) && d.getHours() === h
     }).length,
