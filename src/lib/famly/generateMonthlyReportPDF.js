@@ -260,14 +260,16 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       doc.setFont(undefined, 'bold')
       doc.text(`High priority  ·  ${high.length}`, MARGIN, y)
       y += 5
-      doc.setFont(undefined, 'normal')
-      doc.setFontSize(9)
-      high.forEach(inc => {
-        addPageIfNeeded(6)
-        doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y)
-        y += 5
-      })
-      y += 3
+      if (period.type !== '12month') {
+        doc.setFont(undefined, 'normal')
+        doc.setFontSize(9)
+        high.forEach(inc => {
+          addPageIfNeeded(6)
+          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y)
+          y += 5
+        })
+        y += 3
+      }
     }
 
     if (medium.length > 0) {
@@ -276,14 +278,16 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       doc.setFont(undefined, 'bold')
       doc.text(`Medium priority  ·  ${medium.length}`, MARGIN, y)
       y += 5
-      doc.setFont(undefined, 'normal')
-      doc.setFontSize(9)
-      medium.forEach(inc => {
-        addPageIfNeeded(6)
-        doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y)
-        y += 5
-      })
-      y += 3
+      if (period.type !== '12month') {
+        doc.setFont(undefined, 'normal')
+        doc.setFontSize(9)
+        medium.forEach(inc => {
+          addPageIfNeeded(6)
+          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y)
+          y += 5
+        })
+        y += 3
+      }
     }
     text(doc, 'text')
     y += 3
@@ -582,20 +586,24 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       if (nurseryHigh.length > 0) {
         text(doc, 'warningText'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
         doc.text(`High priority  ·  ${nurseryHigh.length}`, MARGIN, y); y += 5
-        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
-        nurseryHigh.forEach(inc => {
-          addPageIfNeeded(6); text(doc, 'text')
-          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y); y += 5
-        }); y += 3
+        if (period.type !== '12month') {
+          doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+          nurseryHigh.forEach(inc => {
+            addPageIfNeeded(6); text(doc, 'text')
+            doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y); y += 5
+          }); y += 3
+        }
       }
       if (nurseryMedium.length > 0) {
         text(doc, 'marmaladeShade'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
         doc.text(`Medium priority  ·  ${nurseryMedium.length}`, MARGIN, y); y += 5
-        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
-        nurseryMedium.forEach(inc => {
-          addPageIfNeeded(6); text(doc, 'text')
-          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y); y += 5
-        }); y += 3
+        if (period.type !== '12month') {
+          doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+          nurseryMedium.forEach(inc => {
+            addPageIfNeeded(6); text(doc, 'text')
+            doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}  ·  ${(inc.location || '').slice(0, 28)}`, MARGIN + 2, y); y += 5
+          }); y += 3
+        }
       }
       text(doc, 'text'); y += 3
     }
@@ -785,21 +793,25 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       if (homeHigh.length > 0) {
         text(doc, 'warningText'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
         doc.text(`High priority  ·  ${homeHigh.length}`, MARGIN, y); y += 5
-        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
-        homeHigh.forEach(inc => {
-          addPageIfNeeded(6)
-          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}`, MARGIN + 2, y); y += 5
-        }); y += 3
+        if (period.type !== '12month') {
+          doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+          homeHigh.forEach(inc => {
+            addPageIfNeeded(6)
+            doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}`, MARGIN + 2, y); y += 5
+          }); y += 3
+        }
       }
       if (homeMedium.length > 0) {
         text(doc, 'marmaladeShade'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
         doc.text(`Medium priority  ·  ${homeMedium.length}`, MARGIN, y); y += 5
-        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
-        homeMedium.forEach(inc => {
-          addPageIfNeeded(6)
-          text(doc, 'text')
-          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}`, MARGIN + 2, y); y += 5
-        }); y += 3
+        if (period.type !== '12month') {
+          doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+          homeMedium.forEach(inc => {
+            addPageIfNeeded(6)
+            text(doc, 'text')
+            doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}`, MARGIN + 2, y); y += 5
+          }); y += 3
+        }
       }
       text(doc, 'text'); y += 3
     }
