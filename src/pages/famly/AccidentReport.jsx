@@ -713,18 +713,9 @@ function AtNurserySection({ report }) {
           <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>
             Children with repeated nursery reports this period
           </div>
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             {nurseryRepeats.map((child, i) => (
-              <div key={i}>
-                <div className="text-sm font-semibold" style={{ color: FOREST }}>{child.displayName} — {child.count} reports</div>
-                <ul className="mt-1 space-y-0.5">
-                  {child.incidents.map((inc, j) => (
-                    <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
-                      • {formatDate(inc.date)} · {inc.injuryCategory}{inc.location ? ` · ${inc.location}` : ''}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <div key={i} className="text-sm" style={{ color: FOREST }}>{child.displayName} — {child.count} reports</div>
             ))}
           </div>
         </div>
@@ -906,21 +897,9 @@ function HomeOnArrivalSection({ report }) {
           <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>
             Children with repeated home / on-arrival reports this period
           </div>
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             {homeRepeats.map((child, i) => (
-              <div key={i}>
-                <div className="text-sm font-semibold" style={{ color: FOREST }}>
-                  {child.displayName} — {child.count} reports
-                </div>
-                <ul className="mt-1 space-y-0.5">
-                  {child.incidents.map((inc, j) => (
-                    <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
-                      • {formatDate(inc.date)} · {inc.injuryCategory}
-                      {inc.onArrival ? ' · arrived with injury' : ' · location: Home'}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <div key={i} className="text-sm" style={{ color: FOREST }}>{child.displayName} — {child.count} reports</div>
             ))}
           </div>
         </div>

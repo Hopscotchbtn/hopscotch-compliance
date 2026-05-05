@@ -629,7 +629,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     if (displayedNurseryRepeats.length > 0) {
       // height: 9 header + per child (4 gap if not first, 6 name, n*5 incidents) + 5 padding
       const flagH = 9 + displayedNurseryRepeats.reduce((acc, child, ci) =>
-        acc + (ci > 0 ? 4 : 0) + 6 + child.incidents.length * 5, 0) + 5
+        acc + (ci > 0 ? 4 : 0) + 6, 0) + 5
       addPageIfNeeded(flagH + 4)
       fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
       doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
@@ -645,13 +645,6 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
         text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
         doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 4, y + 5)
         y += 6
-        doc.setFont(undefined, 'normal')
-        child.incidents.forEach(inc => {
-          text(doc, 'text')
-          const loc = inc.location ? `  ·  ${inc.location.slice(0, 30)}` : ''
-          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 6, y + 4)
-          y += 5
-        })
       })
       y += 11
     }
@@ -835,7 +828,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     // ── Repeat children ──
     if (homeRepeats.length > 0) {
       const flagH = 9 + homeRepeats.reduce((acc, child, ci) =>
-        acc + (ci > 0 ? 4 : 0) + 6 + child.incidents.length * 5, 0) + 5
+        acc + (ci > 0 ? 4 : 0) + 6, 0) + 5
       addPageIfNeeded(flagH + 4)
       fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
       doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
@@ -851,13 +844,6 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
         text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
         doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 4, y + 5)
         y += 6
-        doc.setFont(undefined, 'normal')
-        child.incidents.forEach(inc => {
-          text(doc, 'text')
-          const detail = inc.onArrival ? 'arrived with injury' : 'location: Home'
-          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 6, y + 4)
-          y += 5
-        })
       })
       y += 11
     }
