@@ -318,19 +318,43 @@ function KpiStrip({ report }) {
 }
 
 function RegulatoryFlagsBar({ report }) {
-  const { riddorCount, ofstedCount, ladoCount } = report
+  const { riddorCount, ofstedCount, ladoCount, riddorIncs, ofstedIncs, ladoIncs, period } = report
   if (riddorCount + ofstedCount + ladoCount === 0) return null
-  const parts = []
-  if (riddorCount > 0) parts.push(`RIDDOR: ${riddorCount}`)
-  if (ofstedCount > 0) parts.push(`Ofsted: ${ofstedCount}`)
-  if (ladoCount > 0) parts.push(`LADO: ${ladoCount}`)
+  const is12Month = period.type === '12month'
+  if (!is12Month) {
+    const parts = []
+    if (riddorCount > 0) parts.push(`RIDDOR: ${riddorCount}`)
+    if (ofstedCount > 0) parts.push(`Ofsted: ${ofstedCount}`)
+    if (ladoCount > 0) parts.push(`LADO: ${ladoCount}`)
+    return (
+      <div className="rounded-md border px-4 py-2.5 mb-6 text-sm font-semibold" style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE, color: MARMALADE_SHADE }}>
+        Regulatory flags &nbsp;—&nbsp; {parts.join('   ·   ')}
+      </div>
+    )
+  }
+  const flags = [
+    { label: 'RIDDOR', incs: riddorIncs },
+    { label: 'Ofsted notifiable', incs: ofstedIncs },
+    { label: 'LADO', incs: ladoIncs },
+  ].filter(f => f.incs.length > 0)
   return (
-    <div
-      className="rounded-md border px-4 py-2.5 mb-6 text-sm font-semibold"
-      style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE, color: MARMALADE_SHADE }}
-    >
-      Regulatory flags &nbsp;—&nbsp; {parts.join('   ·   ')}
-    </div>
+    <section className="mb-8">
+      <h2 className="text-base font-bold mb-3" style={{ color: FOREST, fontFamily: "'Ivar Display', Georgia, serif" }}>
+        Regulatory flags
+      </h2>
+      <div className="space-y-4">
+        {flags.map(({ label, incs }) => (
+          <div key={label} className="rounded-md border px-4 py-3" style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}>
+            <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>{label} · {incs.length}</div>
+            <ul className="space-y-1 text-sm" style={{ color: FOREST }}>
+              {incs.map((inc, i) => (
+                <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)}{inc.location ? ` · ${inc.location}` : ''}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -448,17 +472,35 @@ function LocationSection({ report }) {
       {siteLocs.length > 0 && (
         <div>
           <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Top locations in the nursery</div>
-          <ul className="space-y-1 text-sm">
-            {siteLocs.map((loc, i) => {
-              const pct = totalReports > 0 ? Math.round((loc.count / totalReports) * 100) : 0
-              return (
-                <li key={i} className="flex items-baseline justify-between" style={{ color: FOREST }}>
-                  <span>• {loc.location}</span>
-                  <span style={{ color: FOREST_T3 }}>{loc.count} ({pct}%)</span>
-                </li>
-              )
-            })}
-          </ul>
+          {report.period.type === '12month' ? (
+            <div className="space-y-1.5">
+              {siteLocs.map((loc, i) => {
+                const locMax = Math.max(1, ...siteLocs.map(l => l.count))
+                const pct = (loc.count / locMax) * 100
+                return (
+                  <div key={i} className="flex items-center gap-3 text-sm">
+                    <div className="w-32 truncate" style={{ color: FOREST }}>{loc.location}</div>
+                    <div className="flex-1 h-4 rounded" style={{ backgroundColor: PEBBLE }}>
+                      <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: FOREST_T1, border: `1px solid ${FOREST_T3}` }} />
+                    </div>
+                    <div className="w-8 text-right" style={{ color: FOREST_T3 }}>{loc.count}</div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {siteLocs.map((loc, i) => {
+                const pct = totalReports > 0 ? Math.round((loc.count / totalReports) * 100) : 0
+                return (
+                  <li key={i} className="flex items-baseline justify-between" style={{ color: FOREST }}>
+                    <span>• {loc.location}</span>
+                    <span style={{ color: FOREST_T3 }}>{loc.count} ({pct}%)</span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </div>
       )}
     </section>

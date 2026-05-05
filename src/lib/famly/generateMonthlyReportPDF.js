@@ -85,7 +85,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
   const period = report.period
   const {
     totalReports, onArrival, atNursery,
-    ofstedCount, riddorCount, ladoCount,
+    ofstedCount, riddorCount, ladoCount, ofstedIncs, riddorIncs, ladoIncs,
     acknowledged, ackRate,
     high, medium,
     homeLoc, siteLocs,
@@ -225,20 +225,38 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
   // ─── REGULATORY FLAGS BAR ──
 
   if (riddorCount + ofstedCount + ladoCount > 0) {
-    addPageIfNeeded(14)
-    fill(doc, 'marmaladeT1')
-    stroke(doc, 'marmalade')
-    doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 11, 1.5, 1.5, 'FD')
-    text(doc, 'marmaladeShade')
-    doc.setFontSize(9)
-    doc.setFont(undefined, 'bold')
-    const parts = []
-    if (riddorCount > 0) parts.push(`RIDDOR: ${riddorCount}`)
-    if (ofstedCount > 0) parts.push(`Ofsted: ${ofstedCount}`)
-    if (ladoCount > 0) parts.push(`LADO: ${ladoCount}`)
-    doc.text(`Regulatory flags  —  ${parts.join('   ·   ')}`, MARGIN + 4, y + 7)
-    text(doc, 'text')
-    y += 16
+    if (period.type === '12month') {
+      const flagGroups = [
+        { label: 'RIDDOR', incs: riddorIncs },
+        { label: 'Ofsted notifiable', incs: ofstedIncs },
+        { label: 'LADO', incs: ladoIncs },
+      ].filter(f => f.incs.length > 0)
+      sectionHeading(doc, 'Regulatory flags', y); y += 8
+      flagGroups.forEach(({ label, incs }) => {
+        addPageIfNeeded(10 + incs.length * 5)
+        text(doc, 'marmaladeShade'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+        doc.text(`${label}  ·  ${incs.length}`, MARGIN, y); y += 5
+        doc.setFont(undefined, 'normal'); doc.setFontSize(8)
+        incs.forEach(inc => {
+          addPageIfNeeded(6); text(doc, 'text')
+          const loc = inc.location ? `  ·  ${inc.location.slice(0, 30)}` : ''
+          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}${loc}`, MARGIN + 2, y); y += 5
+        })
+        y += 3
+      })
+      text(doc, 'text'); y += 4
+    } else {
+      addPageIfNeeded(14)
+      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
+      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 11, 1.5, 1.5, 'FD')
+      text(doc, 'marmaladeShade'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+      const parts = []
+      if (riddorCount > 0) parts.push(`RIDDOR: ${riddorCount}`)
+      if (ofstedCount > 0) parts.push(`Ofsted: ${ofstedCount}`)
+      if (ladoCount > 0) parts.push(`LADO: ${ladoCount}`)
+      doc.text(`Regulatory flags  —  ${parts.join('   ·   ')}`, MARGIN + 4, y + 7)
+      text(doc, 'text'); y += 16
+    }
   }
 
   // ─── NEEDS FORMAL REVIEW ──

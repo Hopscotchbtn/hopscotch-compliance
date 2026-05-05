@@ -9,9 +9,12 @@ export function computeAccidentReport(incidents, period) {
   const onArrival = periodIncs.filter(x => x.onArrival).length
   const atNursery = totalReports - onArrival
 
-  const ofstedCount = periodIncs.filter(x => x.ofsted).length
-  const riddorCount = periodIncs.filter(x => x.riddor).length
-  const ladoCount = periodIncs.filter(x => x.lado).length
+  const ofstedIncs = periodIncs.filter(x => x.ofsted)
+  const riddorIncs = periodIncs.filter(x => x.riddor)
+  const ladoIncs = periodIncs.filter(x => x.lado)
+  const ofstedCount = ofstedIncs.length
+  const riddorCount = riddorIncs.length
+  const ladoCount = ladoIncs.length
 
   const acknowledged = periodIncs.filter(x => x.acknowledgedAt).length
   const ackRate = totalReports > 0 ? Math.round((acknowledged / totalReports) * 100) : 100
@@ -153,6 +156,9 @@ export function computeAccidentReport(incidents, period) {
     ofstedCount,
     riddorCount,
     ladoCount,
+    ofstedIncs,
+    riddorIncs,
+    ladoIncs,
     acknowledged,
     ackRate,
     high,
