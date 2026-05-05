@@ -627,25 +627,35 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     // ── Repeat children ──
     const displayedNurseryRepeats = period.type !== 'month' ? nurseryRepeats.filter(c => c.count > 5) : nurseryRepeats
     if (displayedNurseryRepeats.length > 0) {
-      // height: 9 header + per child (4 gap if not first, 6 name, n*5 incidents) + 5 padding
-      const flagH = 9 + displayedNurseryRepeats.reduce((acc, child, ci) =>
-        acc + (ci > 0 ? 4 : 0) + 6 + (period.type !== '12month' ? child.incidents.length * 5 : 0), 0) + 5
-      addPageIfNeeded(flagH + 4)
-      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
-      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
-      text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-      doc.text('Children with repeated nursery reports this period', MARGIN + 4, y + 6)
-      y += 9
-      displayedNurseryRepeats.forEach((child, ci) => {
-        if (ci > 0) {
-          stroke(doc, 'rule'); doc.setLineWidth(0.2)
-          doc.line(MARGIN + 4, y + 2, MARGIN + CONTENT_WIDTH - 4, y + 2)
-          y += 4
-        }
-        text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 4, y + 5)
+      if (period.type === '12month') {
+        addPageIfNeeded(14)
+        text(doc, 'forest'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+        doc.text('Children with repeated nursery reports this period', MARGIN, y); y += 6
+        doc.setFontSize(8)
+        displayedNurseryRepeats.forEach(child => {
+          addPageIfNeeded(8)
+          doc.setFont(undefined, 'normal'); text(doc, 'text')
+          doc.text(`•  ${child.displayName}  —  ${child.count} reports`, MARGIN + 2, y); y += 5
+        })
         y += 6
-        if (period.type !== '12month') {
+      } else {
+        const flagH = 9 + displayedNurseryRepeats.reduce((acc, child, ci) =>
+          acc + (ci > 0 ? 4 : 0) + 6 + child.incidents.length * 5, 0) + 5
+        addPageIfNeeded(flagH + 4)
+        fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
+        doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
+        text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+        doc.text('Children with repeated nursery reports this period', MARGIN + 4, y + 6)
+        y += 9
+        displayedNurseryRepeats.forEach((child, ci) => {
+          if (ci > 0) {
+            stroke(doc, 'rule'); doc.setLineWidth(0.2)
+            doc.line(MARGIN + 4, y + 2, MARGIN + CONTENT_WIDTH - 4, y + 2)
+            y += 4
+          }
+          text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+          doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 4, y + 5)
+          y += 6
           doc.setFont(undefined, 'normal')
           child.incidents.forEach(inc => {
             text(doc, 'text')
@@ -653,9 +663,9 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
             doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 6, y + 4)
             y += 5
           })
-        }
-      })
-      y += 11
+        })
+        y += 11
+      }
     }
 
     // ── Injury types ──
@@ -836,24 +846,35 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
     // ── Repeat children ──
     if (homeRepeats.length > 0) {
-      const flagH = 9 + homeRepeats.reduce((acc, child, ci) =>
-        acc + (ci > 0 ? 4 : 0) + 6 + (period.type !== '12month' ? child.incidents.length * 5 : 0), 0) + 5
-      addPageIfNeeded(flagH + 4)
-      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
-      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
-      text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-      doc.text('Children with repeated home / on-arrival reports this period', MARGIN + 4, y + 6)
-      y += 9
-      homeRepeats.forEach((child, ci) => {
-        if (ci > 0) {
-          stroke(doc, 'rule'); doc.setLineWidth(0.2)
-          doc.line(MARGIN + 4, y + 2, MARGIN + CONTENT_WIDTH - 4, y + 2)
-          y += 4
-        }
-        text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-        doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 4, y + 5)
+      if (period.type === '12month') {
+        addPageIfNeeded(14)
+        text(doc, 'forest'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+        doc.text('Children with repeated home / on-arrival reports this period', MARGIN, y); y += 6
+        doc.setFontSize(8)
+        homeRepeats.forEach(child => {
+          addPageIfNeeded(8)
+          doc.setFont(undefined, 'normal'); text(doc, 'text')
+          doc.text(`•  ${child.displayName}  —  ${child.count} reports`, MARGIN + 2, y); y += 5
+        })
         y += 6
-        if (period.type !== '12month') {
+      } else {
+        const flagH = 9 + homeRepeats.reduce((acc, child, ci) =>
+          acc + (ci > 0 ? 4 : 0) + 6 + child.incidents.length * 5, 0) + 5
+        addPageIfNeeded(flagH + 4)
+        fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
+        doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
+        text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+        doc.text('Children with repeated home / on-arrival reports this period', MARGIN + 4, y + 6)
+        y += 9
+        homeRepeats.forEach((child, ci) => {
+          if (ci > 0) {
+            stroke(doc, 'rule'); doc.setLineWidth(0.2)
+            doc.line(MARGIN + 4, y + 2, MARGIN + CONTENT_WIDTH - 4, y + 2)
+            y += 4
+          }
+          text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+          doc.text(`${child.displayName}  —  ${child.count} reports`, MARGIN + 4, y + 5)
+          y += 6
           doc.setFont(undefined, 'normal')
           child.incidents.forEach(inc => {
             text(doc, 'text')
@@ -861,9 +882,9 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
             doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 6, y + 4)
             y += 5
           })
-        }
-      })
-      y += 11
+        })
+        y += 11
+      }
     }
 
     // ── Injury types ──
