@@ -237,9 +237,15 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       doc.text(`${label}  ·  ${incs.length}`, MARGIN, y); y += 5
       doc.setFont(undefined, 'normal'); doc.setFontSize(8)
       incs.forEach(inc => {
-        addPageIfNeeded(6); text(doc, 'text')
+        const hasNature = inc.nature && inc.nature.trim()
+        addPageIfNeeded(hasNature ? 10 : 6); text(doc, 'text')
         const loc = inc.location ? `  ·  ${inc.location.slice(0, 30)}` : ''
-        doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}${loc}`, MARGIN + 2, y); y += 5
+        doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}${loc}`, MARGIN + 2, y); y += 4
+        if (hasNature) {
+          text(doc, 'mute'); doc.setFontSize(7)
+          doc.text(inc.nature.trim().slice(0, 100), MARGIN + 5, y); y += 5
+          doc.setFontSize(8); text(doc, 'text')
+        }
       })
       y += 3
     })

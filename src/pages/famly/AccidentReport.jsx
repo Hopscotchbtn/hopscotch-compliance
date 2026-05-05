@@ -336,7 +336,7 @@ function RegulatoryFlagsBar({ report }) {
             <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>{label} · {incs.length}</div>
             <ul className="space-y-1 text-sm" style={{ color: FOREST }}>
               {incs.map((inc, i) => (
-                <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)}{inc.location ? ` · ${inc.location}` : ''}</li>
+                <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)}{inc.location ? ` · ${inc.location}` : ''}{inc.nature ? ` — ${inc.nature.slice(0, 80)}` : ''}</li>
               ))}
             </ul>
           </div>
