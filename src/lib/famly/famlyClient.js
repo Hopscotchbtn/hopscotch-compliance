@@ -188,7 +188,7 @@ function normalise(r) {
     childName: r.child?.name?.fullName ?? 'Unknown',
     childId: r.child?.id ?? null,
     kind: r.kind === 'incident' ? 'Incident' : 'Accident',
-    happenedAt: r.date ?? r.createdAt,
+    happenedAt: r.date && r.time ? `${r.date}T${r.time}` : (r.date ?? r.createdAt),
     time: r.time ?? '',
     createdBy: r.createdBy?.name?.fullName ?? '',
     location: r.location ?? '',

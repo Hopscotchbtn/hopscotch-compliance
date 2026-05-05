@@ -229,6 +229,8 @@ export function AccidentReport() {
 
           <DayOfWeekSection report={report} />
 
+          <TimeOfDaySection report={report} />
+
           <AtNurserySection report={report} />
 
           <HomeOnArrivalSection report={report} />
@@ -478,6 +480,36 @@ function DayOfWeekSection({ report }) {
           return (
             <div key={day} className="flex items-center gap-3 text-sm">
               <div className="w-20" style={{ color: FOREST }}>{day}</div>
+              <div className="flex-1 h-4 rounded" style={{ backgroundColor: PEBBLE }}>
+                <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: FOREST_T1, border: `1px solid ${FOREST_T3}` }} />
+              </div>
+              <div className="w-8 text-right" style={{ color: FOREST_T3 }}>{count}</div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function TimeOfDaySection({ report }) {
+  const { hourCounts, totalReports } = report
+  if (totalReports === 0) return null
+  const activeHours = (hourCounts || []).filter(h => h.count > 0)
+  if (activeHours.length === 0) return null
+  const hourMax = Math.max(1, ...activeHours.map(h => h.count))
+  return (
+    <section className="mb-8">
+      <h2 className="text-base font-bold mb-3" style={{ color: FOREST, fontFamily: "'Ivar Display', Georgia, serif" }}>
+        Time of day
+      </h2>
+      <div className="space-y-1.5">
+        {activeHours.map(({ hour, count }) => {
+          const pct = (count / hourMax) * 100
+          const label = `${String(hour).padStart(2, '0')}:00`
+          return (
+            <div key={hour} className="flex items-center gap-3 text-sm">
+              <div className="w-12" style={{ color: FOREST }}>{label}</div>
               <div className="flex-1 h-4 rounded" style={{ backgroundColor: PEBBLE }}>
                 <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: FOREST_T1, border: `1px solid ${FOREST_T3}` }} />
               </div>
