@@ -335,8 +335,9 @@ function RegulatoryFlagsBar({ report }) {
 }
 
 function FormalReviewSection({ report }) {
-  const { high, medium } = report
+  const { high, medium, period } = report
   if (high.length === 0 && medium.length === 0) return null
+  const showList = period.type !== '12month'
   return (
     <section className="mb-8">
       <h2 className="text-base font-bold" style={{ color: FOREST, fontFamily: "'Ivar Display', Georgia, serif" }}>
@@ -351,13 +352,15 @@ function FormalReviewSection({ report }) {
           <div className="text-sm font-bold" style={{ color: '#991b1b' }}>
             High priority · {high.length}
           </div>
-          <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
-            {high.map((inc, i) => (
-              <li key={i}>
-                • {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}
-              </li>
-            ))}
-          </ul>
+          {showList && (
+            <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
+              {high.map((inc, i) => (
+                <li key={i}>
+                  • {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 
@@ -366,13 +369,15 @@ function FormalReviewSection({ report }) {
           <div className="text-sm font-bold" style={{ color: MARMALADE_SHADE }}>
             Medium priority · {medium.length}
           </div>
-          <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
-            {medium.map((inc, i) => (
-              <li key={i}>
-                • {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}
-              </li>
-            ))}
-          </ul>
+          {showList && (
+            <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
+              {medium.map((inc, i) => (
+                <li key={i}>
+                  • {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </section>
@@ -676,21 +681,25 @@ function AtNurserySection({ report }) {
           {nurseryHigh.length > 0 && (
             <div className="mb-2">
               <div className="text-sm font-bold" style={{ color: '#991b1b' }}>High priority · {nurseryHigh.length}</div>
-              <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
-                {nurseryHigh.map((inc, i) => (
-                  <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}</li>
-                ))}
-              </ul>
+              {report.period.type !== '12month' && (
+                <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
+                  {nurseryHigh.map((inc, i) => (
+                    <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           {nurseryMedium.length > 0 && (
             <div>
               <div className="text-sm font-bold" style={{ color: MARMALADE_SHADE }}>Medium priority · {nurseryMedium.length}</div>
-              <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
-                {nurseryMedium.map((inc, i) => (
-                  <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}</li>
-                ))}
-              </ul>
+              {report.period.type !== '12month' && (
+                <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
+                  {nurseryMedium.map((inc, i) => (
+                    <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </div>
@@ -862,21 +871,25 @@ function HomeOnArrivalSection({ report }) {
           {homeHigh.length > 0 && (
             <div className="mb-2">
               <div className="text-sm font-bold" style={{ color: '#991b1b' }}>High priority · {homeHigh.length}</div>
-              <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
-                {homeHigh.map((inc, i) => (
-                  <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory}</li>
-                ))}
-              </ul>
+              {report.period.type !== '12month' && (
+                <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
+                  {homeHigh.map((inc, i) => (
+                    <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
           {homeMedium.length > 0 && (
             <div>
               <div className="text-sm font-bold" style={{ color: MARMALADE_SHADE }}>Medium priority · {homeMedium.length}</div>
-              <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
-                {homeMedium.map((inc, i) => (
-                  <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory}</li>
-                ))}
-              </ul>
+              {report.period.type !== '12month' && (
+                <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
+                  {homeMedium.map((inc, i) => (
+                    <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
         </div>
