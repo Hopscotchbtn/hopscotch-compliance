@@ -63,7 +63,7 @@ export function computeAccidentReport(incidents, period) {
   }
   const nurserySortedIncs = [...settingIncs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
   const nurseryInjuryTypes = categoryCounts(settingIncs)
-  const nurseryLocs = locationCounts(settingIncs).slice(0, 5)
+  const nurseryLocs = locationCounts(settingIncs)
   const nowN = new Date()
   const nurseryMonthly = Array.from({ length: 12 }, (_, i) => {
     const d = new Date(nowN.getFullYear(), nowN.getMonth() - (11 - i), 1)

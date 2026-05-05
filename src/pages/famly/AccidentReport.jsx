@@ -786,17 +786,35 @@ function AtNurserySection({ report }) {
       {nurseryLocs.length > 0 && (
         <div className="mb-6">
           <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Where they happen</div>
-          <ul className="space-y-1 text-sm">
-            {nurseryLocs.map((loc, i) => {
-              const pct = settingIncs.length > 0 ? Math.round((loc.count / settingIncs.length) * 100) : 0
-              return (
-                <li key={i} className="flex items-baseline justify-between" style={{ color: FOREST }}>
-                  <span>• {loc.location}</span>
-                  <span style={{ color: FOREST_T3 }}>{loc.count} ({pct}%)</span>
-                </li>
-              )
-            })}
-          </ul>
+          {report.period.type === '12month' ? (
+            <div className="space-y-1.5">
+              {nurseryLocs.map((loc, i) => {
+                const locMax = Math.max(1, nurseryLocs[0].count)
+                const pct = (loc.count / locMax) * 100
+                return (
+                  <div key={i} className="flex items-center gap-3 text-sm">
+                    <div className="w-32 truncate" style={{ color: FOREST }}>{loc.location || '(blank)'}</div>
+                    <div className="flex-1 h-4 rounded" style={{ backgroundColor: PEBBLE }}>
+                      <div className="h-full rounded" style={{ width: `${pct}%`, backgroundColor: FOREST_T1, border: `1px solid ${FOREST_T3}` }} />
+                    </div>
+                    <div className="w-8 text-right" style={{ color: FOREST_T3 }}>{loc.count}</div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {nurseryLocs.slice(0, 5).map((loc, i) => {
+                const pct = settingIncs.length > 0 ? Math.round((loc.count / settingIncs.length) * 100) : 0
+                return (
+                  <li key={i} className="flex items-baseline justify-between" style={{ color: FOREST }}>
+                    <span>• {loc.location}</span>
+                    <span style={{ color: FOREST_T3 }}>{loc.count} ({pct}%)</span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </div>
       )}
 

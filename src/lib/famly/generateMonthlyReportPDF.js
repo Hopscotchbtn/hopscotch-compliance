@@ -702,16 +702,35 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
     // ── Location ──
     if (nurseryLocs.length > 0) {
-      addPageIfNeeded(20 + nurseryLocs.length * 5)
+      const displayLocs = period.type === '12month' ? nurseryLocs : nurseryLocs.slice(0, 5)
+      addPageIfNeeded(20 + displayLocs.length * 5)
       doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
       doc.text('Where they happen', MARGIN, y); text(doc, 'text'); y += 6
-      doc.setFontSize(9); doc.setFont(undefined, 'normal')
-      nurseryLocs.forEach(({ location, count }) => {
-        addPageIfNeeded(6)
-        const pct = settingIncs.length > 0 ? Math.round((count / settingIncs.length) * 100) : 0
-        text(doc, 'text'); doc.text(`•  ${location}`, MARGIN + 4, y)
-        text(doc, 'mute'); doc.text(`${count}   (${pct}%)`, MARGIN + 90, y); y += 5
-      }); y += 6
+      doc.setFontSize(8); doc.setFont(undefined, 'normal')
+      if (period.type === '12month') {
+        const locMax = Math.max(1, displayLocs[0]?.count ?? 1)
+        const barMaxW = 80; const barX = MARGIN + 48
+        displayLocs.forEach(({ location, count }) => {
+          addPageIfNeeded(6)
+          const w = (count / locMax) * barMaxW
+          text(doc, 'text'); doc.text((location || '(blank)').slice(0, 18), MARGIN + 2, y)
+          if (w > 0) {
+            fill(doc, 'forestLight'); stroke(doc, 'forestLight')
+            doc.rect(barX, y - 3, Math.max(w, 0.5), 4, 'F')
+            fill(doc, 'marmalade'); doc.rect(barX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
+          }
+          text(doc, 'mute'); doc.text(String(count), barX + barMaxW + 3, y); y += 5
+        })
+      } else {
+        doc.setFontSize(9)
+        displayLocs.forEach(({ location, count }) => {
+          addPageIfNeeded(6)
+          const pct = settingIncs.length > 0 ? Math.round((count / settingIncs.length) * 100) : 0
+          text(doc, 'text'); doc.text(`•  ${location}`, MARGIN + 4, y)
+          text(doc, 'mute'); doc.text(`${count}   (${pct}%)`, MARGIN + 90, y); y += 5
+        })
+      }
+      text(doc, 'text'); y += 6
     }
 
     // ── Day of week ──
