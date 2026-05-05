@@ -713,9 +713,20 @@ function AtNurserySection({ report }) {
           <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>
             Children with repeated nursery reports this period
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             {nurseryRepeats.map((child, i) => (
-              <div key={i} className="text-sm" style={{ color: FOREST }}>{child.displayName} — {child.count} reports</div>
+              <div key={i}>
+                <div className="text-sm font-semibold" style={{ color: FOREST }}>{child.displayName} — {child.count} reports</div>
+                {report.period.type !== '12month' && (
+                  <ul className="mt-1 space-y-0.5">
+                    {child.incidents.map((inc, j) => (
+                      <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
+                        • {formatDate(inc.date)} · {inc.injuryCategory}{inc.location ? ` · ${inc.location}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -897,9 +908,21 @@ function HomeOnArrivalSection({ report }) {
           <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>
             Children with repeated home / on-arrival reports this period
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             {homeRepeats.map((child, i) => (
-              <div key={i} className="text-sm" style={{ color: FOREST }}>{child.displayName} — {child.count} reports</div>
+              <div key={i}>
+                <div className="text-sm font-semibold" style={{ color: FOREST }}>{child.displayName} — {child.count} reports</div>
+                {report.period.type !== '12month' && (
+                  <ul className="mt-1 space-y-0.5">
+                    {child.incidents.map((inc, j) => (
+                      <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
+                        • {formatDate(inc.date)} · {inc.injuryCategory}
+                        {inc.onArrival ? ' · arrived with injury' : ' · location: Home'}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -940,6 +963,35 @@ function HomeOnArrivalSection({ report }) {
         <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Monthly trend (last 12 months)</div>
         <TrendBars monthly={homeMonthly} max={homeMax} />
       </div>
+
+      {/* Full incident list — monthly only */}
+      {report.period.type !== '12month' && homeSortedIncs.length > 0 && (
+        <div>
+          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>All incidents this period</div>
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${PEBBLE_SHADE}` }}>
+                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Child</th>
+                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Date</th>
+                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Injury</th>
+                <th className="text-left py-1.5 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Acknowledged</th>
+              </tr>
+            </thead>
+            <tbody>
+              {homeSortedIncs.map((inc, i) => (
+                <tr key={i} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
+                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{childDisplayName(inc.childName)}</td>
+                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{formatDate(inc.happenedAt)}</td>
+                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{inc.injuryCategory}</td>
+                  <td className="py-1.5" style={{ color: inc.acknowledgedAt ? APPLE : MARMALADE_SHADE }}>
+                    {inc.acknowledgedAt ? 'Yes' : 'No'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
     </section>
   )
