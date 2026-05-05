@@ -320,18 +320,6 @@ function KpiStrip({ report }) {
 function RegulatoryFlagsBar({ report }) {
   const { riddorCount, ofstedCount, ladoCount, riddorIncs, ofstedIncs, ladoIncs, period } = report
   if (riddorCount + ofstedCount + ladoCount === 0) return null
-  const is12Month = period.type === '12month'
-  if (!is12Month) {
-    const parts = []
-    if (riddorCount > 0) parts.push(`RIDDOR: ${riddorCount}`)
-    if (ofstedCount > 0) parts.push(`Ofsted: ${ofstedCount}`)
-    if (ladoCount > 0) parts.push(`LADO: ${ladoCount}`)
-    return (
-      <div className="rounded-md border px-4 py-2.5 mb-6 text-sm font-semibold" style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE, color: MARMALADE_SHADE }}>
-        Regulatory flags &nbsp;—&nbsp; {parts.join('   ·   ')}
-      </div>
-    )
-  }
   const flags = [
     { label: 'RIDDOR', incs: riddorIncs },
     { label: 'Ofsted notifiable', incs: ofstedIncs },
