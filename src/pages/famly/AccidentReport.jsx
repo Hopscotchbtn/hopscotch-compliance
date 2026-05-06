@@ -842,7 +842,7 @@ function HomeOnArrivalSection({ report }) {
   const {
     homeIncs, settingIncs, homeRepeats, totalReports,
     homeAcknowledged, homeAckRate, homeHigh, homeMedium,
-    homeDowCounts, homeSortedIncs,
+    homeDowCounts, homeSortedIncs, home3MonthSortedIncs, homeRepeats3Month,
     periodHome, homeMonthly, homePatterns, homeInjuryTypes,
     dowOrder,
   } = report
@@ -947,8 +947,8 @@ function HomeOnArrivalSection({ report }) {
 
       <PatternFlags patterns={homePatterns} />
 
-      {/* Repeat children */}
-      {homeRepeats.length > 0 && (
+      {/* Repeat children — 12-month reports only; monthly uses the 3-month section below */}
+      {report.period.type === '12month' && homeRepeats.length > 0 && (
         <div
           className="rounded-md border px-4 py-3 mb-4"
           style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}
@@ -960,16 +960,6 @@ function HomeOnArrivalSection({ report }) {
             {homeRepeats.map((child, i) => (
               <div key={i}>
                 <div className="text-sm font-semibold" style={{ color: FOREST }}>{child.displayName} — {child.count} reports</div>
-                {report.period.type !== '12month' && (
-                  <ul className="mt-1 space-y-0.5">
-                    {child.incidents.map((inc, j) => (
-                      <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
-                        • {formatDate(inc.date)} · {inc.injuryCategory}
-                        {inc.onArrival ? ' · arrived with injury' : ' · location: Home'}
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
             ))}
           </div>
@@ -1012,32 +1002,108 @@ function HomeOnArrivalSection({ report }) {
         <TrendBars monthly={homeMonthly} max={homeMax} />
       </div>
 
-      {/* Full incident list — monthly only */}
-      {report.period.type !== '12month' && homeSortedIncs.length > 0 && (
-        <div>
-          <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>All incidents this period</div>
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${PEBBLE_SHADE}` }}>
-                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Child</th>
-                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Date</th>
-                <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Injury</th>
-                <th className="text-left py-1.5 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Acknowledged</th>
-              </tr>
-            </thead>
-            <tbody>
-              {homeSortedIncs.map((inc, i) => (
-                <tr key={i} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
-                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{childDisplayName(inc.childName)}</td>
-                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{formatDate(inc.happenedAt)}</td>
-                  <td className="py-1.5 pr-2" style={{ color: FOREST }}>{inc.injuryCategory}</td>
-                  <td className="py-1.5" style={{ color: inc.acknowledgedAt ? APPLE : MARMALADE_SHADE }}>
-                    {inc.acknowledgedAt ? 'Yes' : 'No'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Monthly-only: this-period list, 3-month list, 3-month repeats */}
+      {report.period.type !== '12month' && (
+        <div className="space-y-6">
+
+          {/* All incidents this period */}
+          <div>
+            <div className="text-sm font-semibold mb-1" style={{ color: FOREST }}>All incidents this period</div>
+            <p className="text-xs mb-2" style={{ color: FOREST_T3 }}>
+              Home / on-arrival incidents recorded in {report.period.label} only.
+            </p>
+            {homeSortedIncs.length === 0 ? (
+              <p className="text-sm italic" style={{ color: FOREST_T3 }}>No at-home accidents this month.</p>
+            ) : (
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${PEBBLE_SHADE}` }}>
+                    <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Child</th>
+                    <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Date</th>
+                    <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Injury</th>
+                    <th className="text-left py-1.5 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Acknowledged</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {homeSortedIncs.map((inc, i) => (
+                    <tr key={i} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
+                      <td className="py-1.5 pr-2" style={{ color: FOREST }}>{childDisplayName(inc.childName)}</td>
+                      <td className="py-1.5 pr-2" style={{ color: FOREST }}>{formatDate(inc.happenedAt)}</td>
+                      <td className="py-1.5 pr-2" style={{ color: FOREST }}>{inc.injuryCategory}</td>
+                      <td className="py-1.5" style={{ color: inc.acknowledgedAt ? APPLE : MARMALADE_SHADE }}>
+                        {inc.acknowledgedAt ? 'Yes' : 'No'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* All home incidents — last 3 months */}
+          <div>
+            <div className="text-sm font-semibold mb-1" style={{ color: FOREST }}>All home / on-arrival incidents — last 3 months</div>
+            <p className="text-xs mb-2" style={{ color: FOREST_T3 }}>
+              Includes this period. Use to spot patterns across recent months.
+            </p>
+            {home3MonthSortedIncs.length === 0 ? (
+              <p className="text-sm italic" style={{ color: FOREST_T3 }}>No at-home incidents in the last 3 months.</p>
+            ) : (
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr style={{ borderBottom: `1px solid ${PEBBLE_SHADE}` }}>
+                    <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Child</th>
+                    <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Date</th>
+                    <th className="text-left py-1.5 pr-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Injury</th>
+                    <th className="text-left py-1.5 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Acknowledged</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {home3MonthSortedIncs.map((inc, i) => (
+                    <tr key={i} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
+                      <td className="py-1.5 pr-2" style={{ color: FOREST }}>{childDisplayName(inc.childName)}</td>
+                      <td className="py-1.5 pr-2" style={{ color: FOREST }}>{formatDate(inc.happenedAt)}</td>
+                      <td className="py-1.5 pr-2" style={{ color: FOREST }}>{inc.injuryCategory}</td>
+                      <td className="py-1.5" style={{ color: inc.acknowledgedAt ? APPLE : MARMALADE_SHADE }}>
+                        {inc.acknowledgedAt ? 'Yes' : 'No'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Children with multiple incidents in last 3 months */}
+          {homeRepeats3Month.length > 0 && (
+            <div
+              className="rounded-md border px-4 py-3"
+              style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}
+            >
+              <div className="text-sm font-bold mb-1" style={{ color: MARMALADE_SHADE }}>
+                Children with multiple home incidents — last 3 months
+              </div>
+              <p className="text-xs mb-2" style={{ color: FOREST_T3 }}>
+                These children appear more than once across the rolling 3-month window. This may warrant a safeguarding conversation.
+              </p>
+              <div className="space-y-3">
+                {homeRepeats3Month.map((child, i) => (
+                  <div key={i}>
+                    <div className="text-sm font-semibold" style={{ color: FOREST }}>{child.displayName} — {child.count} incidents</div>
+                    <ul className="mt-1 space-y-0.5">
+                      {child.incidents.map((inc, j) => (
+                        <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
+                          • {formatDate(inc.date)} · {inc.injuryCategory}
+                          {inc.onArrival ? ' · arrived with injury' : ' · location: Home'}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
       )}
 

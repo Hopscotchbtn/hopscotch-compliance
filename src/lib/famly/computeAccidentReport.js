@@ -51,6 +51,35 @@ export function computeAccidentReport(incidents, period) {
   }
   const homeSortedIncs = [...homeIncs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
 
+  const threeMonthCutoff = new Date(period.to)
+  threeMonthCutoff.setMonth(threeMonthCutoff.getMonth() - 3)
+  threeMonthCutoff.setDate(1)
+  threeMonthCutoff.setHours(0, 0, 0, 0)
+  const home3MonthIncs = filterByRange(incidents, threeMonthCutoff, period.to)
+    .filter(x => (x.location || '').toLowerCase() === 'home' || x.onArrival)
+  const home3MonthSortedIncs = [...home3MonthIncs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
+  const homeRepeat3Map = new Map()
+  for (const inc of home3MonthIncs) {
+    const list = homeRepeat3Map.get(inc.childName) ?? []
+    list.push(inc)
+    homeRepeat3Map.set(inc.childName, list)
+  }
+  const homeRepeats3Month = Array.from(homeRepeat3Map.entries())
+    .filter(([, incs]) => incs.length >= 2)
+    .map(([name, incs]) => {
+      const sorted = [...incs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
+      return {
+        displayName: childDisplayName(name),
+        count: incs.length,
+        incidents: sorted.map(inc => ({
+          date: inc.happenedAt,
+          injuryCategory: inc.injuryCategory,
+          onArrival: !!inc.onArrival,
+        })),
+      }
+    })
+    .sort((a, b) => b.count - a.count)
+
   // Nursery (at-setting) stats
   const nurseryAcknowledged = settingIncs.filter(x => x.acknowledgedAt).length
   const nurseryAckRate = settingIncs.length > 0 ? Math.round((nurseryAcknowledged / settingIncs.length) * 100) : 100
@@ -183,6 +212,8 @@ export function computeAccidentReport(incidents, period) {
     homeMedium,
     homeDowCounts,
     homeSortedIncs,
+    home3MonthSortedIncs,
+    homeRepeats3Month,
     nurseryAcknowledged,
     nurseryAckRate,
     nurseryHigh,
