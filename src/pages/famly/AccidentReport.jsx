@@ -1040,6 +1040,36 @@ function HomeOnArrivalSection({ report }) {
             )}
           </div>
 
+          {/* Children with repeated incidents this period */}
+          {homeRepeats.length > 0 && (
+            <div
+              className="rounded-md border px-4 py-3"
+              style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}
+            >
+              <div className="text-sm font-bold mb-1" style={{ color: MARMALADE_SHADE }}>
+                Children with repeated home incidents — this period
+              </div>
+              <p className="text-xs mb-2" style={{ color: FOREST_T3 }}>
+                Children with 2 or more home / on-arrival incidents within {report.period.label}.
+              </p>
+              <div className="space-y-3">
+                {homeRepeats.map((child, i) => (
+                  <div key={i}>
+                    <div className="text-sm font-semibold" style={{ color: FOREST }}>{child.displayName} — {child.count} incidents</div>
+                    <ul className="mt-1 space-y-0.5">
+                      {child.incidents.map((inc, j) => (
+                        <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
+                          • {formatDate(inc.date)} · {inc.injuryCategory}
+                          {inc.onArrival ? ' · arrived with injury' : ' · location: Home'}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* All home incidents — last 3 months */}
           <div>
             <div className="text-sm font-semibold mb-1" style={{ color: FOREST }}>All home / on-arrival incidents — last 3 months</div>
