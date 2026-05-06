@@ -1,4 +1,4 @@
-import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, categoryCounts, isOutdoor, outdoorMonthlyTrend, detectMonthlyPatterns, detectChildPatterns, isHome, homeMonthlyTrend, childDisplayName } from './dataHelpers'
+import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, categoryCounts, isOutdoor, outdoorMonthlyTrend, detectMonthlyPatterns, isHome, homeMonthlyTrend, childDisplayName } from './dataHelpers'
 
 const DOW_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -177,21 +177,6 @@ export function computeAccidentReport(incidents, period) {
   const repeatWindowLabel = period.type === 'month' ? 'rolling 3 months' : period.label
   const repeats = repeatChildren(repeatPool, 2).slice(0, 8)
 
-  const overallMonthly = Array.from({ length: 12 }, (_, i) => {
-    const now = new Date()
-    const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1)
-    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    return {
-      yearMonth,
-      label: d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
-      count: incidents.filter(inc => inc.happenedAt.startsWith(yearMonth)).length,
-    }
-  })
-  const allPatterns = [
-    ...detectMonthlyPatterns(overallMonthly, 'all'),
-    ...detectChildPatterns(periodIncs),
-  ]
-
   return {
     period,
     totalReports,
@@ -246,6 +231,5 @@ export function computeAccidentReport(incidents, period) {
     yoyDiff,
     repeats,
     repeatWindowLabel,
-    allPatterns,
   }
 }

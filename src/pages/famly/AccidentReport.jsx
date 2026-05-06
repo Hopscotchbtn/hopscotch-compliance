@@ -223,8 +223,6 @@ export function AccidentReport() {
 
           <RepeatChildrenSection report={report} />
 
-          <OverallPatternsSection report={report} />
-
           <InjuryTypeSection report={report} />
 
           <LocationSection report={report} />
@@ -620,25 +618,6 @@ function PatternFlags({ patterns }) {
   )
 }
 
-function OverallPatternsSection({ report }) {
-  const { allPatterns } = report
-  if (!allPatterns || allPatterns.length === 0) return null
-  return (
-    <section className="mb-8">
-      <h2 className="text-base font-bold mb-2" style={{ color: FOREST, fontFamily: "'Ivar Display', Georgia, serif" }}>
-        Patterns
-      </h2>
-      <p className="text-xs mb-3" style={{ color: FOREST_T3 }}>
-        Detected across all incident types. Context matters — some children may have medical or developmental factors.
-      </p>
-      <div className="rounded-md border px-4 py-3" style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}>
-        <ul className="text-xs space-y-0.5" style={{ color: FOREST }}>
-          {allPatterns.map((p, i) => <li key={i}>• {p}</li>)}
-        </ul>
-      </div>
-    </section>
-  )
-}
 
 function SectionHeader({ title }) {
   return (
