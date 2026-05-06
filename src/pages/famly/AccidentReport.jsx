@@ -66,6 +66,8 @@ function titleForPeriod(period) {
 export function AccidentReport() {
   const [searchParams] = useSearchParams()
   const siteId = searchParams.get('site') ?? ''
+  const allSiteIds = searchParams.get('siteIds') ?? ''
+  const isAnonymised = !!allSiteIds
   const type = searchParams.get('type') ?? 'month'
   const monthKey = searchParams.get('month') ?? ymKey(new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1))
 
@@ -83,17 +85,22 @@ export function AccidentReport() {
         setLoading(true)
         setError(null)
 
-        const sitesRes = await fetch('/api/famly-sites')
-        if (!sitesRes.ok) throw new Error('Failed to load sites')
-        const sites = await sitesRes.json()
-        const site = sites.find(s => s.id === siteId)
-        if (cancelled) return
-        if (site) setSiteName(site.name)
+        if (isAnonymised) {
+          setSiteName('All Nurseries')
+        } else {
+          const sitesRes = await fetch('/api/famly-sites')
+          if (!sitesRes.ok) throw new Error('Failed to load sites')
+          const sites = await sitesRes.json()
+          const site = sites.find(s => s.id === siteId)
+          if (cancelled) return
+          if (site) setSiteName(site.name)
+        }
 
         const range = fetchRangeForPeriod(period)
         const fromStr = range.from.toISOString().slice(0, 10)
         const toStr = range.to.toISOString().slice(0, 10)
-        const res = await fetch(`/api/famly-incidents?siteId=${siteId}&from=${fromStr}&to=${toStr}`)
+        const fetchParam = isAnonymised ? `siteIds=${allSiteIds}` : `siteId=${siteId}`
+        const res = await fetch(`/api/famly-incidents?${fetchParam}&from=${fromStr}&to=${toStr}`)
         if (!res.ok) throw new Error('Failed to load incidents')
         const raw = await res.json()
         if (cancelled) return
@@ -104,13 +111,13 @@ export function AccidentReport() {
         if (!cancelled) setLoading(false)
       }
     }
-    if (siteId) load()
+    if (siteId || allSiteIds) load()
     else {
       setError('Missing site in URL')
       setLoading(false)
     }
     return () => { cancelled = true }
-  }, [siteId, period])
+  }, [siteId, allSiteIds, period])
 
   const report = useMemo(() => {
     if (!incidents) return null
@@ -217,11 +224,11 @@ export function AccidentReport() {
 
           <KpiStrip report={report} />
 
-          <RegulatoryFlagsBar report={report} />
+          <RegulatoryFlagsBar report={report} anonymised={isAnonymised} />
 
-          <FormalReviewSection report={report} />
+          {!isAnonymised && <FormalReviewSection report={report} />}
 
-          <RepeatChildrenSection report={report} />
+          {!isAnonymised && <RepeatChildrenSection report={report} />}
 
           <InjuryTypeSection report={report} />
 
@@ -231,9 +238,9 @@ export function AccidentReport() {
 
           <TimeOfDaySection report={report} />
 
-          <AtNurserySection report={report} />
+          <AtNurserySection report={report} anonymised={isAnonymised} />
 
-          <HomeOnArrivalSection report={report} />
+          <HomeOnArrivalSection report={report} anonymised={isAnonymised} />
 
           <ReviewedBySection />
 
@@ -317,8 +324,8 @@ function KpiStrip({ report }) {
   )
 }
 
-function RegulatoryFlagsBar({ report }) {
-  const { riddorCount, ofstedCount, ladoCount, riddorIncs, ofstedIncs, ladoIncs, period } = report
+function RegulatoryFlagsBar({ report, anonymised = false }) {
+  const { riddorCount, ofstedCount, ladoCount, riddorIncs, ofstedIncs, ladoIncs } = report
   if (riddorCount + ofstedCount + ladoCount === 0) return null
   const flags = [
     { label: 'RIDDOR', incs: riddorIncs },
@@ -334,11 +341,13 @@ function RegulatoryFlagsBar({ report }) {
         {flags.map(({ label, incs }) => (
           <div key={label} className="rounded-md border px-4 py-3" style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}>
             <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>{label} · {incs.length}</div>
-            <ul className="space-y-1 text-sm" style={{ color: FOREST }}>
-              {incs.map((inc, i) => (
-                <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory}{inc.location ? ` · ${inc.location}` : ''}</li>
-              ))}
-            </ul>
+            {!anonymised && (
+              <ul className="space-y-1 text-sm" style={{ color: FOREST }}>
+                {incs.map((inc, i) => (
+                  <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory}{inc.location ? ` · ${inc.location}` : ''}</li>
+                ))}
+              </ul>
+            )}
           </div>
         ))}
       </div>
@@ -646,7 +655,7 @@ function InjuryTypeList({ types, total }) {
   )
 }
 
-function AtNurserySection({ report }) {
+function AtNurserySection({ report, anonymised = false }) {
   const {
     settingIncs, nurseryRepeats, totalReports,
     nurseryAcknowledged, nurseryAckRate, nurseryHigh, nurseryMedium,
@@ -712,7 +721,7 @@ function AtNurserySection({ report }) {
           {nurseryHigh.length > 0 && (
             <div className="mb-2">
               <div className="text-sm font-bold" style={{ color: '#991b1b' }}>High priority · {nurseryHigh.length}</div>
-              {report.period.type !== '12month' && (
+              {!anonymised && report.period.type !== '12month' && (
                 <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
                   {nurseryHigh.map((inc, i) => (
                     <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}</li>
@@ -724,7 +733,7 @@ function AtNurserySection({ report }) {
           {nurseryMedium.length > 0 && (
             <div>
               <div className="text-sm font-bold" style={{ color: MARMALADE_SHADE }}>Medium priority · {nurseryMedium.length}</div>
-              {report.period.type !== '12month' && (
+              {!anonymised && report.period.type !== '12month' && (
                 <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
                   {nurseryMedium.map((inc, i) => (
                     <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory} · {(inc.location || '').slice(0, 40)}</li>
@@ -739,7 +748,7 @@ function AtNurserySection({ report }) {
       <PatternFlags patterns={nurseryPatterns} />
 
       {/* Repeat children */}
-      {nurseryRepeats.length > 0 && (
+      {!anonymised && nurseryRepeats.length > 0 && (
         <div className="rounded-md border px-4 py-3 mb-4" style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}>
           <div className="text-sm font-bold mb-2" style={{ color: MARMALADE_SHADE }}>
             Children with repeated nursery reports this period
@@ -839,7 +848,7 @@ function AtNurserySection({ report }) {
   )
 }
 
-function HomeOnArrivalSection({ report }) {
+function HomeOnArrivalSection({ report, anonymised = false }) {
   const {
     homeIncs, settingIncs, homeRepeats, totalReports,
     homeAcknowledged, homeAckRate, homeHigh, homeMedium,
@@ -922,7 +931,7 @@ function HomeOnArrivalSection({ report }) {
           {homeHigh.length > 0 && (
             <div className="mb-2">
               <div className="text-sm font-bold" style={{ color: '#991b1b' }}>High priority · {homeHigh.length}</div>
-              {report.period.type !== '12month' && (
+              {!anonymised && report.period.type !== '12month' && (
                 <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
                   {homeHigh.map((inc, i) => (
                     <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory}</li>
@@ -934,7 +943,7 @@ function HomeOnArrivalSection({ report }) {
           {homeMedium.length > 0 && (
             <div>
               <div className="text-sm font-bold" style={{ color: MARMALADE_SHADE }}>Medium priority · {homeMedium.length}</div>
-              {report.period.type !== '12month' && (
+              {!anonymised && report.period.type !== '12month' && (
                 <ul className="mt-1 space-y-1 text-sm" style={{ color: FOREST }}>
                   {homeMedium.map((inc, i) => (
                     <li key={i}>• {childDisplayName(inc.childName)} · {formatDate(inc.happenedAt)} · {inc.injuryCategory}</li>
@@ -949,7 +958,7 @@ function HomeOnArrivalSection({ report }) {
       <PatternFlags patterns={homePatterns} />
 
       {/* Repeat children — 12-month reports only; monthly uses the 3-month section below */}
-      {report.period.type === '12month' && homeRepeats.length > 0 && (
+      {!anonymised && report.period.type === '12month' && homeRepeats.length > 0 && (
         <div
           className="rounded-md border px-4 py-3 mb-4"
           style={{ backgroundColor: MARMALADE_T1, borderColor: MARMALADE }}
@@ -1004,7 +1013,7 @@ function HomeOnArrivalSection({ report }) {
       </div>
 
       {/* Monthly-only: this-period list, 3-month list, 3-month repeats */}
-      {report.period.type !== '12month' && (
+      {!anonymised && report.period.type !== '12month' && (
         <div className="space-y-6">
 
           {/* All incidents this period */}

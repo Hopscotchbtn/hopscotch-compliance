@@ -59,6 +59,8 @@ const REPORT_TYPES = [
   { id: 'ytd', label: 'Year-to-date' },
 ]
 
+const ALL_NURSERIES_ID = '__all__'
+
 export function FamlyDashboard() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -91,9 +93,20 @@ export function FamlyDashboard() {
       })
   }, [])
 
+  const isAllNurseries = selectedSiteId === ALL_NURSERIES_ID
+  const availableReportTypes = isAllNurseries
+    ? REPORT_TYPES.filter(t => t.id !== 'ytd')
+    : REPORT_TYPES
+
   const handleViewReport = () => {
     if (!selectedSiteId) return
-    const params = new URLSearchParams({ site: selectedSiteId, type: reportType, month: selectedMonth })
+    let params
+    if (isAllNurseries) {
+      const ids = sites.map(s => s.id).join(',')
+      params = new URLSearchParams({ siteIds: ids, type: reportType, month: selectedMonth })
+    } else {
+      params = new URLSearchParams({ site: selectedSiteId, type: reportType, month: selectedMonth })
+    }
     navigate(`/famly-dashboard/report?${params.toString()}`)
   }
 
@@ -136,17 +149,21 @@ export function FamlyDashboard() {
                 onChange={e => setSelectedSiteId(e.target.value)}
                 className="w-full text-sm border border-stone-200 rounded-md px-3 py-2.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500"
               >
+                <option value={ALL_NURSERIES_ID}>All nurseries</option>
                 {sites.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
+              {isAllNurseries && (
+                <p className="text-xs text-slate-400 mt-2">Statistical data only — no children's names or personal information.</p>
+              )}
             </div>
 
             {/* Report type */}
             <div className="bg-white border border-stone-200 rounded-lg p-4">
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Report type</label>
               <div className="grid grid-cols-3 gap-1 bg-stone-100 rounded-md p-1">
-                {REPORT_TYPES.map(t => {
+                {availableReportTypes.map(t => {
                   const active = reportType === t.id
                   return (
                     <button

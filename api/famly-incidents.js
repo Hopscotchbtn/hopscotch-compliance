@@ -101,10 +101,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { siteId, from, to } = req.query
+  const { siteId, siteIds, from, to } = req.query
 
-  if (!siteId) {
-    return res.status(400).json({ error: 'siteId is required' })
+  const ids = siteIds
+    ? siteIds.split(',').map(s => s.trim()).filter(Boolean)
+    : siteId
+      ? [siteId]
+      : []
+
+  if (ids.length === 0) {
+    return res.status(400).json({ error: 'siteId or siteIds is required' })
   }
 
   const token = process.env.FAMLY_ACCESS_TOKEN
@@ -113,7 +119,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const records = await fetchAllReports(token, [siteId], from, to)
+    const records = await fetchAllReports(token, ids, from, to)
     return res.status(200).json(records.map(normalise))
   } catch (err) {
     console.error('[famly-incidents] error:', err)
