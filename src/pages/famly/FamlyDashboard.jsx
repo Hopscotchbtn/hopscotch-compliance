@@ -94,9 +94,7 @@ export function FamlyDashboard() {
   }, [])
 
   const isAllNurseries = selectedSiteId === ALL_NURSERIES_ID
-  const availableReportTypes = isAllNurseries
-    ? REPORT_TYPES.filter(t => t.id !== 'ytd')
-    : REPORT_TYPES
+  const availableReportTypes = REPORT_TYPES
 
   const handleViewReport = () => {
     if (!selectedSiteId) return
