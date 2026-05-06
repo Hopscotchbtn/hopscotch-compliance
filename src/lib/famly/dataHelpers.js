@@ -172,6 +172,39 @@ export function detectMonthlyPatterns(monthlyTrend, incidentLabel = 'incidents')
 // Keep old name as alias so existing imports don't break
 export const detectOutdoorPatterns = (t) => detectMonthlyPatterns(t, 'outdoor')
 
+export function detectChildPatterns(periodIncs) {
+  const patterns = []
+  if (periodIncs.length === 0) return patterns
+
+  const childMap = new Map()
+  for (const inc of periodIncs) {
+    const entry = childMap.get(inc.childName) ?? { home: 0, setting: 0 }
+    if (isHome(inc)) entry.home++
+    else entry.setting++
+    childMap.set(inc.childName, entry)
+  }
+
+  const bothSettings = Array.from(childMap.entries())
+    .filter(([, e]) => e.home > 0 && e.setting > 0)
+    .map(([name]) => childDisplayName(name))
+
+  if (bothSettings.length === 1) {
+    patterns.push(`${bothSettings[0]} had incidents in both home and nursery settings this period`)
+  } else if (bothSettings.length > 1) {
+    patterns.push(`${bothSettings.length} children had incidents in both home and nursery settings: ${bothSettings.join(', ')}`)
+  }
+
+  const highFreq = Array.from(childMap.entries())
+    .filter(([, e]) => e.home + e.setting >= 3)
+    .map(([name, e]) => `${childDisplayName(name)} (${e.home + e.setting})`)
+
+  if (highFreq.length > 0) {
+    patterns.push(`Children with 3 or more incidents this period: ${highFreq.join(', ')}`)
+  }
+
+  return patterns
+}
+
 export function isHome(inc) {
   return (inc.location || '').toLowerCase() === 'home' || !!inc.onArrival
 }
