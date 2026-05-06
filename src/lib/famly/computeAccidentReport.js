@@ -177,6 +177,30 @@ export function computeAccidentReport(incidents, period) {
   const repeatWindowLabel = period.type === 'month' ? 'rolling 3 months' : period.label
   const repeats = repeatChildren(repeatPool, 2).slice(0, 8)
 
+  const siteMap = new Map()
+  for (const inc of periodIncs) {
+    const key = inc.siteName || inc.siteId || 'Unknown'
+    const entry = siteMap.get(key) ?? { siteName: key, incs: [] }
+    entry.incs.push(inc)
+    siteMap.set(key, entry)
+  }
+  const siteComparison = siteMap.size > 1
+    ? Array.from(siteMap.values())
+        .map(({ siteName: sName, incs: sIncs }) => {
+          const acked = sIncs.filter(x => x.acknowledgedAt).length
+          return {
+            siteName: sName,
+            total: sIncs.length,
+            high: sIncs.filter(x => x.severity === 'high').length,
+            medium: sIncs.filter(x => x.severity === 'medium').length,
+            ackRate: sIncs.length > 0 ? Math.round((acked / sIncs.length) * 100) : 100,
+            homeCount: sIncs.filter(isHome).length,
+            regulatoryCount: sIncs.filter(x => x.riddor || x.ofsted || x.lado).length,
+          }
+        })
+        .sort((a, b) => a.siteName.localeCompare(b.siteName))
+    : []
+
   return {
     period,
     totalReports,
@@ -231,5 +255,6 @@ export function computeAccidentReport(incidents, period) {
     yoyDiff,
     repeats,
     repeatWindowLabel,
+    siteComparison,
   }
 }

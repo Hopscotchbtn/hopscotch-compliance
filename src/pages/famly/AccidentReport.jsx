@@ -218,6 +218,8 @@ export function AccidentReport() {
             <p className="text-sm mt-1" style={{ color: FOREST_T3 }}>{period.label}</p>
           </header>
 
+          {isAnonymised && <AcrossSiteSection report={report} />}
+
           <SectionHeader title="Overall" />
 
           <SummarySection report={report} />
@@ -610,6 +612,47 @@ function TrendBars({ monthly, max }) {
         )
       })}
     </div>
+  )
+}
+
+function AcrossSiteSection({ report }) {
+  const { siteComparison } = report
+  if (!siteComparison || siteComparison.length === 0) return null
+  return (
+    <section className="mb-8">
+      <SectionHeader title="Across Site View" />
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${PEBBLE_SHADE}` }}>
+              <th className="text-left py-2 pr-3 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Site</th>
+              <th className="text-right py-2 px-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Total</th>
+              <th className="text-right py-2 px-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>High</th>
+              <th className="text-right py-2 px-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Medium</th>
+              <th className="text-right py-2 px-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Ack. rate</th>
+              <th className="text-right py-2 px-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Home / on arrival</th>
+              <th className="text-right py-2 pl-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Regulatory</th>
+            </tr>
+          </thead>
+          <tbody>
+            {siteComparison.map((site, i) => (
+              <tr key={i} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
+                <td className="py-2 pr-3 font-medium" style={{ color: FOREST }}>{site.siteName}</td>
+                <td className="py-2 px-2 text-right font-semibold" style={{ color: FOREST }}>{site.total}</td>
+                <td className="py-2 px-2 text-right font-semibold" style={{ color: site.high > 0 ? '#991b1b' : FOREST_T3 }}>{site.high}</td>
+                <td className="py-2 px-2 text-right font-semibold" style={{ color: site.medium > 0 ? MARMALADE_SHADE : FOREST_T3 }}>{site.medium}</td>
+                <td className="py-2 px-2 text-right" style={{ color: site.ackRate < 80 ? MARMALADE_SHADE : FOREST }}>{site.ackRate}%</td>
+                <td className="py-2 px-2 text-right" style={{ color: FOREST }}>{site.homeCount}</td>
+                <td className="py-2 pl-2 text-right font-semibold" style={{ color: site.regulatoryCount > 0 ? MARMALADE_SHADE : FOREST_T3 }}>{site.regulatoryCount}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs mt-2" style={{ color: FOREST_T3 }}>
+        High / medium: auto-flagged by keyword. Regulatory: RIDDOR, Ofsted notifiable, or LADO. Ack. rate highlighted if below 80%.
+      </p>
+    </section>
   )
 }
 
