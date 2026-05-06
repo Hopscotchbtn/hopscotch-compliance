@@ -781,7 +781,7 @@ function AtNurserySection({ report, anonymised = false }) {
       )}
 
       {/* Location */}
-      {nurseryLocs.length > 0 && (
+      {nurseryLocs.length > 0 && !(anonymised && report.period.type === '12month') && (
         <div className="mb-6">
           <div className="text-sm font-semibold mb-2" style={{ color: FOREST }}>Where they happen</div>
           {report.period.type === '12month' ? (
