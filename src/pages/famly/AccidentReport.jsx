@@ -781,7 +781,7 @@ function TimeOfDayBySiteSection({ report }) {
         </table>
       </div>
       <p className="text-xs mt-2" style={{ color: FOREST_T3 }}>
-        Counts incidents reported in this period by their recorded time, hour by hour. Hours with no incidents at any site are omitted. Peak time is the busiest hour for each site.
+        Counts incidents in this period by their recorded time. Out-of-hours incidents are grouped into Before 7am and After 7pm; the rest are shown hour by hour. Empty buckets are omitted. Peak time is the busiest bucket for each site.
       </p>
     </section>
   )

@@ -251,18 +251,25 @@ export function computeAccidentReport(incidents, period) {
   }
   let siteTimeOfDayComparison = null
   if (todHourBuckets.size > 1) {
-    const hourTotals = Array.from({ length: 24 }, (_, h) =>
-      Array.from(todHourBuckets.values()).reduce((a, c) => a + c[h], 0)
-    )
-    const activeHours = hourTotals
-      .map((total, h) => ({ hour: h, total }))
-      .filter(x => x.total > 0)
-    if (activeHours.length > 0) {
-      const activeBuckets = activeHours.map(({ hour }) => ({ key: `h${hour}`, label: hourLabel(hour), hour }))
+    const candidates = []
+    candidates.push({ key: 'before7am', label: 'Before 7am', mapper: c => c.slice(0, 7).reduce((a, b) => a + b, 0) })
+    for (let h = 7; h <= 18; h++) {
+      candidates.push({ key: `h${h}`, label: hourLabel(h), mapper: ((hour) => (c) => c[hour])(h) })
+    }
+    candidates.push({ key: 'after7pm', label: 'After 7pm', mapper: c => c.slice(19).reduce((a, b) => a + b, 0) })
+
+    const allCounts = Array.from(todHourBuckets.values())
+    const candidateTotals = candidates.map(b => allCounts.reduce((a, c) => a + b.mapper(c), 0))
+    const activeIdx = candidateTotals
+      .map((t, i) => ({ t, i }))
+      .filter(x => x.t > 0)
+      .map(x => x.i)
+    if (activeIdx.length > 0) {
+      const activeBuckets = activeIdx.map(i => candidates[i])
       const sortedSites = Array.from(todHourBuckets.keys()).sort((a, b) => a.localeCompare(b))
       const todRows = sortedSites.map(siteName => {
         const fullCounts = todHourBuckets.get(siteName)
-        const counts = activeBuckets.map(b => fullCounts[b.hour])
+        const counts = activeBuckets.map(b => b.mapper(fullCounts))
         let peakIdx = -1
         let peakVal = 0
         counts.forEach((c, i) => { if (c > peakVal) { peakVal = c; peakIdx = i } })
@@ -272,7 +279,7 @@ export function computeAccidentReport(incidents, period) {
           peakLabel: peakIdx === -1 ? '—' : activeBuckets[peakIdx].label,
         }
       })
-      const bucketTotals = activeBuckets.map((_, i) => todRows.reduce((a, r) => a + r.counts[i], 0))
+      const bucketTotals = activeIdx.map(i => candidateTotals[i])
       siteTimeOfDayComparison = {
         buckets: activeBuckets.map(b => ({ key: b.key, label: b.label })),
         rows: todRows,
