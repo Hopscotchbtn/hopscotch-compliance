@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { classifyAll, childDisplayName, formatDate } from '../../lib/famly/dataHelpers'
+import { classifyAll, childDisplayName, formatDate, abbreviateSite } from '../../lib/famly/dataHelpers'
 import { computeAccidentReport } from '../../lib/famly/computeAccidentReport'
 import { generateMonthlyReportPDF } from '../../lib/famly/generateMonthlyReportPDF'
 import { generateReportSummary } from '../../lib/famly/reportSummary'
@@ -641,7 +641,7 @@ function AcrossSiteSection({ report }) {
           <tbody>
             {siteComparison.map((site, i) => (
               <tr key={i} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
-                <td className="py-2 pr-3 font-medium" style={{ color: FOREST }}>{site.siteName}</td>
+                <td className="py-2 pr-3 font-medium" style={{ color: FOREST }}>{abbreviateSite(site.siteName)}</td>
                 <td className="py-2 px-2 text-right font-semibold" style={{ color: FOREST }}>{site.total}</td>
                 <td className="py-2 px-2 text-right font-semibold" style={{ color: site.high > 0 ? '#991b1b' : FOREST_T3 }}>{site.high}</td>
                 <td className="py-2 px-2 text-right font-semibold" style={{ color: site.medium > 0 ? MARMALADE_SHADE : FOREST_T3 }}>{site.medium}</td>
@@ -711,7 +711,7 @@ function MonthlyPivotTable({ title, months, rows, monthTotals, grandTotal }) {
           <tbody>
             {rows.map(row => (
               <tr key={row.siteName} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
-                <td className="py-1.5 pr-2 font-medium whitespace-nowrap" style={{ color: FOREST }}>{row.siteName}</td>
+                <td className="py-1.5 pr-2 font-medium whitespace-nowrap" style={{ color: FOREST }}>{abbreviateSite(row.siteName)}</td>
                 {row.counts.map((c, i) => (
                   <td key={i} className="py-1.5 px-1 text-right" style={{ color: c === 0 ? PEBBLE_SHADE : FOREST }}>
                     {c}
@@ -759,7 +759,7 @@ function TimeOfDayBySiteSection({ report }) {
           <tbody>
             {rows.map(row => (
               <tr key={row.siteName} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
-                <td className="py-1.5 pr-2 font-medium whitespace-nowrap" style={{ color: FOREST }}>{row.siteName}</td>
+                <td className="py-1.5 pr-2 font-medium whitespace-nowrap" style={{ color: FOREST }}>{abbreviateSite(row.siteName)}</td>
                 {row.counts.map((c, i) => (
                   <td key={i} className="py-1.5 px-1 text-right" style={{ color: c === 0 ? PEBBLE_SHADE : FOREST }}>
                     {c}

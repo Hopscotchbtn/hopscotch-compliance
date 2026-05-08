@@ -1,6 +1,20 @@
 import { classifyInjury } from './classifyInjury'
 import { classifySeverity } from './classifySeverity'
 
+const SITE_ABBREVIATIONS = {
+  'Hopscotch Hove Station': 'HS',
+  'Hopscotch Peacehaven':   'PH',
+  'Hopscotch Preston Park': 'PP',
+  'Hopscotch Seaford':      'SF',
+  'Hopscotch Seven Dials':  'SD',
+  'Hopscotch West Hove':    'WH',
+  'Hopscotch Worthing':     'W',
+}
+
+export function abbreviateSite(name) {
+  return SITE_ABBREVIATIONS[name] ?? name
+}
+
 export function childDisplayName(fullName) {
   const parts = fullName.trim().split(' ')
   if (parts.length < 2) return fullName

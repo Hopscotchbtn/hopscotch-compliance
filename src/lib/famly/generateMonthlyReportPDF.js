@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf'
-import { childDisplayName, formatDate } from './dataHelpers'
+import { childDisplayName, formatDate, abbreviateSite } from './dataHelpers'
 import { computeAccidentReport } from './computeAccidentReport'
 import { generateReportSummary } from './reportSummary'
 
@@ -231,7 +231,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     sectionHeading(doc, 'Across Site View', y); y += 8
 
     const acsHeaders = ['Site', 'Total', 'High', 'Med', 'Ack', 'Home', 'Reg']
-    const acsWidths  = [56, 18, 18, 18, 18, 27, 27]
+    const acsWidths  = [18, 22, 22, 22, 24, 37, 37]
     text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'bold')
     {
       let cx = MARGIN
@@ -247,7 +247,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     siteComparison.forEach(site => {
       addPageIfNeeded(5)
       const cells = [
-        site.siteName,
+        abbreviateSite(site.siteName),
         String(site.total),
         String(site.high),
         String(site.medium),
@@ -279,8 +279,8 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       addPageIfNeeded(20 + rows.length * 5)
       text(doc, 'forest'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
       doc.text(title, MARGIN, y); y += 5
-      const siteW = 30
-      const totalW = 12
+      const siteW = 14
+      const totalW = 14
       const monthW = (CONTENT_WIDTH - siteW - totalW) / months.length
       // Header
       text(doc, 'mute'); doc.setFontSize(6); doc.setFont(undefined, 'bold')
@@ -295,7 +295,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       rows.forEach(row => {
         addPageIfNeeded(5)
         text(doc, 'text'); doc.setFont(undefined, 'normal')
-        doc.text(row.siteName.slice(0, 18), MARGIN + 1, y)
+        doc.text(abbreviateSite(row.siteName), MARGIN + 1, y)
         row.counts.forEach((c, i) => {
           if (c === 0) text(doc, 'mute')
           else text(doc, 'text')
@@ -347,7 +347,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     sectionHeading(doc, 'Time of day by site', y); y += 8
 
     const peakW = 24
-    const siteW = 30
+    const siteW = 14
     const bucketW = (CONTENT_WIDTH - siteW - peakW) / Math.max(1, buckets.length)
     // Header
     const headerLabel = (b) => {
@@ -367,7 +367,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     todRows.forEach(row => {
       addPageIfNeeded(5)
       text(doc, 'text'); doc.setFont(undefined, 'normal')
-      doc.text(row.siteName.slice(0, 18), MARGIN + 1, y)
+      doc.text(abbreviateSite(row.siteName), MARGIN + 1, y)
       row.counts.forEach((c, i) => {
         if (c === 0) text(doc, 'mute')
         else text(doc, 'text')
