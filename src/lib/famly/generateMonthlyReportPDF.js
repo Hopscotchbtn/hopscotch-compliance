@@ -350,10 +350,15 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     const siteW = 30
     const bucketW = (CONTENT_WIDTH - siteW - peakW) / Math.max(1, buckets.length)
     // Header
+    const headerLabel = (b) => {
+      if (b.key === 'before7am') return '<7am'
+      if (b.key === 'after7pm')  return '>7pm'
+      return b.label
+    }
     text(doc, 'mute'); doc.setFontSize(6); doc.setFont(undefined, 'bold')
     doc.text('SITE', MARGIN + 1, y)
     buckets.forEach((b, i) => {
-      doc.text(b.label.toUpperCase(), MARGIN + siteW + (i + 1) * bucketW - 1, y, { align: 'right' })
+      doc.text(headerLabel(b).toUpperCase(), MARGIN + siteW + (i + 1) * bucketW - 1, y, { align: 'right' })
     })
     doc.text('PEAK', MARGIN + CONTENT_WIDTH - 1, y, { align: 'right' })
     y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
