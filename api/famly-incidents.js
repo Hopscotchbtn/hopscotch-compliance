@@ -76,8 +76,8 @@ async function fetchAllReports(token, siteIds, from, to) {
   const all = []
   let cursor = null
   let pages = 0
-  const pageSize = 50
-  const maxPages = 60 // ~3000 records safety cap
+  const pageSize = 100
+  const maxPages = 200 // safety cap: 20,000 records
 
   do {
     const data = await fetchGraphQL(token, REPORTS_QUERY, {
