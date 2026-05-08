@@ -596,7 +596,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       homePatterns.forEach(p => {
         addPageIfNeeded(5)
         text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'normal')
-        doc.text(`⚑  ${p}`, MARGIN + 2, y); y += 5
+        doc.text(`!  ${p}`, MARGIN + 2, y); y += 5
       })
       y += 3
     }
