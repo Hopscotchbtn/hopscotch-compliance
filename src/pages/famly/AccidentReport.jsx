@@ -739,7 +739,7 @@ function MonthlyPivotTable({ title, months, rows, monthTotals, grandTotal }) {
 function TimeOfDayBySiteSection({ report }) {
   const data = report.siteTimeOfDayComparison
   if (!data) return null
-  const { buckets, rows, bucketTotals, grandTotal } = data
+  const { buckets, rows, bucketTotals } = data
   return (
     <section className="mb-8">
       <SectionHeader title="Time of day by site" />
@@ -753,7 +753,6 @@ function TimeOfDayBySiteSection({ report }) {
                   {b.label}
                 </th>
               ))}
-              <th className="text-right py-1.5 px-2 font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>Total</th>
               <th className="text-right py-1.5 pl-2 font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>Peak time</th>
             </tr>
           </thead>
@@ -766,7 +765,6 @@ function TimeOfDayBySiteSection({ report }) {
                     {c}
                   </td>
                 ))}
-                <td className="py-1.5 px-2 text-right font-semibold" style={{ color: FOREST }}>{row.total}</td>
                 <td className="py-1.5 pl-2 text-right whitespace-nowrap" style={{ color: FOREST_T3 }}>{row.peakLabel}</td>
               </tr>
             ))}
@@ -777,14 +775,13 @@ function TimeOfDayBySiteSection({ report }) {
                   {c}
                 </td>
               ))}
-              <td className="py-1.5 px-2 text-right font-semibold" style={{ color: FOREST }}>{grandTotal}</td>
               <td className="py-1.5 pl-2"></td>
             </tr>
           </tbody>
         </table>
       </div>
       <p className="text-xs mt-2" style={{ color: FOREST_T3 }}>
-        Counts incidents reported in this period by their recorded time. Peak time is the bucket with the most incidents for each site.
+        Counts incidents reported in this period by their recorded time, hour by hour. Hours with no incidents at any site are omitted. Peak time is the busiest hour for each site.
       </p>
     </section>
   )

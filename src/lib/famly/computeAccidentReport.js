@@ -224,14 +224,13 @@ export function computeAccidentReport(incidents, period) {
     if (isHome(inc)) entry.home[idx]++
     else entry.nursery[idx]++
   }
-  const TIME_BUCKETS = [
-    { key: 'preDropoff', label: 'Before 9am', from: 0,  to: 9  },
-    { key: 'morning',    label: '9am – 12pm', from: 9,  to: 12 },
-    { key: 'lunch',      label: '12 – 2pm',   from: 12, to: 14 },
-    { key: 'afternoon',  label: '2 – 5pm',    from: 14, to: 17 },
-    { key: 'pickup',     label: '5pm onward', from: 17, to: 24 },
-  ]
-  const todBuckets = new Map()
+  function hourLabel(h) {
+    if (h === 0) return '12am'
+    if (h < 12) return `${h}am`
+    if (h === 12) return '12pm'
+    return `${h - 12}pm`
+  }
+  const todHourBuckets = new Map()
   for (const inc of periodIncs) {
     const key = inc.siteName || inc.siteId
     if (!key) continue
@@ -242,38 +241,43 @@ export function computeAccidentReport(incidents, period) {
       const d = new Date(inc.happenedAt)
       h = isNaN(d) ? null : d.getHours()
     }
-    if (h === null || isNaN(h)) continue
-    const bucketIdx = TIME_BUCKETS.findIndex(b => h >= b.from && h < b.to)
-    if (bucketIdx === -1) continue
-    let counts = todBuckets.get(key)
+    if (h === null || isNaN(h) || h < 0 || h > 23) continue
+    let counts = todHourBuckets.get(key)
     if (!counts) {
-      counts = Array(TIME_BUCKETS.length).fill(0)
-      todBuckets.set(key, counts)
+      counts = Array(24).fill(0)
+      todHourBuckets.set(key, counts)
     }
-    counts[bucketIdx]++
+    counts[h]++
   }
   let siteTimeOfDayComparison = null
-  if (todBuckets.size > 1) {
-    const sortedSites = Array.from(todBuckets.keys()).sort((a, b) => a.localeCompare(b))
-    const todRows = sortedSites.map(siteName => {
-      const counts = todBuckets.get(siteName)
-      const total = counts.reduce((a, b) => a + b, 0)
-      let peakIdx = -1
-      let peakVal = 0
-      counts.forEach((c, i) => { if (c > peakVal) { peakVal = c; peakIdx = i } })
-      return {
-        siteName,
-        counts,
-        total,
-        peakLabel: peakIdx === -1 ? '—' : TIME_BUCKETS[peakIdx].label,
+  if (todHourBuckets.size > 1) {
+    const hourTotals = Array.from({ length: 24 }, (_, h) =>
+      Array.from(todHourBuckets.values()).reduce((a, c) => a + c[h], 0)
+    )
+    const activeHours = hourTotals
+      .map((total, h) => ({ hour: h, total }))
+      .filter(x => x.total > 0)
+    if (activeHours.length > 0) {
+      const activeBuckets = activeHours.map(({ hour }) => ({ key: `h${hour}`, label: hourLabel(hour), hour }))
+      const sortedSites = Array.from(todHourBuckets.keys()).sort((a, b) => a.localeCompare(b))
+      const todRows = sortedSites.map(siteName => {
+        const fullCounts = todHourBuckets.get(siteName)
+        const counts = activeBuckets.map(b => fullCounts[b.hour])
+        let peakIdx = -1
+        let peakVal = 0
+        counts.forEach((c, i) => { if (c > peakVal) { peakVal = c; peakIdx = i } })
+        return {
+          siteName,
+          counts,
+          peakLabel: peakIdx === -1 ? '—' : activeBuckets[peakIdx].label,
+        }
+      })
+      const bucketTotals = activeBuckets.map((_, i) => todRows.reduce((a, r) => a + r.counts[i], 0))
+      siteTimeOfDayComparison = {
+        buckets: activeBuckets.map(b => ({ key: b.key, label: b.label })),
+        rows: todRows,
+        bucketTotals,
       }
-    })
-    const bucketTotals = TIME_BUCKETS.map((_, i) => todRows.reduce((a, r) => a + r.counts[i], 0))
-    siteTimeOfDayComparison = {
-      buckets: TIME_BUCKETS.map(b => ({ key: b.key, label: b.label })),
-      rows: todRows,
-      bucketTotals,
-      grandTotal: todRows.reduce((a, r) => a + r.total, 0),
     }
   }
 
