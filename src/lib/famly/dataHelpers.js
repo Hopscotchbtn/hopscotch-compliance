@@ -30,7 +30,7 @@ export function classifyAll(incidents) {
 }
 
 export function filterByMonth(incidents, yearMonth) {
-  return incidents.filter(inc => inc.happenedAt.startsWith(yearMonth))
+  return incidents.filter(inc => (inc.happenedAt || '').startsWith(yearMonth))
 }
 
 export function rollingWindow(incidents, months) {
@@ -95,11 +95,10 @@ export function categoryCounts(incidents) {
     .sort((a, b) => b.count - a.count)
 }
 
-export function buildTrend(incidents) {
-  const now = new Date()
+export function buildTrend(incidents, anchor = new Date()) {
   const result = []
   for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1)
     const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     const label = d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
     const monthIncs = filterByMonth(incidents, yearMonth)
@@ -131,15 +130,14 @@ export function isOutdoor(inc) {
   return OUTDOOR_KEYWORDS.some(kw => loc.includes(kw))
 }
 
-// Returns monthly outdoor incident counts for the last 12 months (all incidents, not just period)
-export function outdoorMonthlyTrend(allIncidents) {
-  const now = new Date()
+// Returns monthly outdoor incident counts for the 12 months ending at `anchor` (defaults to today).
+export function outdoorMonthlyTrend(allIncidents, anchor = new Date()) {
   const months = []
   for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1)
     const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     const label = d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
-    const count = allIncidents.filter(inc => inc.happenedAt.startsWith(yearMonth) && isOutdoor(inc)).length
+    const count = allIncidents.filter(inc => (inc.happenedAt || '').startsWith(yearMonth) && isOutdoor(inc)).length
     months.push({ yearMonth, label, count })
   }
   return months
@@ -188,18 +186,17 @@ export const detectOutdoorPatterns = (t) => detectMonthlyPatterns(t, 'outdoor')
 
 
 export function isHome(inc) {
-  return (inc.location || '').toLowerCase() === 'home' || !!inc.onArrival
+  return (inc.location || '').trim().toLowerCase() === 'home' || !!inc.onArrival
 }
 
-// Returns monthly home/on-arrival incident counts for the last 12 months
-export function homeMonthlyTrend(allIncidents) {
-  const now = new Date()
+// Returns monthly home/on-arrival incident counts for the 12 months ending at `anchor` (defaults to today).
+export function homeMonthlyTrend(allIncidents, anchor = new Date()) {
   const months = []
   for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1)
     const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     const label = d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
-    const count = allIncidents.filter(inc => inc.happenedAt.startsWith(yearMonth) && isHome(inc)).length
+    const count = allIncidents.filter(inc => (inc.happenedAt || '').startsWith(yearMonth) && isHome(inc)).length
     months.push({ yearMonth, label, count })
   }
   return months

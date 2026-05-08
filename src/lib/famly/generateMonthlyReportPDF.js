@@ -78,9 +78,10 @@ function sectionHeading(doc, label, y) {
 
 // ─── main generator ──────────────────────────────────────────────────────────
 
-export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePeriod) {
+export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = {}) {
+  const { anonymised: anonymisedOpt, period: periodOpt } = options
   const report = Array.isArray(reportOrIncidents)
-    ? computeAccidentReport(reportOrIncidents, maybePeriod ?? defaultPreviousMonthPeriod())
+    ? computeAccidentReport(reportOrIncidents, periodOpt ?? defaultPreviousMonthPeriod())
     : reportOrIncidents
   const period = report.period
   const {
@@ -99,7 +100,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     yoyDiff, repeats, repeatWindowLabel,
     siteComparison, siteMonthlyComparison, siteTimeOfDayComparison,
   } = report
-  const anonymised = !!(siteComparison && siteComparison.length > 0)
+  const anonymised = anonymisedOpt ?? !!(siteComparison && siteComparison.length > 0)
   const dowMax = Math.max(1, ...Object.values(dowCounts))
 
   const doc = new jsPDF()

@@ -7,7 +7,6 @@ export function computeAccidentReport(incidents, period) {
   const totalReports = periodIncs.length
 
   const onArrival = periodIncs.filter(x => x.onArrival).length
-  const atNursery = totalReports - onArrival
 
   const ofstedIncs = periodIncs.filter(x => x.ofsted)
   const riddorIncs = periodIncs.filter(x => x.riddor)
@@ -26,18 +25,21 @@ export function computeAccidentReport(incidents, period) {
   const homeLoc = allLocs.find(l => l.location.toLowerCase() === 'home') ?? null
   const siteLocs = allLocs.filter(l => l.location.toLowerCase() !== 'home').slice(0, 5)
 
-  const homeIncs = periodIncs.filter(x => (x.location || '').toLowerCase() === 'home' || x.onArrival)
-  const settingIncs = periodIncs.filter(x => (x.location || '').toLowerCase() !== 'home' && !x.onArrival)
+  const homeIncs = periodIncs.filter(x => (x.location || '').trim().toLowerCase() === 'home' || x.onArrival)
+  const settingIncs = periodIncs.filter(x => (x.location || '').trim().toLowerCase() !== 'home' && !x.onArrival)
+  const atNursery = settingIncs.length
 
   const injuryTypes = categoryCounts(periodIncs)
 
+  const trendAnchor = period.to instanceof Date ? period.to : new Date(period.to)
+
   const periodOutdoor = periodIncs.filter(isOutdoor)
-  const outdoorMonthly = outdoorMonthlyTrend(incidents)
+  const outdoorMonthly = outdoorMonthlyTrend(incidents, trendAnchor)
   const outdoorPatterns = detectMonthlyPatterns(outdoorMonthly, 'outdoor')
   const outdoorInjuryTypes = categoryCounts(periodOutdoor)
 
   const periodHome = periodIncs.filter(isHome)
-  const homeMonthly = homeMonthlyTrend(incidents)
+  const homeMonthly = homeMonthlyTrend(incidents, trendAnchor)
   const homePatterns = detectMonthlyPatterns(homeMonthly, 'home/on-arrival')
   const homeInjuryTypes = categoryCounts(periodHome)
   const homeAcknowledged = homeIncs.filter(x => x.acknowledgedAt).length
@@ -56,7 +58,7 @@ export function computeAccidentReport(incidents, period) {
   threeMonthCutoff.setDate(1)
   threeMonthCutoff.setHours(0, 0, 0, 0)
   const home3MonthIncs = filterByRange(incidents, threeMonthCutoff, period.to)
-    .filter(x => (x.location || '').toLowerCase() === 'home' || x.onArrival)
+    .filter(isHome)
   const home3MonthSortedIncs = [...home3MonthIncs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
   const homeRepeat3Map = new Map()
   for (const inc of home3MonthIncs) {
@@ -93,14 +95,13 @@ export function computeAccidentReport(incidents, period) {
   const nurserySortedIncs = [...settingIncs].sort((a, b) => new Date(b.happenedAt) - new Date(a.happenedAt))
   const nurseryInjuryTypes = categoryCounts(settingIncs)
   const nurseryLocs = locationCounts(settingIncs)
-  const nowN = new Date()
   const nurseryMonthly = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(nowN.getFullYear(), nowN.getMonth() - (11 - i), 1)
+    const d = new Date(trendAnchor.getFullYear(), trendAnchor.getMonth() - (11 - i), 1)
     const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     return {
       yearMonth,
       label: d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
-      count: incidents.filter(inc => inc.happenedAt.startsWith(yearMonth) && !isHome(inc)).length,
+      count: incidents.filter(inc => (inc.happenedAt || '').startsWith(yearMonth) && !isHome(inc)).length,
     }
   })
   const nurseryPatterns = detectMonthlyPatterns(nurseryMonthly, 'nursery')
@@ -157,9 +158,9 @@ export function computeAccidentReport(incidents, period) {
   const hourCounts = Array.from({ length: 24 }, (_, h) => ({
     hour: h,
     count: periodIncs.filter(inc => {
-      if (inc.time) return parseInt(inc.time.split(':')[0], 10) === h
-      const d = new Date(inc.happenedAt)
-      return !isNaN(d) && d.getHours() === h
+      if (!inc.time) return false
+      const parsed = parseInt(inc.time.split(':')[0], 10)
+      return !isNaN(parsed) && parsed === h
     }).length,
   }))
 
@@ -203,7 +204,7 @@ export function computeAccidentReport(incidents, period) {
 
   let siteMonthlyComparison = null
   const trailingMonths = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(nowN.getFullYear(), nowN.getMonth() - (11 - i), 1)
+    const d = new Date(trendAnchor.getFullYear(), trendAnchor.getMonth() - (11 - i), 1)
     return {
       yearMonth: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
       label: d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
@@ -233,15 +234,9 @@ export function computeAccidentReport(incidents, period) {
   const todHourBuckets = new Map()
   for (const inc of periodIncs) {
     const key = inc.siteName || inc.siteId
-    if (!key) continue
-    let h
-    if (inc.time) {
-      h = parseInt(inc.time.split(':')[0], 10)
-    } else {
-      const d = new Date(inc.happenedAt)
-      h = isNaN(d) ? null : d.getHours()
-    }
-    if (h === null || isNaN(h) || h < 0 || h > 23) continue
+    if (!key || !inc.time) continue
+    const h = parseInt(inc.time.split(':')[0], 10)
+    if (isNaN(h) || h < 0 || h > 23) continue
     let counts = todHourBuckets.get(key)
     if (!counts) {
       counts = Array(24).fill(0)

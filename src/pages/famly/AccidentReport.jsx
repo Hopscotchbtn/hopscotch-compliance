@@ -126,8 +126,8 @@ export function AccidentReport() {
 
   const handleDownload = useCallback(() => {
     if (!report) return
-    generateMonthlyReportPDF(report, siteName)
-  }, [report, siteName])
+    generateMonthlyReportPDF(report, siteName, { anonymised: isAnonymised })
+  }, [report, siteName, isAnonymised])
 
   const handlePrint = useCallback(() => { window.print() }, [])
 
