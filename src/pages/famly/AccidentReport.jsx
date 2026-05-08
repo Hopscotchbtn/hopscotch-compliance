@@ -220,6 +220,8 @@ export function AccidentReport() {
 
           {isAnonymised && <AcrossSiteSection report={report} />}
 
+          {isAnonymised && <MonthlyBySiteSection report={report} />}
+
           <SectionHeader title="Overall" />
 
           <SummarySection report={report} />
@@ -653,6 +655,82 @@ function AcrossSiteSection({ report }) {
         High / medium: auto-flagged by keyword. Regulatory: RIDDOR, Ofsted notifiable, or LADO. Ack. rate highlighted if below 80%.
       </p>
     </section>
+  )
+}
+
+function MonthlyBySiteSection({ report }) {
+  const data = report.siteMonthlyComparison
+  if (!data) return null
+  const { months, nursery, home, nurseryMonthTotals, homeMonthTotals, nurseryGrandTotal, homeGrandTotal } = data
+
+  return (
+    <section className="mb-8">
+      <SectionHeader title="Monthly accidents by site" />
+      <MonthlyPivotTable
+        title="At nursery"
+        months={months}
+        rows={nursery}
+        monthTotals={nurseryMonthTotals}
+        grandTotal={nurseryGrandTotal}
+      />
+      <div className="mt-5">
+        <MonthlyPivotTable
+          title="At home / on arrival"
+          months={months}
+          rows={home}
+          monthTotals={homeMonthTotals}
+          grandTotal={homeGrandTotal}
+        />
+      </div>
+      <p className="text-xs mt-2" style={{ color: FOREST_T3 }}>
+        Trailing 12 months. "At nursery" excludes incidents flagged as home or on-arrival.
+      </p>
+    </section>
+  )
+}
+
+function MonthlyPivotTable({ title, months, rows, monthTotals, grandTotal }) {
+  return (
+    <div>
+      <h3 className="text-sm font-semibold mb-2" style={{ color: FOREST }}>{title}</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${PEBBLE_SHADE}` }}>
+              <th className="text-left py-1.5 pr-2 font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>Site</th>
+              {months.map(m => (
+                <th key={m.yearMonth} className="text-right py-1.5 px-1 font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>
+                  {m.label}
+                </th>
+              ))}
+              <th className="text-right py-1.5 pl-2 font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.siteName} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
+                <td className="py-1.5 pr-2 font-medium whitespace-nowrap" style={{ color: FOREST }}>{row.siteName}</td>
+                {row.counts.map((c, i) => (
+                  <td key={i} className="py-1.5 px-1 text-right" style={{ color: c === 0 ? PEBBLE_SHADE : FOREST }}>
+                    {c}
+                  </td>
+                ))}
+                <td className="py-1.5 pl-2 text-right font-semibold" style={{ color: FOREST }}>{row.total}</td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: `2px solid ${PEBBLE_SHADE}` }}>
+              <td className="py-1.5 pr-2 font-semibold uppercase tracking-wide text-xs" style={{ color: FOREST_T3 }}>Total</td>
+              {monthTotals.map((c, i) => (
+                <td key={i} className="py-1.5 px-1 text-right font-semibold" style={{ color: c === 0 ? PEBBLE_SHADE : FOREST }}>
+                  {c}
+                </td>
+              ))}
+              <td className="py-1.5 pl-2 text-right font-semibold" style={{ color: FOREST }}>{grandTotal}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   )
 }
 

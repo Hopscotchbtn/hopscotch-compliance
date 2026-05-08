@@ -201,6 +201,52 @@ export function computeAccidentReport(incidents, period) {
         .sort((a, b) => a.siteName.localeCompare(b.siteName))
     : []
 
+  let siteMonthlyComparison = null
+  const trailingMonths = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(nowN.getFullYear(), nowN.getMonth() - (11 - i), 1)
+    return {
+      yearMonth: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+    }
+  })
+  const ymIndex = new Map(trailingMonths.map((m, i) => [m.yearMonth, i]))
+  const buckets = new Map()
+  for (const inc of incidents) {
+    const key = inc.siteName || inc.siteId
+    if (!key) continue
+    const idx = ymIndex.get((inc.happenedAt || '').slice(0, 7))
+    if (idx === undefined) continue
+    let entry = buckets.get(key)
+    if (!entry) {
+      entry = { nursery: Array(12).fill(0), home: Array(12).fill(0) }
+      buckets.set(key, entry)
+    }
+    if (isHome(inc)) entry.home[idx]++
+    else entry.nursery[idx]++
+  }
+  if (buckets.size > 1) {
+    const sortedSites = Array.from(buckets.keys()).sort((a, b) => a.localeCompare(b))
+    const nursery = sortedSites.map(siteName => {
+      const counts = buckets.get(siteName).nursery
+      return { siteName, counts, total: counts.reduce((a, b) => a + b, 0) }
+    })
+    const home = sortedSites.map(siteName => {
+      const counts = buckets.get(siteName).home
+      return { siteName, counts, total: counts.reduce((a, b) => a + b, 0) }
+    })
+    const nurseryMonthTotals = trailingMonths.map((_, i) => nursery.reduce((a, s) => a + s.counts[i], 0))
+    const homeMonthTotals = trailingMonths.map((_, i) => home.reduce((a, s) => a + s.counts[i], 0))
+    siteMonthlyComparison = {
+      months: trailingMonths,
+      nursery,
+      home,
+      nurseryMonthTotals,
+      homeMonthTotals,
+      nurseryGrandTotal: nursery.reduce((a, s) => a + s.total, 0),
+      homeGrandTotal: home.reduce((a, s) => a + s.total, 0),
+    }
+  }
+
   return {
     period,
     totalReports,
@@ -256,5 +302,6 @@ export function computeAccidentReport(incidents, period) {
     repeats,
     repeatWindowLabel,
     siteComparison,
+    siteMonthlyComparison,
   }
 }
