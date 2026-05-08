@@ -97,7 +97,9 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     nurseryMonthly, nurseryPatterns, nurseryRepeats,
     dowOrder, dowCounts, hourCounts,
     yoyDiff, repeats, repeatWindowLabel,
+    siteComparison, siteMonthlyComparison, siteTimeOfDayComparison,
   } = report
+  const anonymised = !!(siteComparison && siteComparison.length > 0)
   const dowMax = Math.max(1, ...Object.values(dowCounts))
 
   const doc = new jsPDF()
@@ -222,6 +224,170 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
   y = cardY + cardH + 8
   text(doc, 'text')
 
+  // ─── CROSS-SITE COMPARISONS (anonymised only) ──
+
+  if (anonymised && siteComparison && siteComparison.length > 0) {
+    addPageIfNeeded(16 + siteComparison.length * 5)
+    sectionHeading(doc, 'Across Site View', y); y += 8
+
+    const acsHeaders = ['Site', 'Total', 'High', 'Med', 'Ack', 'Home', 'Reg']
+    const acsWidths  = [56, 18, 18, 18, 18, 27, 27]
+    text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'bold')
+    {
+      let cx = MARGIN
+      acsHeaders.forEach((h, i) => {
+        const align = i === 0 ? 'left' : 'right'
+        doc.text(h.toUpperCase(), align === 'right' ? cx + acsWidths[i] - 1 : cx + 1, y, { align })
+        cx += acsWidths[i]
+      })
+    }
+    y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
+    doc.setFont(undefined, 'normal'); doc.setFontSize(8); text(doc, 'text')
+
+    siteComparison.forEach(site => {
+      addPageIfNeeded(5)
+      const cells = [
+        site.siteName,
+        String(site.total),
+        String(site.high),
+        String(site.medium),
+        `${site.ackRate}%`,
+        String(site.homeCount),
+        String(site.regulatoryCount),
+      ]
+      let cx = MARGIN
+      cells.forEach((cell, i) => {
+        if (i === 2 && site.high > 0) text(doc, 'warningText')
+        else if (i === 3 && site.medium > 0) text(doc, 'marmaladeShade')
+        else if (i === 4 && site.ackRate < 80) text(doc, 'marmaladeShade')
+        else if (i === 6 && site.regulatoryCount > 0) text(doc, 'marmaladeShade')
+        else text(doc, 'text')
+        const align = i === 0 ? 'left' : 'right'
+        doc.text(cell, align === 'right' ? cx + acsWidths[i] - 1 : cx + 1, y, { align })
+        cx += acsWidths[i]
+      })
+      text(doc, 'text')
+      y += 5
+    })
+    text(doc, 'mute'); doc.setFontSize(6); doc.setFont(undefined, 'normal')
+    doc.text('High / Med: auto-flagged. Reg: RIDDOR / Ofsted / LADO. Ack rate flagged below 80%.', MARGIN, y + 2)
+    text(doc, 'text'); y += 8
+  }
+
+  if (anonymised && siteMonthlyComparison) {
+    const drawMonthlyPivot = (title, rows, monthTotals, grandTotal, months) => {
+      addPageIfNeeded(20 + rows.length * 5)
+      text(doc, 'forest'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+      doc.text(title, MARGIN, y); y += 5
+      const siteW = 30
+      const totalW = 12
+      const monthW = (CONTENT_WIDTH - siteW - totalW) / months.length
+      // Header
+      text(doc, 'mute'); doc.setFontSize(6); doc.setFont(undefined, 'bold')
+      doc.text('SITE', MARGIN + 1, y)
+      months.forEach((m, i) => {
+        doc.text(m.label.toUpperCase(), MARGIN + siteW + (i + 1) * monthW - 1, y, { align: 'right' })
+      })
+      doc.text('TOTAL', MARGIN + CONTENT_WIDTH - 1, y, { align: 'right' })
+      y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
+      // Body
+      doc.setFont(undefined, 'normal'); doc.setFontSize(7); text(doc, 'text')
+      rows.forEach(row => {
+        addPageIfNeeded(5)
+        text(doc, 'text'); doc.setFont(undefined, 'normal')
+        doc.text(row.siteName.slice(0, 18), MARGIN + 1, y)
+        row.counts.forEach((c, i) => {
+          if (c === 0) text(doc, 'mute')
+          else text(doc, 'text')
+          doc.text(String(c), MARGIN + siteW + (i + 1) * monthW - 1, y, { align: 'right' })
+        })
+        text(doc, 'text'); doc.setFont(undefined, 'bold')
+        doc.text(String(row.total), MARGIN + CONTENT_WIDTH - 1, y, { align: 'right' })
+        y += 5
+      })
+      // Totals row
+      stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y - 3, MARGIN + CONTENT_WIDTH, y - 3)
+      text(doc, 'mute'); doc.setFontSize(6); doc.setFont(undefined, 'bold')
+      doc.text('TOTAL', MARGIN + 1, y)
+      doc.setFontSize(7)
+      monthTotals.forEach((c, i) => {
+        if (c === 0) text(doc, 'mute')
+        else text(doc, 'text')
+        doc.text(String(c), MARGIN + siteW + (i + 1) * monthW - 1, y, { align: 'right' })
+      })
+      text(doc, 'text')
+      doc.text(String(grandTotal), MARGIN + CONTENT_WIDTH - 1, y, { align: 'right' })
+      text(doc, 'text'); y += 7
+    }
+
+    addPageIfNeeded(28 + (siteMonthlyComparison.nursery.length + siteMonthlyComparison.home.length) * 5)
+    sectionHeading(doc, 'Monthly accidents by site', y); y += 8
+    drawMonthlyPivot(
+      'At nursery',
+      siteMonthlyComparison.nursery,
+      siteMonthlyComparison.nurseryMonthTotals,
+      siteMonthlyComparison.nurseryGrandTotal,
+      siteMonthlyComparison.months,
+    )
+    drawMonthlyPivot(
+      'At home / on arrival',
+      siteMonthlyComparison.home,
+      siteMonthlyComparison.homeMonthTotals,
+      siteMonthlyComparison.homeGrandTotal,
+      siteMonthlyComparison.months,
+    )
+    text(doc, 'mute'); doc.setFontSize(6); doc.setFont(undefined, 'normal')
+    doc.text('Trailing 12 months. "At nursery" excludes incidents flagged as home or on-arrival.', MARGIN, y)
+    text(doc, 'text'); y += 6
+  }
+
+  if (anonymised && siteTimeOfDayComparison) {
+    const { buckets, rows: todRows, bucketTotals } = siteTimeOfDayComparison
+    addPageIfNeeded(20 + todRows.length * 5)
+    sectionHeading(doc, 'Time of day by site', y); y += 8
+
+    const peakW = 24
+    const siteW = 30
+    const bucketW = (CONTENT_WIDTH - siteW - peakW) / Math.max(1, buckets.length)
+    // Header
+    text(doc, 'mute'); doc.setFontSize(6); doc.setFont(undefined, 'bold')
+    doc.text('SITE', MARGIN + 1, y)
+    buckets.forEach((b, i) => {
+      doc.text(b.label.toUpperCase(), MARGIN + siteW + (i + 1) * bucketW - 1, y, { align: 'right' })
+    })
+    doc.text('PEAK', MARGIN + CONTENT_WIDTH - 1, y, { align: 'right' })
+    y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
+    // Body
+    doc.setFont(undefined, 'normal'); doc.setFontSize(7); text(doc, 'text')
+    todRows.forEach(row => {
+      addPageIfNeeded(5)
+      text(doc, 'text'); doc.setFont(undefined, 'normal')
+      doc.text(row.siteName.slice(0, 18), MARGIN + 1, y)
+      row.counts.forEach((c, i) => {
+        if (c === 0) text(doc, 'mute')
+        else text(doc, 'text')
+        doc.text(String(c), MARGIN + siteW + (i + 1) * bucketW - 1, y, { align: 'right' })
+      })
+      text(doc, 'mute')
+      doc.text(row.peakLabel, MARGIN + CONTENT_WIDTH - 1, y, { align: 'right' })
+      y += 5
+    })
+    // Totals row
+    stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y - 3, MARGIN + CONTENT_WIDTH, y - 3)
+    text(doc, 'mute'); doc.setFontSize(6); doc.setFont(undefined, 'bold')
+    doc.text('TOTAL', MARGIN + 1, y)
+    doc.setFontSize(7)
+    bucketTotals.forEach((c, i) => {
+      if (c === 0) text(doc, 'mute')
+      else text(doc, 'text')
+      doc.text(String(c), MARGIN + siteW + (i + 1) * bucketW - 1, y, { align: 'right' })
+    })
+    text(doc, 'text'); y += 7
+    doc.setFontSize(6); doc.setFont(undefined, 'normal'); text(doc, 'mute')
+    doc.text('Out-of-hours grouped into Before 7am / After 7pm. Empty buckets omitted. Peak = busiest bucket per site.', MARGIN, y)
+    text(doc, 'text'); y += 6
+  }
+
   // ─── REGULATORY FLAGS BAR ──
 
   if (riddorCount + ofstedCount + ladoCount > 0) {
@@ -232,15 +398,17 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     ].filter(f => f.incs.length > 0)
     sectionHeading(doc, 'Regulatory flags', y); y += 8
     flagGroups.forEach(({ label, incs }) => {
-      addPageIfNeeded(10 + incs.length * 5)
+      addPageIfNeeded(10 + (anonymised ? 0 : incs.length * 5))
       text(doc, 'marmaladeShade'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
       doc.text(`${label}  ·  ${incs.length}`, MARGIN, y); y += 5
-      doc.setFont(undefined, 'normal'); doc.setFontSize(8)
-      incs.forEach(inc => {
-        addPageIfNeeded(6); text(doc, 'text')
-        const loc = inc.location ? `  ·  ${inc.location.slice(0, 25)}` : ''
-        doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 2, y); y += 5
-      })
+      if (!anonymised) {
+        doc.setFont(undefined, 'normal'); doc.setFontSize(8)
+        incs.forEach(inc => {
+          addPageIfNeeded(6); text(doc, 'text')
+          const loc = inc.location ? `  ·  ${inc.location.slice(0, 25)}` : ''
+          doc.text(`•  ${childDisplayName(inc.childName)}  ·  ${formatDate(inc.happenedAt)}  ·  ${inc.injuryCategory}${loc}`, MARGIN + 2, y); y += 5
+        })
+      }
       y += 3
     })
     text(doc, 'text'); y += 4
@@ -248,7 +416,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
   // ─── NEEDS FORMAL REVIEW ──
 
-  if (high.length > 0 || medium.length > 0) {
+  if (!anonymised && (high.length > 0 || medium.length > 0)) {
     addPageIfNeeded(20 + (high.length + medium.length) * 5)
     sectionHeading(doc, 'Needs formal review', y)
     y += 6
@@ -300,7 +468,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
   // ─── REPEAT CHILDREN ──
 
-  if (repeats.length > 0) {
+  if (!anonymised && repeats.length > 0) {
     addPageIfNeeded(20 + repeats.length * 6)
     sectionHeading(doc, `Top repeat children  (${repeatWindowLabel})`, y)
     y += 6
@@ -428,23 +596,25 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
       y += 3
     }
 
-    if (homeRepeats.length > 0) {
-      text(doc, 'text'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
-      doc.text('Children with repeated home / on-arrival reports:', MARGIN + 2, y)
-      y += 5
-      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-      doc.text('Child', MARGIN + 4, y); doc.text('Reports', MARGIN + 90, y)
-      y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
-      doc.setFont(undefined, 'normal'); doc.setFontSize(9); text(doc, 'text')
-      homeRepeats.forEach(child => {
-        addPageIfNeeded(5)
-        doc.text(child.displayName, MARGIN + 4, y)
-        text(doc, 'mute'); doc.text(String(child.count), MARGIN + 90, y)
-        text(doc, 'text'); y += 5
-      })
-    } else {
-      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'normal')
-      doc.text('No children with repeated home incidents this period.', MARGIN + 2, y); y += 5
+    if (!anonymised) {
+      if (homeRepeats.length > 0) {
+        text(doc, 'text'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
+        doc.text('Children with repeated home / on-arrival reports:', MARGIN + 2, y)
+        y += 5
+        text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+        doc.text('Child', MARGIN + 4, y); doc.text('Reports', MARGIN + 90, y)
+        y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
+        doc.setFont(undefined, 'normal'); doc.setFontSize(9); text(doc, 'text')
+        homeRepeats.forEach(child => {
+          addPageIfNeeded(5)
+          doc.text(child.displayName, MARGIN + 4, y)
+          text(doc, 'mute'); doc.text(String(child.count), MARGIN + 90, y)
+          text(doc, 'text'); y += 5
+        })
+      } else {
+        text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'normal')
+        doc.text('No children with repeated home incidents this period.', MARGIN + 2, y); y += 5
+      }
     }
     text(doc, 'text'); y += 6
   }
@@ -582,7 +752,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     text(doc, 'text')
 
     // ── Formal review ──
-    if (nurseryHigh.length > 0 || nurseryMedium.length > 0) {
+    if (!anonymised && (nurseryHigh.length > 0 || nurseryMedium.length > 0)) {
       addPageIfNeeded(16 + (nurseryHigh.length + nurseryMedium.length) * 5)
       sectionHeading(doc, 'Needs formal review', y); y += 6
       text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'normal')
@@ -631,7 +801,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
 
     // ── Repeat children ──
     const displayedNurseryRepeats = period.type !== 'month' ? nurseryRepeats.filter(c => c.count > 5) : nurseryRepeats
-    if (displayedNurseryRepeats.length > 0) {
+    if (!anonymised && displayedNurseryRepeats.length > 0) {
       if (period.type === '12month') {
         addPageIfNeeded(14)
         text(doc, 'forest'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
@@ -819,7 +989,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     text(doc, 'text')
 
     // ── Formal review ──
-    if (homeHigh.length > 0 || homeMedium.length > 0) {
+    if (!anonymised && (homeHigh.length > 0 || homeMedium.length > 0)) {
       addPageIfNeeded(16 + (homeHigh.length + homeMedium.length) * 5)
       sectionHeading(doc, 'Needs formal review', y)
       y += 6
@@ -869,7 +1039,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     }
 
     // ── Repeat children ──
-    if (homeRepeats.length > 0) {
+    if (!anonymised && homeRepeats.length > 0) {
       if (period.type === '12month') {
         addPageIfNeeded(14)
         text(doc, 'forest'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
@@ -967,7 +1137,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     text(doc, 'text'); y += 6
 
     // ── All incidents list (monthly only) ──
-    if (period.type === 'month' && homeSortedIncs.length > 0) {
+    if (!anonymised && period.type === 'month' && homeSortedIncs.length > 0) {
       addPageIfNeeded(20 + homeSortedIncs.length * 5)
       doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
       doc.text('All incidents this period', MARGIN, y); text(doc, 'text'); y += 4
