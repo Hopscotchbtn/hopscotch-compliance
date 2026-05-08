@@ -222,6 +222,8 @@ export function AccidentReport() {
 
           {isAnonymised && <MonthlyBySiteSection report={report} />}
 
+          {isAnonymised && <TimeOfDayBySiteSection report={report} />}
+
           <SectionHeader title="Overall" />
 
           <SummarySection report={report} />
@@ -731,6 +733,60 @@ function MonthlyPivotTable({ title, months, rows, monthTotals, grandTotal }) {
         </table>
       </div>
     </div>
+  )
+}
+
+function TimeOfDayBySiteSection({ report }) {
+  const data = report.siteTimeOfDayComparison
+  if (!data) return null
+  const { buckets, rows, bucketTotals, grandTotal } = data
+  return (
+    <section className="mb-8">
+      <SectionHeader title="Time of day by site" />
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs border-collapse">
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${PEBBLE_SHADE}` }}>
+              <th className="text-left py-1.5 pr-2 font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>Site</th>
+              {buckets.map(b => (
+                <th key={b.key} className="text-right py-1.5 px-1 font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>
+                  {b.label}
+                </th>
+              ))}
+              <th className="text-right py-1.5 px-2 font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>Total</th>
+              <th className="text-right py-1.5 pl-2 font-semibold uppercase tracking-wide" style={{ color: FOREST_T3 }}>Peak time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.siteName} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
+                <td className="py-1.5 pr-2 font-medium whitespace-nowrap" style={{ color: FOREST }}>{row.siteName}</td>
+                {row.counts.map((c, i) => (
+                  <td key={i} className="py-1.5 px-1 text-right" style={{ color: c === 0 ? PEBBLE_SHADE : FOREST }}>
+                    {c}
+                  </td>
+                ))}
+                <td className="py-1.5 px-2 text-right font-semibold" style={{ color: FOREST }}>{row.total}</td>
+                <td className="py-1.5 pl-2 text-right whitespace-nowrap" style={{ color: FOREST_T3 }}>{row.peakLabel}</td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: `2px solid ${PEBBLE_SHADE}` }}>
+              <td className="py-1.5 pr-2 font-semibold uppercase tracking-wide text-xs" style={{ color: FOREST_T3 }}>Total</td>
+              {bucketTotals.map((c, i) => (
+                <td key={i} className="py-1.5 px-1 text-right font-semibold" style={{ color: c === 0 ? PEBBLE_SHADE : FOREST }}>
+                  {c}
+                </td>
+              ))}
+              <td className="py-1.5 px-2 text-right font-semibold" style={{ color: FOREST }}>{grandTotal}</td>
+              <td className="py-1.5 pl-2"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs mt-2" style={{ color: FOREST_T3 }}>
+        Counts incidents reported in this period by their recorded time. Peak time is the bucket with the most incidents for each site.
+      </p>
+    </section>
   )
 }
 
