@@ -863,7 +863,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, maybePerio
     }
 
     // ── Location ──
-    if (nurseryLocs.length > 0) {
+    if (nurseryLocs.length > 0 && !(anonymised && period.type === '12month')) {
       const displayLocs = period.type === '12month' ? nurseryLocs : nurseryLocs.slice(0, 5)
       addPageIfNeeded(20 + displayLocs.length * 5)
       doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
