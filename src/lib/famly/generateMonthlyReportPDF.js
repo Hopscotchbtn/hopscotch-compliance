@@ -93,6 +93,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
     homeIncs, settingIncs, injuryTypes,
     periodHome, homeMonthly, homePatterns, homeInjuryTypes, homeRepeats,
     homeAcknowledged, homeAckRate, homeHigh, homeMedium, homeDowCounts, homeSortedIncs,
+    home3MonthSortedIncs, homeRepeats3Month,
     nurseryAcknowledged, nurseryAckRate, nurseryHigh, nurseryMedium,
     nurseryDowCounts, nurserySortedIncs, nurseryInjuryTypes, nurseryLocs,
     nurseryMonthly, nurseryPatterns, nurseryRepeats,
@@ -1163,6 +1164,69 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
         doc.text(inc.acknowledgedAt ? 'Yes' : 'No', MARGIN + 145, y)
         y += 5
       }); y += 6
+    }
+
+    // ── All home / on-arrival incidents — last 3 months (monthly only) ──
+    if (!anonymised && period.type === 'month') {
+      addPageIfNeeded(20 + home3MonthSortedIncs.length * 5)
+      doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
+      doc.text('All home / on-arrival incidents — last 3 months', MARGIN, y); y += 4
+      doc.setFontSize(8); doc.setFont(undefined, 'normal'); text(doc, 'mute')
+      doc.text('Includes this period. Use to spot patterns across recent months.', MARGIN, y); y += 5
+      if (home3MonthSortedIncs.length === 0) {
+        doc.setFont(undefined, 'italic'); text(doc, 'mute')
+        doc.text('No at-home incidents in the last 3 months.', MARGIN + 2, y)
+        doc.setFont(undefined, 'normal'); text(doc, 'text'); y += 8
+      } else {
+        text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+        doc.text('Child',         MARGIN + 2,   y)
+        doc.text('Date',          MARGIN + 55,  y)
+        doc.text('Injury',        MARGIN + 90,  y)
+        doc.text('Acknowledged',  MARGIN + 145, y)
+        y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
+        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+        home3MonthSortedIncs.forEach(inc => {
+          addPageIfNeeded(6); text(doc, 'text')
+          doc.text(childDisplayName(inc.childName),  MARGIN + 2,   y)
+          doc.text(formatDate(inc.happenedAt),        MARGIN + 55,  y)
+          doc.text(inc.injuryCategory,                MARGIN + 90,  y, { maxWidth: 52 })
+          text(doc, inc.acknowledgedAt ? 'forest' : 'marmaladeShade')
+          doc.text(inc.acknowledgedAt ? 'Yes' : 'No', MARGIN + 145, y)
+          y += 5
+        }); y += 6
+      }
+    }
+
+    // ── Children with multiple home incidents — last 3 months (monthly only) ──
+    if (!anonymised && period.type === 'month' && homeRepeats3Month.length > 0) {
+      const flagH = 14 + homeRepeats3Month.reduce((acc, child, ci) =>
+        acc + (ci > 0 ? 4 : 0) + 6 + child.incidents.length * 5, 0) + 5
+      addPageIfNeeded(flagH + 4)
+      fill(doc, 'marmaladeT1'); stroke(doc, 'marmalade')
+      doc.roundedRect(MARGIN, y, CONTENT_WIDTH, flagH, 1.5, 1.5, 'FD')
+      text(doc, 'marmaladeShade'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+      doc.text('Children with multiple home incidents — last 3 months', MARGIN + 4, y + 6)
+      text(doc, 'mute'); doc.setFont(undefined, 'normal')
+      doc.text('Appear more than once across the rolling 3-month window — may warrant a safeguarding conversation.', MARGIN + 4, y + 11)
+      y += 14
+      homeRepeats3Month.forEach((child, ci) => {
+        if (ci > 0) {
+          stroke(doc, 'rule'); doc.setLineWidth(0.2)
+          doc.line(MARGIN + 4, y + 2, MARGIN + CONTENT_WIDTH - 4, y + 2)
+          y += 4
+        }
+        text(doc, 'forest'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+        doc.text(`${child.displayName}  —  ${child.count} incidents`, MARGIN + 4, y + 5)
+        y += 6
+        doc.setFont(undefined, 'normal')
+        child.incidents.forEach(inc => {
+          text(doc, 'text')
+          const detail = inc.onArrival ? 'arrived with injury' : 'location: Home'
+          doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 6, y + 4)
+          y += 5
+        })
+      })
+      y += 11
     }
 
   }
