@@ -195,7 +195,7 @@ const HOME_KEYWORDS = [
   'mum', 'mummy', 'mom', 'mommy', 'mam', 'mama',
   'dad', 'daddy', 'papa',
   'parent', 'aunt', 'uncle',
-  'beach', 'shop', 'pub', 'walk', 'holiday', 'outing',
+  'pub', 'walk', 'holiday',
   'way to', 'en route',
 ]
 
