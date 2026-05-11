@@ -195,14 +195,20 @@ const HOME_KEYWORDS = [
   'mum', 'mummy', 'mom', 'mommy', 'mam', 'mama',
   'dad', 'daddy', 'papa',
   'parent', 'aunt', 'uncle',
-  'pub', 'holiday', 'camping',
+  'cousin', 'sibling', 'brother', 'sister', 'nephew', 'niece',
+  'pub', 'holiday', 'camping', 'wedding', 'party', 'swimming',
   'way to', 'en route',
 ]
+
+// Short words that need word-boundary matching to avoid false positives
+// (e.g. "car" substring would wrongly match "carpet area").
+const HOME_WORD_KEYWORDS = ['car']
 
 export function locationLooksLikeHome(locStr) {
   const loc = (locStr || '').trim().toLowerCase()
   if (!loc) return false
-  return HOME_KEYWORDS.some(kw => loc.includes(kw))
+  if (HOME_KEYWORDS.some(kw => loc.includes(kw))) return true
+  return HOME_WORD_KEYWORDS.some(kw => new RegExp(`\\b${kw}\\b`).test(loc))
 }
 
 export function isHome(inc) {
