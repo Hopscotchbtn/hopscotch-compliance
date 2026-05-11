@@ -185,8 +185,28 @@ export function detectMonthlyPatterns(monthlyTrend, incidentLabel = 'incidents')
 export const detectOutdoorPatterns = (t) => detectMonthlyPatterns(t, 'outdoor')
 
 
+// Substring matches against inc.location (case-insensitive). Covers off-site
+// locations like "grandparents", "at park with mum", etc. — these are treated
+// as home/on-arrival rather than nursery-setting incidents.
+const HOME_KEYWORDS = [
+  'home', 'house',
+  'grandparent', 'granny', 'grandma', 'grandpa', 'grandad', 'grandfather', 'grandmother',
+  'nan', 'nanna', 'nana',
+  'mum', 'mummy', 'mom', 'mommy', 'mam', 'mama',
+  'dad', 'daddy', 'papa',
+  'aunt', 'uncle',
+  'beach', 'shop', 'walk', 'holiday', 'outing',
+]
+
+export function locationLooksLikeHome(locStr) {
+  const loc = (locStr || '').trim().toLowerCase()
+  if (!loc) return false
+  return HOME_KEYWORDS.some(kw => loc.includes(kw))
+}
+
 export function isHome(inc) {
-  return (inc.location || '').trim().toLowerCase() === 'home' || !!inc.onArrival
+  if (inc.onArrival) return true
+  return locationLooksLikeHome(inc.location)
 }
 
 // Returns monthly home/on-arrival incident counts for the 12 months ending at `anchor` (defaults to today).

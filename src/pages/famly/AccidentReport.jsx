@@ -1244,7 +1244,7 @@ function HomeOnArrivalSection({ report, anonymised = false }) {
                       {child.incidents.map((inc, j) => (
                         <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
                           • {formatDate(inc.date)} · {inc.injuryCategory}
-                          {inc.onArrival ? ' · arrived with injury' : ' · location: Home'}
+                          {inc.onArrival ? ' · arrived with injury' : ` · location: ${inc.location || 'Home'}`}
                         </li>
                       ))}
                     </ul>
@@ -1308,7 +1308,7 @@ function HomeOnArrivalSection({ report, anonymised = false }) {
                       {child.incidents.map((inc, j) => (
                         <li key={j} className="text-xs" style={{ color: FOREST_T3 }}>
                           • {formatDate(inc.date)} · {inc.injuryCategory}
-                          {inc.onArrival ? ' · arrived with injury' : ' · location: Home'}
+                          {inc.onArrival ? ' · arrived with injury' : ` · location: ${inc.location || 'Home'}`}
                         </li>
                       ))}
                     </ul>

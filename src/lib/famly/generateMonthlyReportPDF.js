@@ -1079,7 +1079,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
           doc.setFont(undefined, 'normal')
           child.incidents.forEach(inc => {
             text(doc, 'text')
-            const detail = inc.onArrival ? 'arrived with injury' : 'location: Home'
+            const detail = inc.onArrival ? 'arrived with injury' : `location: ${inc.location || 'Home'}`
             doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 6, y + 4)
             y += 5
           })
@@ -1227,7 +1227,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
         doc.setFont(undefined, 'normal')
         child.incidents.forEach(inc => {
           text(doc, 'text')
-          const detail = inc.onArrival ? 'arrived with injury' : 'location: Home'
+          const detail = inc.onArrival ? 'arrived with injury' : `location: ${inc.location || 'Home'}`
           doc.text(`•  ${formatDate(inc.date)}  ·  ${inc.injuryCategory}  ·  ${detail}`, MARGIN + 6, y + 4)
           y += 5
         })

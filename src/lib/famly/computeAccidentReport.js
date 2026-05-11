@@ -1,4 +1,4 @@
-import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, categoryCounts, isOutdoor, outdoorMonthlyTrend, detectMonthlyPatterns, isHome, homeMonthlyTrend, childDisplayName } from './dataHelpers'
+import { filterByMonth, filterByRange, repeatChildren, rollingWindow, locationCounts, categoryCounts, isOutdoor, outdoorMonthlyTrend, detectMonthlyPatterns, isHome, locationLooksLikeHome, homeMonthlyTrend, childDisplayName } from './dataHelpers'
 
 const DOW_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -23,10 +23,10 @@ export function computeAccidentReport(incidents, period) {
 
   const allLocs = locationCounts(periodIncs)
   const homeLoc = allLocs.find(l => l.location.toLowerCase() === 'home') ?? null
-  const siteLocs = allLocs.filter(l => l.location.toLowerCase() !== 'home').slice(0, 5)
+  const siteLocs = allLocs.filter(l => !locationLooksLikeHome(l.location)).slice(0, 5)
 
-  const homeIncs = periodIncs.filter(x => (x.location || '').trim().toLowerCase() === 'home' || x.onArrival)
-  const settingIncs = periodIncs.filter(x => (x.location || '').trim().toLowerCase() !== 'home' && !x.onArrival)
+  const homeIncs = periodIncs.filter(isHome)
+  const settingIncs = periodIncs.filter(x => !isHome(x))
   const atNursery = settingIncs.length
 
   const injuryTypes = categoryCounts(periodIncs)
@@ -77,6 +77,7 @@ export function computeAccidentReport(incidents, period) {
           date: inc.happenedAt,
           injuryCategory: inc.injuryCategory,
           onArrival: !!inc.onArrival,
+          location: inc.location || '',
         })),
       }
     })
@@ -144,6 +145,7 @@ export function computeAccidentReport(incidents, period) {
           date: inc.happenedAt,
           injuryCategory: inc.injuryCategory,
           onArrival: !!inc.onArrival,
+          location: inc.location || '',
         })),
       }
     })
