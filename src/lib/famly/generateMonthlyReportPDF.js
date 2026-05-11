@@ -1144,26 +1144,32 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
     text(doc, 'text'); y += 6
 
     // ── All incidents list (monthly only) ──
-    if (!anonymised && period.type === 'month' && homeSortedIncs.length > 0) {
+    if (!anonymised && period.type === 'month') {
       addPageIfNeeded(20 + homeSortedIncs.length * 5)
       doc.setFontSize(10); doc.setFont(undefined, 'bold'); text(doc, 'forest')
       doc.text('All incidents this period', MARGIN, y); text(doc, 'text'); y += 4
-      text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
-      doc.text('Child',         MARGIN + 2,   y)
-      doc.text('Date',          MARGIN + 55,  y)
-      doc.text('Injury',        MARGIN + 90,  y)
-      doc.text('Acknowledged',  MARGIN + 145, y)
-      y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
-      doc.setFont(undefined, 'normal'); doc.setFontSize(9)
-      homeSortedIncs.forEach(inc => {
-        addPageIfNeeded(6); text(doc, 'text')
-        doc.text(childDisplayName(inc.childName),  MARGIN + 2,   y)
-        doc.text(formatDate(inc.happenedAt),        MARGIN + 55,  y)
-        doc.text(inc.injuryCategory,                MARGIN + 90,  y, { maxWidth: 52 })
-        text(doc, inc.acknowledgedAt ? 'forest' : 'marmaladeShade')
-        doc.text(inc.acknowledgedAt ? 'Yes' : 'No', MARGIN + 145, y)
-        y += 5
-      }); y += 6
+      if (homeSortedIncs.length === 0) {
+        doc.setFontSize(9); doc.setFont(undefined, 'italic'); text(doc, 'mute')
+        doc.text('No at-home accidents this month.', MARGIN + 2, y + 3)
+        doc.setFont(undefined, 'normal'); text(doc, 'text'); y += 10
+      } else {
+        text(doc, 'mute'); doc.setFontSize(8); doc.setFont(undefined, 'bold')
+        doc.text('Child',         MARGIN + 2,   y)
+        doc.text('Date',          MARGIN + 55,  y)
+        doc.text('Injury',        MARGIN + 90,  y)
+        doc.text('Acknowledged',  MARGIN + 145, y)
+        y += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, y, MARGIN + CONTENT_WIDTH, y); y += 4
+        doc.setFont(undefined, 'normal'); doc.setFontSize(9)
+        homeSortedIncs.forEach(inc => {
+          addPageIfNeeded(6); text(doc, 'text')
+          doc.text(childDisplayName(inc.childName),  MARGIN + 2,   y)
+          doc.text(formatDate(inc.happenedAt),        MARGIN + 55,  y)
+          doc.text(inc.injuryCategory,                MARGIN + 90,  y, { maxWidth: 52 })
+          text(doc, inc.acknowledgedAt ? 'forest' : 'marmaladeShade')
+          doc.text(inc.acknowledgedAt ? 'Yes' : 'No', MARGIN + 145, y)
+          y += 5
+        }); y += 6
+      }
     }
 
     // ── All home / on-arrival incidents — last 3 months (monthly only) ──
