@@ -194,8 +194,9 @@ const HOME_KEYWORDS = [
   'nan', 'nanna', 'nana',
   'mum', 'mummy', 'mom', 'mommy', 'mam', 'mama',
   'dad', 'daddy', 'papa',
-  'aunt', 'uncle',
-  'beach', 'shop', 'walk', 'holiday', 'outing',
+  'parent', 'aunt', 'uncle',
+  'beach', 'shop', 'pub', 'walk', 'holiday', 'outing',
+  'way to', 'en route',
 ]
 
 export function locationLooksLikeHome(locStr) {
