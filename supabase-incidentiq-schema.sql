@@ -121,6 +121,11 @@ alter table witness_statements enable row level security;
 create policy "Allow public access incidents" on incidents for all using (true);
 create policy "Allow public access statements" on witness_statements for all using (true);
 
+-- Grant Data API access (required for new Supabase projects from 2026-05-30,
+-- and all existing projects from 2026-10-30).
+grant select, insert, update, delete on public.incidents          to anon, authenticated, service_role;
+grant select, insert, update, delete on public.witness_statements to anon, authenticated, service_role;
+
 -- Function to auto-update updated_at timestamp
 create or replace function update_updated_at_column()
 returns trigger as $$
