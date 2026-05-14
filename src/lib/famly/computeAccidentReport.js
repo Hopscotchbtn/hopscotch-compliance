@@ -204,6 +204,22 @@ export function computeAccidentReport(incidents, period) {
         .sort((a, b) => a.siteName.localeCompare(b.siteName))
     : []
 
+  let siteMonthlyBreakdown = null
+  if (period.type === 'month' && siteMap.size > 1) {
+    const breakdownRows = Array.from(siteMap.values())
+      .map(({ siteName: sName, incs: sIncs }) => ({
+        siteName: sName,
+        nursery: sIncs.filter(x => !isHome(x)).length,
+        home: sIncs.filter(isHome).length,
+      }))
+      .sort((a, b) => a.siteName.localeCompare(b.siteName))
+    siteMonthlyBreakdown = {
+      rows: breakdownRows,
+      nurseryTotal: breakdownRows.reduce((a, r) => a + r.nursery, 0),
+      homeTotal: breakdownRows.reduce((a, r) => a + r.home, 0),
+    }
+  }
+
   let siteMonthlyComparison = null
   const trailingMonths = Array.from({ length: 12 }, (_, i) => {
     const d = new Date(trendAnchor.getFullYear(), trendAnchor.getMonth() - (11 - i), 1)
@@ -363,6 +379,7 @@ export function computeAccidentReport(incidents, period) {
     repeats,
     repeatWindowLabel,
     siteComparison,
+    siteMonthlyBreakdown,
     siteMonthlyComparison,
     siteTimeOfDayComparison,
   }

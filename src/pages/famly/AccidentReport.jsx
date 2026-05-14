@@ -736,6 +736,35 @@ function MonthlyPivotTable({ title, months, rows, monthTotals, grandTotal }) {
   )
 }
 
+function SiteBreakdownTable({ rows, metric, total }) {
+  return (
+    <div className="mb-6">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${PEBBLE_SHADE}` }}>
+              <th className="text-left py-1.5 pr-3 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Site</th>
+              <th className="text-right py-1.5 pl-2 font-semibold text-xs uppercase tracking-wide" style={{ color: FOREST_T3 }}>Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => (
+              <tr key={row.siteName} style={{ borderBottom: `1px solid ${PEBBLE}` }}>
+                <td className="py-1.5 pr-3 font-medium" style={{ color: FOREST }}>{abbreviateSite(row.siteName)}</td>
+                <td className="py-1.5 pl-2 text-right font-semibold" style={{ color: row[metric] === 0 ? PEBBLE_SHADE : FOREST }}>{row[metric]}</td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: `2px solid ${PEBBLE_SHADE}` }}>
+              <td className="py-1.5 pr-3 font-semibold uppercase tracking-wide text-xs" style={{ color: FOREST_T3 }}>Total</td>
+              <td className="py-1.5 pl-2 text-right font-semibold" style={{ color: FOREST }}>{total}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function TimeOfDayBySiteSection({ report }) {
   const data = report.siteTimeOfDayComparison
   if (!data) return null
@@ -865,9 +894,18 @@ function AtNurserySection({ report, anonymised = false }) {
     return true
   })
 
+  const breakdown = report.siteMonthlyBreakdown
   return (
     <section className="mb-8">
       <SectionHeader title="At Nursery" />
+
+      {breakdown && (
+        <SiteBreakdownTable
+          rows={breakdown.rows}
+          metric="nursery"
+          total={breakdown.nurseryTotal}
+        />
+      )}
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
@@ -1064,6 +1102,7 @@ function HomeOnArrivalSection({ report, anonymised = false }) {
     return true
   })
 
+  const breakdown = report.siteMonthlyBreakdown
   return (
     <section className="mb-8">
       <SectionHeader title="Home / On-Arrival Incidents" />
@@ -1071,6 +1110,14 @@ function HomeOnArrivalSection({ report, anonymised = false }) {
         Injuries where the child arrived already hurt, or where the location field records "Home".
         Recurring patterns may warrant a safeguarding conversation.
       </p>
+
+      {breakdown && (
+        <SiteBreakdownTable
+          rows={breakdown.rows}
+          metric="home"
+          total={breakdown.homeTotal}
+        />
+      )}
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">

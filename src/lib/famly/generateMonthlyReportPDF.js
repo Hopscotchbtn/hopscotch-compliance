@@ -99,7 +99,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
     nurseryMonthly, nurseryPatterns, nurseryRepeats,
     dowOrder, dowCounts, hourCounts,
     yoyDiff, repeats, repeatWindowLabel,
-    siteComparison, siteMonthlyComparison, siteTimeOfDayComparison,
+    siteComparison, siteMonthlyBreakdown, siteMonthlyComparison, siteTimeOfDayComparison,
   } = report
   const anonymised = anonymisedOpt ?? !!(siteComparison && siteComparison.length > 0)
   const dowMax = Math.max(1, ...Object.values(dowCounts))
@@ -712,6 +712,31 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
     text(doc, 'text'); y += 6
   }
 
+  const drawSiteBreakdown = (rows, metric, total, yStart) => {
+    let cy = yStart
+    addPageIfNeeded(14 + rows.length * 5)
+    text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'bold')
+    doc.text('SITE', MARGIN + 1, cy)
+    doc.text('COUNT', MARGIN + CONTENT_WIDTH - 1, cy, { align: 'right' })
+    cy += 2; stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, cy, MARGIN + CONTENT_WIDTH, cy); cy += 4
+    doc.setFont(undefined, 'normal'); doc.setFontSize(8); text(doc, 'text')
+    rows.forEach(row => {
+      addPageIfNeeded(5)
+      doc.setFont(undefined, 'normal'); text(doc, 'text')
+      doc.text(abbreviateSite(row.siteName), MARGIN + 1, cy)
+      if (row[metric] === 0) text(doc, 'mute'); else text(doc, 'text')
+      doc.text(String(row[metric]), MARGIN + CONTENT_WIDTH - 1, cy, { align: 'right' })
+      cy += 5
+    })
+    stroke(doc, 'rule'); doc.setLineWidth(0.2); doc.line(MARGIN, cy - 3, MARGIN + CONTENT_WIDTH, cy - 3)
+    text(doc, 'mute'); doc.setFontSize(7); doc.setFont(undefined, 'bold')
+    doc.text('TOTAL', MARGIN + 1, cy)
+    text(doc, 'text')
+    doc.text(String(total), MARGIN + CONTENT_WIDTH - 1, cy, { align: 'right' })
+    text(doc, 'text'); cy += 8
+    return cy
+  }
+
   // ─── AT NURSERY ──
 
   {
@@ -730,6 +755,10 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
     doc.text('At Nursery', MARGIN + 4, y + 4)
     text(doc, 'text')
     y += 18
+
+    if (siteMonthlyBreakdown) {
+      y = drawSiteBreakdown(siteMonthlyBreakdown.rows, 'nursery', siteMonthlyBreakdown.nurseryTotal, y)
+    }
 
     // ── KPI cards ──
     const nurseryPctOfTotal = totalReports > 0 ? Math.round((settingIncs.length / totalReports) * 100) : 0
@@ -963,6 +992,10 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
     doc.text('Recurring patterns may warrant a safeguarding conversation.', MARGIN, y + 4)
     text(doc, 'text')
     y += 12
+
+    if (siteMonthlyBreakdown) {
+      y = drawSiteBreakdown(siteMonthlyBreakdown.rows, 'home', siteMonthlyBreakdown.homeTotal, y)
+    }
 
     // ── KPI cards ──
     const homePctOfTotal = totalReports > 0 ? Math.round((homeIncs.length / totalReports) * 100) : 0
