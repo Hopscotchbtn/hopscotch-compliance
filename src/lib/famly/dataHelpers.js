@@ -126,6 +126,7 @@ export function lastYearYearMonth() {
 const OUTDOOR_KEYWORDS = ['garden', 'outdoor', 'outside', 'playground', 'yard', 'external', 'park', 'field', 'patio']
 
 export function isOutdoor(inc) {
+  if (isHome(inc)) return false
   const loc = (inc.location || '').toLowerCase()
   return OUTDOOR_KEYWORDS.some(kw => loc.includes(kw))
 }
@@ -198,6 +199,7 @@ const HOME_KEYWORDS = [
   'cousin', 'sibling', 'brother', 'sister', 'nephew', 'niece',
   'pub', 'holiday', 'camping', 'wedding', 'party', 'swimming',
   'way to', 'en route',
+  'outside of nursery', 'off site', 'off-site',
 ]
 
 // Short words that need word-boundary matching to avoid false positives
