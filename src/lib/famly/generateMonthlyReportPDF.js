@@ -343,7 +343,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
     text(doc, 'text'); y += 6
   }
 
-  if (anonymised && siteTimeOfDayComparison) {
+  if (anonymised && siteTimeOfDayComparison && period.type !== 'month') {
     const { buckets, rows: todRows, bucketTotals } = siteTimeOfDayComparison
     addPageIfNeeded(20 + todRows.length * 5)
     sectionHeading(doc, 'Time of day by site', y); y += 8

@@ -222,7 +222,7 @@ export function AccidentReport() {
 
           {isAnonymised && period.type !== 'month' && <MonthlyBySiteSection report={report} />}
 
-          {isAnonymised && <TimeOfDayBySiteSection report={report} />}
+          {isAnonymised && period.type !== 'month' && <TimeOfDayBySiteSection report={report} />}
 
           <SectionHeader title="Overall" />
 
