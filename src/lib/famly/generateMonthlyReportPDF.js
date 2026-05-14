@@ -276,7 +276,7 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
     text(doc, 'text'); y += 8
   }
 
-  if (anonymised && siteMonthlyComparison) {
+  if (anonymised && siteMonthlyComparison && period.type !== 'month') {
     const drawMonthlyPivot = (title, rows, monthTotals, grandTotal, months) => {
       addPageIfNeeded(20 + rows.length * 5)
       text(doc, 'forest'); doc.setFontSize(9); doc.setFont(undefined, 'bold')
@@ -687,32 +687,29 @@ export function generateMonthlyReportPDF(reportOrIncidents, siteName, options = 
     y += 6
   }
 
-  // ─── TIME OF DAY (non-monthly) ──
+  // ─── TIME OF DAY ──
 
-  if (period.type !== 'month' && totalReports > 0) {
-    const activeHours = hourCounts.filter(h => h.count > 0)
-    if (activeHours.length > 0) {
-      addPageIfNeeded(20 + activeHours.length * 5)
-      sectionHeading(doc, 'Time of day', y)
-      y += 10
-      const hourMax = Math.max(1, ...activeHours.map(h => h.count))
-      const hourBarMaxW = 70; const hourBarX = MARGIN + 25
-      doc.setFontSize(8); doc.setFont(undefined, 'normal')
-      activeHours.forEach(({ hour, count }) => {
-        addPageIfNeeded(5)
-        const label = `${String(hour).padStart(2, '0')}:00`
-        text(doc, 'text'); doc.text(label, MARGIN + 2, y)
-        const w = (count / hourMax) * hourBarMaxW
-        if (w > 0) {
-          fill(doc, 'forestLight'); stroke(doc, 'forestLight')
-          doc.rect(hourBarX, y - 3, Math.max(w, 0.5), 4, 'F')
-          fill(doc, 'marmalade'); doc.rect(hourBarX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
-        }
-        text(doc, 'mute'); doc.text(String(count), hourBarX + hourBarMaxW + 3, y)
-        y += 5
-      })
-      text(doc, 'text'); y += 6
-    }
+  if (totalReports > 0 && hourCounts.some(h => h.count > 0)) {
+    addPageIfNeeded(20 + hourCounts.length * 5)
+    sectionHeading(doc, 'Time of day', y)
+    y += 10
+    const hourMax = Math.max(1, ...hourCounts.map(h => h.count))
+    const hourBarMaxW = 70; const hourBarX = MARGIN + 25
+    doc.setFontSize(8); doc.setFont(undefined, 'normal')
+    hourCounts.forEach(({ hour, count }) => {
+      addPageIfNeeded(5)
+      const label = `${String(hour).padStart(2, '0')}:00`
+      text(doc, 'text'); doc.text(label, MARGIN + 2, y)
+      const w = (count / hourMax) * hourBarMaxW
+      if (w > 0) {
+        fill(doc, 'forestLight'); stroke(doc, 'forestLight')
+        doc.rect(hourBarX, y - 3, Math.max(w, 0.5), 4, 'F')
+        fill(doc, 'marmalade'); doc.rect(hourBarX + Math.max(w, 0.5) - 1.5, y - 3, 1.5, 4, 'F')
+      }
+      text(doc, 'mute'); doc.text(String(count), hourBarX + hourBarMaxW + 3, y)
+      y += 5
+    })
+    text(doc, 'text'); y += 6
   }
 
   // ─── AT NURSERY ──

@@ -220,7 +220,7 @@ export function AccidentReport() {
 
           {isAnonymised && <AcrossSiteSection report={report} />}
 
-          {isAnonymised && <MonthlyBySiteSection report={report} />}
+          {isAnonymised && period.type !== 'month' && <MonthlyBySiteSection report={report} />}
 
           {isAnonymised && <TimeOfDayBySiteSection report={report} />}
 
@@ -545,16 +545,16 @@ function DayOfWeekSection({ report }) {
 function TimeOfDaySection({ report }) {
   const { hourCounts, totalReports } = report
   if (totalReports === 0) return null
-  const activeHours = (hourCounts || []).filter(h => h.count > 0)
-  if (activeHours.length === 0) return null
-  const hourMax = Math.max(1, ...activeHours.map(h => h.count))
+  const hours = hourCounts || []
+  if (!hours.some(h => h.count > 0)) return null
+  const hourMax = Math.max(1, ...hours.map(h => h.count))
   return (
     <section className="mb-8">
       <h2 className="text-base font-bold mb-3" style={{ color: FOREST, fontFamily: "'Ivar Display', Georgia, serif" }}>
         Time of day
       </h2>
       <div className="space-y-1.5">
-        {activeHours.map(({ hour, count }) => {
+        {hours.map(({ hour, count }) => {
           const pct = (count / hourMax) * 100
           const label = `${String(hour).padStart(2, '0')}:00`
           return (
