@@ -89,12 +89,6 @@ export function Home() {
               </Button>
             </Link>
             <div style={{ height: '20px' }} />
-            <Link to="/famly-dashboard" className="block">
-              <Button color="sunshine" size="large" fullWidth className="border border-black">
-                <span className="text-lg">📊 Accident &amp; Incident Dashboard</span>
-              </Button>
-            </Link>
-            <div style={{ height: '20px' }} />
             <a
               href="https://hopscotch-investigator.vercel.app"
               target="_blank"
