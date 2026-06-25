@@ -9,6 +9,15 @@ function getRatingFill(rating) {
   return '00b050'
 }
 
+// Escape text before injecting it raw into the document XML. Without this, a
+// value containing <, > or & produces invalid XML and the whole render crashes.
+function escapeXml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
 // Fix the fill color of a cell that contains a text placeholder like {pre_rating_1}.
 // The template hardcodes colors regardless of the actual rating value.
 function fixRatingCellColor(xml, fieldName, n, rating) {
@@ -62,7 +71,7 @@ function injectRatingColors(xml, data) {
 
     const rating = data[`reassess_rating_${hazardIndex}`] || ''
     const fill = getRatingFill(rating)
-    const textContent = rating ? `<w:t>${rating}</w:t>` : ''
+    const textContent = rating ? `<w:t>${escapeXml(rating)}</w:t>` : ''
     const replacement = `<w:tc><w:tcPr><w:shd w:fill="${fill}" w:val="clear"/><w:vAlign w:val="center"/></w:tcPr><w:p w:rsidR="00000000"><w:pPr><w:jc w:val="center"/><w:rPr/></w:pPr><w:r><w:rPr><w:rtl w:val="0"/></w:rPr>${textContent}</w:r></w:p></w:tc>`
 
     result = result.substring(0, cellStart) + replacement + result.substring(cellEnd)
@@ -101,8 +110,16 @@ export default async function handler(req, res) {
 
     // Fix all rating cell colours: template hardcodes colors regardless of value.
     // Also injects rating text into reassess_rating cells which had no placeholder.
-    let docXml = zip.files['word/document.xml'].asText()
-    docXml = injectRatingColors(docXml, data)
+    const originalXml = zip.files['word/document.xml'].asText()
+    let docXml = originalXml
+    try {
+      docXml = injectRatingColors(originalXml, data)
+    } catch (colorErr) {
+      // Colour injection is a nice-to-have. If it fails, fall back to the
+      // unmodified template so the document still generates.
+      console.error('Rating colour injection failed, using template colours:', colorErr)
+      docXml = originalXml
+    }
     zip.file('word/document.xml', docXml)
 
     // Create docxtemplater instance
@@ -164,7 +181,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: `Template error: ${templateErrors}` })
     }
 
-    return res.status(500).json({ error: 'Failed to generate document' })
+    // Surface the real reason (e.g. invalid XML) instead of a generic message.
+    return res.status(500).json({ error: `Failed to generate document: ${error.message || 'unknown error'}` })
   }
 }
 
