@@ -459,7 +459,7 @@ Generate the complete risk assessment JSON with all hazard details filled in.`
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 4000,
+      max_tokens: 8000,
       system: [
         {
           type: 'text',
