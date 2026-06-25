@@ -106,7 +106,7 @@ export function RiskValidationScreen() {
       })
     } catch (err) {
       console.error('Generate DOCX error:', err)
-      setError('Failed to generate document. Please try again.')
+      setError(`Failed to generate document: ${err?.message || 'unknown error'}. Please try again.`)
     } finally {
       setLoading(false)
       setLoadingMessage('')
