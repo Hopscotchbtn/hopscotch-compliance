@@ -164,9 +164,15 @@ export default async function handler(req, res) {
     // Generate filename
     const outputFileName = fileName || `Risk Assessment - ${data.activity_description || 'General'} - ${data.assessment_date || new Date().toISOString().split('T')[0]}.docx`
 
+    // Content-Disposition must be ASCII (Latin-1). Smart quotes, dashes and other
+    // non-ASCII characters in the filename throw "Invalid character in header content".
+    // Send an ASCII-safe fallback plus an RFC 5987 UTF-8 version for modern browsers.
+    const asciiFileName = outputFileName.replace(/[^\x20-\x7E]/g, '_').replace(/"/g, "'")
+    const encodedFileName = encodeURIComponent(outputFileName)
+
     // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
-    res.setHeader('Content-Disposition', `attachment; filename="${outputFileName}"`)
+    res.setHeader('Content-Disposition', `attachment; filename="${asciiFileName}"; filename*=UTF-8''${encodedFileName}`)
     res.setHeader('Content-Length', buffer.length)
 
     // Send the buffer
