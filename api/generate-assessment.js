@@ -458,7 +458,7 @@ ${getFsmsGuidance(policiesSelected)}
 Generate the complete risk assessment JSON with all hazard details filled in.`
 
     const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       system: [
         {
