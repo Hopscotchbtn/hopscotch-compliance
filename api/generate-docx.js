@@ -99,8 +99,8 @@ export default async function handler(req, res) {
     // Load the template into PizZip
     const zip = new PizZip(templateContent)
 
-    // Fix reassess_rating cells: template has hardcoded green for all of them
-    // since they were always Low before. Now update color and add rating text.
+    // Fix all rating cell colours: template hardcodes colors regardless of value.
+    // Also injects rating text into reassess_rating cells which had no placeholder.
     let docXml = zip.files['word/document.xml'].asText()
     docXml = injectRatingColors(docXml, data)
     zip.file('word/document.xml', docXml)

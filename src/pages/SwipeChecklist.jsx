@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { SwipeCard } from '../components/SwipeCard'
-import { SignatureCanvas } from '../components/SignatureCanvas'
 import { Button } from '../components/ui/Button'
 import { checkTypes, getChecklistItems, isMonday } from '../data/checklists'
-import { submitCheck, uploadCheckPhoto, uploadSignature } from '../lib/supabase'
+import { submitCheck, uploadCheckPhoto } from '../lib/supabase'
 
 export function SwipeChecklist() {
   const { checkTypeId, roomName } = useParams()
@@ -21,7 +20,6 @@ export function SwipeChecklist() {
   const [responses, setResponses] = useState({})
   const [notes, setNotes] = useState({})
   const [photos, setPhotos] = useState({})
-  const [signature, setSignature] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const [showSummary, setShowSummary] = useState(false)
@@ -109,12 +107,6 @@ export function SwipeChecklist() {
         if (url) photoUrls[itemId] = url
       }
 
-      // Upload signature
-      let signatureUrl = null
-      if (signature) {
-        signatureUrl = await uploadSignature(signature)
-      }
-
       const submitItems = items.map(item => ({
         id: item.id,
         text: item.text,
@@ -129,7 +121,6 @@ export function SwipeChecklist() {
         checkType: checkTypeId,
         completedBy,
         items: submitItems,
-        signatureUrl,
       })
 
       if (hasIssues) {
@@ -300,11 +291,6 @@ export function SwipeChecklist() {
             </div>
           )}
 
-          {/* Signature */}
-          <div className="bg-white rounded-xl p-4 mb-6 shadow-sm">
-            <SignatureCanvas onSignature={setSignature} />
-          </div>
-
           {/* Error message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
@@ -318,10 +304,10 @@ export function SwipeChecklist() {
               color="forest"
               size="large"
               fullWidth
-              disabled={isSubmitting || !signature}
+              disabled={isSubmitting}
               onClick={handleSubmit}
             >
-              {isSubmitting ? 'Submitting...' : !signature ? 'Sign to Submit' : 'Submit Check'}
+              {isSubmitting ? 'Submitting...' : 'Submit Check'}
             </Button>
 
             <Button

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
-import { SignatureCanvas } from '../components/SignatureCanvas'
-import { submitCheck, uploadSignature } from '../lib/supabase'
+import { submitCheck } from '../lib/supabase'
 
 const NOTICE = 'The daily checks must be carried out before the nursery is open and children are on site. The garden/outside areas should be monitored through the day and any defects reported immediately to the duty manager and made safe (comments should be added below to reference defects found.) All relevant staff should be informed of any hazards or issues in the outdoor play areas/public areas.'
 
@@ -25,15 +24,12 @@ export function GardenChecklist() {
 
   const [showNotice, setShowNotice] = useState(true)
   const [comment, setComment] = useState('')
-  const [signature, setSignature] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     if (!nursery) navigate('/')
   }, [nursery, navigate])
-
-  const isValid = !!signature
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
@@ -47,8 +43,6 @@ export function GardenChecklist() {
         photo_url: null,
       }))
 
-      const signatureUrl = signature ? await uploadSignature(signature) : null
-
       await submitCheck({
         nursery,
         room: 'Garden/Outdoor Area',
@@ -56,7 +50,6 @@ export function GardenChecklist() {
         completedBy,
         items: submitItems,
         notes: comment.trim(),
-        signatureUrl,
       })
 
       navigate('/section/nursery')
@@ -118,10 +111,6 @@ export function GardenChecklist() {
           />
         </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <SignatureCanvas onSignature={setSignature} />
-        </div>
-
         {error && (
           <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
             {error}
@@ -132,10 +121,10 @@ export function GardenChecklist() {
           color="forest"
           size="large"
           fullWidth
-          disabled={isSubmitting || !isValid}
+          disabled={isSubmitting}
           onClick={handleSubmit}
         >
-          {isSubmitting ? 'Submitting...' : !signature ? 'Sign to Submit' : 'Submit Check'}
+          {isSubmitting ? 'Submitting...' : 'Submit Check'}
         </Button>
       </div>
     </div>

@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { Button } from '../components/ui/Button'
-import { SignatureCanvas } from '../components/SignatureCanvas'
 import { checkTypes } from '../data/checklists'
-import { submitCheck, uploadSignature } from '../lib/supabase'
+import { submitCheck } from '../lib/supabase'
 import { Input } from '../components/ui/Input'
 
 export function NurseryRoomChecklist() {
@@ -20,7 +19,6 @@ export function NurseryRoomChecklist() {
   const [phase, setPhase] = useState('notice') // 'notice' | 'checklist'
   const [comment, setComment] = useState('')
   const [initials, setInitials] = useState(completedBy || '')
-  const [signature, setSignature] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
 
@@ -28,13 +26,12 @@ export function NurseryRoomChecklist() {
     if (!nursery) navigate('/')
   }, [nursery, navigate])
 
-  const isValid = signature && initials.trim()
+  const isValid = !!initials.trim()
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
     setError(null)
     try {
-      const signatureUrl = signature ? await uploadSignature(signature) : null
       const submitItems = items.map(item => ({
         id: item.id,
         text: item.text,
@@ -48,7 +45,6 @@ export function NurseryRoomChecklist() {
         completedBy: initials.trim(),
         items: submitItems,
         notes: comment.trim() || null,
-        signatureUrl,
       })
 
       navigate(`/check/roomSafety`, {
@@ -133,11 +129,6 @@ export function NurseryRoomChecklist() {
           />
         </div>
 
-        {/* Signature */}
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <SignatureCanvas onSignature={setSignature} />
-        </div>
-
         {error && (
           <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
             {error}
@@ -151,7 +142,7 @@ export function NurseryRoomChecklist() {
           disabled={isSubmitting || !isValid}
           onClick={handleSubmit}
         >
-          {isSubmitting ? 'Submitting...' : !initials.trim() ? 'Enter initials to submit' : !signature ? 'Sign to Submit' : 'Submit Check'}
+          {isSubmitting ? 'Submitting...' : !initials.trim() ? 'Enter initials to submit' : 'Submit Check'}
         </Button>
       </div>
     </div>
