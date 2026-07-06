@@ -60,6 +60,12 @@ export const assessmentTypes = [
     name: 'Security',
     description: 'Site security, access control, and safeguarding',
     icon: 'Lock'
+  },
+  {
+    id: 'event',
+    name: 'Event',
+    description: 'Special events, celebrations, and one-off activities',
+    icon: 'PartyPopper'
   }
 ];
 
