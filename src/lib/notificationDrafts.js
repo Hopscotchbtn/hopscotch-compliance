@@ -86,7 +86,7 @@ ${incidentData.nursery}`
   return {
     subject,
     body,
-    mailto: `mailto:sarah@hopscotchnurseries.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+    mailto: `mailto:${import.meta.env.VITE_COO_EMAIL || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
     recipient: 'COO',
   }
 }
